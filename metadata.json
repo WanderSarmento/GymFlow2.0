@@ -1,0 +1,6 @@
+{
+  "name": "GymFlow - Monitor de Lotação & Controle de Acesso",
+  "description": "Plataforma SaaS multi-tenancy para academias com monitoramento de lotação em tempo real, link próprio dos alunos, controle remoto de catracas pela recepção e firmware ESP32 dedicado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
