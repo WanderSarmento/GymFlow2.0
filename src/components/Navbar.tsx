@@ -14,7 +14,7 @@ interface NavbarProps {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   gyms: GymProfile[];
-  currentGym: GymProfile;
+  currentGym: GymProfile | null;
   onSelectGym: (gym: GymProfile) => void;
   onOpenRegisterModal: () => void;
   onOpenShareModal: () => void;
@@ -68,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const theme = THEME_COLOR_CONFIG[currentGym.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
+  const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
   const isSupabaseActive = isSupabaseConfigured();
   const isSuperAdmin = currentUser?.role === 'superadmin';
 
@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2.5 sm:gap-4">
           <div className="flex items-center gap-2">
             <div className={`relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl ${theme.primary} shadow-md font-black shrink-0 text-xl`}>
-              {currentGym.logoEmoji || '⚡'}
+              {currentGym?.logoEmoji || '⚡'}
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400"></span>

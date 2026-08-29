@@ -2,83 +2,7 @@ import { Announcement, DaySchedule, DayCrowdStats, GymProfile } from '../types';
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
-export const INITIAL_GYMS: GymProfile[] = [
-  {
-    id: 'gym-fitflow-matriz',
-    slug: 'fitflow-centro',
-    name: 'FitFlow Club & Musculação',
-    slogan: 'Sala de Musculação & Treinamento de Alta Performance',
-    city: 'São Paulo',
-    neighborhood: 'Centro / Av. Paulista',
-    address: 'Av. Paulista, 1200 - Bela Vista',
-    contactPhone: '(11) 98765-4321',
-    maxCapacity: 80,
-    currentCount: 34,
-    turnstileLocked: false,
-    isOpen: true,
-    themeColor: 'cyan',
-    logoEmoji: '⚡',
-    apiKey: 'GF_KEY_FITFLOW_99214_LIVE',
-    ownerName: 'Carlos Mendonça',
-    ownerEmail: 'carlos@fitflow.com.br',
-    createdAt: '2026-01-15T10:00:00.000Z',
-    operatingHours: {
-      weekdays: { open: '06:00', close: '23:00', isOpen: true },
-      saturday: { open: '07:00', close: '17:00', isOpen: true },
-      sunday: { open: '08:00', close: '14:00', isOpen: true }
-    }
-  },
-  {
-    id: 'gym-iron-muscle',
-    slug: 'iron-muscle',
-    name: 'Iron Muscle Academy',
-    slogan: 'Centro Avançado de Hipertrofia e Força',
-    city: 'Curitiba',
-    neighborhood: 'Batel',
-    address: 'Rua Bispo Dom José, 450 - Batel',
-    contactPhone: '(41) 99123-8877',
-    maxCapacity: 120,
-    currentCount: 68,
-    turnstileLocked: false,
-    isOpen: true,
-    themeColor: 'amber',
-    logoEmoji: '🔥',
-    apiKey: 'GF_KEY_IRON_77182_LIVE',
-    ownerName: 'Renata Albuquerque',
-    ownerEmail: 'renata@ironmuscle.com.br',
-    createdAt: '2026-02-10T14:30:00.000Z',
-    operatingHours: {
-      weekdays: { open: '05:30', close: '00:00', isOpen: true },
-      saturday: { open: '08:00', close: '18:00', isOpen: true },
-      sunday: { open: '09:00', close: '15:00', isOpen: true }
-    }
-  },
-  {
-    id: 'gym-powerfit-barra',
-    slug: 'powerfit-barra',
-    name: 'PowerFit Premium Lounge',
-    slogan: 'Saúde, Cardio & Bem-Estar Integrado',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Barra da Tijuca',
-    address: 'Av. das Américas, 3500 - Bloco 2',
-    contactPhone: '(21) 97654-1122',
-    maxCapacity: 95,
-    currentCount: 41,
-    turnstileLocked: false,
-    isOpen: true,
-    themeColor: 'emerald',
-    logoEmoji: '🌿',
-    apiKey: 'GF_KEY_POWER_33190_LIVE',
-    ownerName: 'Dr. Thiago Siqueira',
-    ownerEmail: 'thiago@powerfit.com.br',
-    createdAt: '2026-03-01T09:00:00.000Z',
-    operatingHours: {
-      weekdays: { open: '06:00', close: '22:30', isOpen: true },
-      saturday: { open: '07:30', close: '16:00', isOpen: true },
-      sunday: { open: '08:00', close: '13:00', isOpen: true }
-    }
-  }
-];
+export const INITIAL_GYMS: GymProfile[] = [];
 
 export const THEME_COLOR_CONFIG: Record<string, {
   name: string;
@@ -223,63 +147,7 @@ export const GYM_SCHEDULE: DaySchedule[] = [
   }
 ];
 
-export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'ann-1',
-    title: 'Manutenção Preventiva nos Aparelhos de Crossover & Smith',
-    content: 'Informamos que nesta quinta-feira (das 13:00 às 15:00) os aparelhos de Crossover 01 e Smith Machine passarão por lubrificação e troca de cabos de aço preventiva. Os demais aparelhos estarão 100% disponíveis.',
-    category: 'manutencao',
-    priority: 'high',
-    date: '28/08/2026',
-    author: 'Equipe de Manutenção & Coordenação',
-    pinned: true,
-    active: true
-  },
-  {
-    id: 'ann-2',
-    title: 'Desafio FitFlow de Primavera: Inscrições Abertas!',
-    content: 'Participe do nosso desafio de 30 dias com acompanhamento de bioimpedância gratuita, treinos funcionais temáticos e premiações exclusivas para os alunos mais dedicados. Inscreva-se na recepção ou com os professores na sala de musculação.',
-    category: 'evento',
-    priority: 'medium',
-    date: '27/08/2026',
-    author: 'Coordenação Esportiva',
-    pinned: true,
-    active: true
-  },
-  {
-    id: 'ann-3',
-    title: 'Novo Sistema de Catracas Conectadas & Monitor de Lotação',
-    content: 'Implementamos contadores automatizados via ESP32 nas catracas de entrada e saída. Agora você pode checar a lotação da sala de musculação em tempo real pelo aplicativo antes de sair de casa para planejar o melhor horário do seu treino!',
-    category: 'novidade',
-    priority: 'medium',
-    date: '26/08/2026',
-    author: 'Diretoria FitFlow',
-    pinned: false,
-    active: true
-  },
-  {
-    id: 'ann-4',
-    title: 'Horário Especial no Feriado de 7 de Setembro',
-    content: 'No feriado nacional da Independência, a academia funcionará em horário especial de domingo: das 08:00 às 14:00. O estacionamento estará liberado gratuitamente para todos os alunos.',
-    category: 'horario',
-    priority: 'high',
-    date: '25/08/2026',
-    author: 'Recepção Central',
-    pinned: false,
-    active: true
-  },
-  {
-    id: 'ann-5',
-    title: 'Uso Obrigatório de Toalha e Higienização dos Aparelhos',
-    content: 'Lembramos a todos os alunos sobre a importância de utilizar toalha durante o treino e higienizar os bancos e pegadas com o álcool 70% e papel toalha disponíveis nos totens da sala.',
-    category: 'importante',
-    priority: 'low',
-    date: '20/08/2026',
-    author: 'Equipe Técnica',
-    pinned: false,
-    active: true
-  }
-];
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
 
 // Helper to generate hourly crowd data by day of the week
 export const WEEKLY_CROWD_DATA: Record<number, DayCrowdStats> = {

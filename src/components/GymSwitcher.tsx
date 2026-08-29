@@ -16,7 +16,7 @@ import { THEME_COLOR_CONFIG } from '../data/gymData';
 
 interface GymSwitcherProps {
   gyms: GymProfile[];
-  currentGym: GymProfile;
+  currentGym: GymProfile | null;
   onSelectGym: (gym: GymProfile) => void;
   onOpenRegisterModal: () => void;
   onOpenShareModal: () => void;
@@ -45,6 +45,20 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (!currentGym) {
+    return (
+      <button
+        id="gym-switcher-empty-register-btn"
+        type="button"
+        onClick={onOpenRegisterModal}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-dashed border-cyan-400/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 transition-all text-xs sm:text-sm font-semibold cursor-pointer"
+      >
+        <Plus className="w-4 h-4 text-cyan-400" />
+        <span>+ Cadastrar Academia</span>
+      </button>
+    );
+  }
 
   const theme = THEME_COLOR_CONFIG[currentGym.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
 

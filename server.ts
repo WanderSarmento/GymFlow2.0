@@ -262,9 +262,9 @@ function getGymStateByIdOrSlug(idOrSlug: string): GymServerState | null {
   return null;
 }
 
-function getDefaultGymState(): GymServerState {
+function getDefaultGymState(): GymServerState | null {
   const first = gymsStore.values().next().value;
-  return first;
+  return first || null;
 }
 
 function getAuthUserFromRequest(req: Request): GymUserRecord | null {
@@ -1592,6 +1592,31 @@ void sendHeartbeat() {
 
   app.get('/api/occupancy', (req: Request, res: Response) => {
     const gymState = getDefaultGymState();
+    if (!gymState) {
+      res.json({
+        gymId: '',
+        gymName: 'Nenhuma Academia',
+        gymSlug: '',
+        themeColor: 'cyan',
+        logoEmoji: '⚡',
+        currentCount: 0,
+        maxCapacity: 80,
+        status: 'empty',
+        percentage: 0,
+        turnstileLocked: false,
+        isOpen: false,
+        openingTimeToday: '06:00',
+        closingTimeToday: '23:00',
+        lastAccessTime: null,
+        lastAccessType: null,
+        esp32Connected: false,
+        esp32LastPing: null,
+        esp32DeviceName: 'ESP32_CATRACA',
+        esp32Ip: '192.168.1.100',
+        pendingRelayTrigger: null
+      });
+      return;
+    }
     const hours = getGymTodayHours(gymState.profile.operatingHours);
     const percentage = Math.min(100, Math.round((gymState.currentCount / gymState.maxCapacity) * 100));
     const status = calculateStatus(gymState.currentCount, gymState.maxCapacity);
@@ -1622,6 +1647,10 @@ void sendHeartbeat() {
 
   app.post('/api/turnstile/action', (req: Request, res: Response) => {
     const gymState = getDefaultGymState();
+    if (!gymState) {
+      res.status(404).json({ success: false, message: 'Nenhuma academia cadastrada.' });
+      return;
+    }
     if (!isAuthorizedForGym(req, gymState)) {
       res.status(403).json({ success: false, message: 'Acesso não autorizado para esta academia.' });
       return;
@@ -1663,7 +1692,7 @@ void sendHeartbeat() {
       return;
     }
     const gymState = getGymStateByIdOrSlug(user.gymSlug || user.gymId) || getDefaultGymState();
-    if (!isAuthorizedForGym(req, gymState)) {
+    if (!gymState || !isAuthorizedForGym(req, gymState)) {
       res.json({ logs: [], totalEntriesToday: 0, totalExitsToday: 0 });
       return;
     }
@@ -1677,7 +1706,7 @@ void sendHeartbeat() {
 
   app.get('/api/announcements', (req: Request, res: Response) => {
     const gymState = getDefaultGymState();
-    res.json({ announcements: gymState.announcements });
+    res.json({ announcements: gymState ? gymState.announcements : [] });
   });
 
   // =========================================================================

@@ -33,11 +33,37 @@ import {
 import { OccupancyData, AccessLog, Announcement, GymProfile, AuthUser } from './types';
 import { soundFx } from './utils/audio';
 import { INITIAL_GYMS, THEME_COLOR_CONFIG } from './data/gymData';
-import { Dumbbell, Shield, Cpu, Share2, Plus, Sparkles, Building2, ExternalLink, Sliders, ShieldAlert, Lock, AlertTriangle } from 'lucide-react';
+import { Dumbbell, Shield, Cpu, Share2, Plus, Sparkles, Building2, ExternalLink, Sliders, ShieldAlert, Lock, AlertTriangle, Smartphone } from 'lucide-react';
+
+const DEFAULT_EMPTY_OCCUPANCY: OccupancyData = {
+  gymId: '',
+  gymName: 'Nenhuma Academia Cadastrada',
+  gymSlug: '',
+  themeColor: 'cyan',
+  logoEmoji: '⚡',
+  slogan: 'Monitoramento de Lotação em Tempo Real',
+  city: '',
+  neighborhood: '',
+  currentCount: 0,
+  maxCapacity: 80,
+  status: 'empty',
+  percentage: 0,
+  turnstileLocked: false,
+  isOpen: false,
+  closingTimeToday: '23:00',
+  openingTimeToday: '06:00',
+  lastAccessTime: null,
+  lastAccessType: null,
+  esp32Connected: false,
+  esp32LastPing: null,
+  esp32DeviceName: 'ESP32_CATRACA',
+  esp32Ip: '192.168.1.100',
+  pendingRelayTrigger: null
+};
 
 export default function App() {
   const [gyms, setGyms] = useState<GymProfile[]>(INITIAL_GYMS);
-  const [currentGym, setCurrentGym] = useState<GymProfile>(INITIAL_GYMS[0]);
+  const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('student');
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -52,31 +78,7 @@ export default function App() {
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
   // Core occupancy and telemetry state
-  const [occupancy, setOccupancy] = useState<OccupancyData>({
-    gymId: INITIAL_GYMS[0].id,
-    gymName: INITIAL_GYMS[0].name,
-    gymSlug: INITIAL_GYMS[0].slug,
-    themeColor: INITIAL_GYMS[0].themeColor,
-    logoEmoji: INITIAL_GYMS[0].logoEmoji,
-    slogan: INITIAL_GYMS[0].slogan,
-    city: INITIAL_GYMS[0].city,
-    neighborhood: INITIAL_GYMS[0].neighborhood,
-    currentCount: INITIAL_GYMS[0].currentCount,
-    maxCapacity: INITIAL_GYMS[0].maxCapacity,
-    status: 'low',
-    percentage: Math.round((INITIAL_GYMS[0].currentCount / INITIAL_GYMS[0].maxCapacity) * 100),
-    turnstileLocked: false,
-    isOpen: true,
-    closingTimeToday: '23:00',
-    openingTimeToday: '06:00',
-    lastAccessTime: null,
-    lastAccessType: null,
-    esp32Connected: true,
-    esp32LastPing: new Date().toISOString(),
-    esp32DeviceName: `ESP32_CATRACA_${INITIAL_GYMS[0].slug.toUpperCase()}`,
-    esp32Ip: '192.168.1.145',
-    pendingRelayTrigger: null
-  });
+  const [occupancy, setOccupancy] = useState<OccupancyData>(DEFAULT_EMPTY_OCCUPANCY);
 
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -108,6 +110,9 @@ export default function App() {
           if (match) selected = match;
         }
         setCurrentGym(selected);
+      } else {
+        setGyms([]);
+        setCurrentGym(null);
       }
     }
     initGyms();
@@ -115,6 +120,7 @@ export default function App() {
 
   // 2. Load gym data whenever currentGym changes or polled
   const loadGymData = useCallback(async (gymSlug: string, silent = false) => {
+    if (!gymSlug) return;
     if (!silent) setIsRefreshing(true);
     try {
       const details = await fetchGymDetails(gymSlug);
@@ -210,6 +216,7 @@ export default function App() {
 
   // Handlers for ESP32 Simulation
   const handleSimulateEntry = async () => {
+    if (!currentGym) return;
     if (soundEnabled) soundFx.playEntry();
     const res = await triggerESP32Entry(currentGym.slug, true);
     await loadGymData(currentGym.slug, true);
@@ -217,6 +224,7 @@ export default function App() {
   };
 
   const handleSimulateExit = async () => {
+    if (!currentGym) return;
     if (soundEnabled) soundFx.playExit();
     const res = await triggerESP32Exit(currentGym.slug, true);
     await loadGymData(currentGym.slug, true);
@@ -225,6 +233,7 @@ export default function App() {
 
   // Handlers for Reception Actions
   const handleTurnstileAction = async (action: string, value?: any, notes?: string) => {
+    if (!currentGym) return;
     if (soundEnabled) {
       if (action.includes('entry')) soundFx.playEntry();
       else if (action.includes('exit')) soundFx.playExit();
@@ -236,6 +245,7 @@ export default function App() {
   };
 
   const handleUpdateCapacity = async (maxCapacity: number) => {
+    if (!currentGym) return;
     const res = await updateGymSettings(currentGym.slug, { maxCapacity });
     if (res.success && res.profile) {
       handleGymUpdated(res.profile);
@@ -245,6 +255,7 @@ export default function App() {
 
   // Announcements CRUD
   const handleAddAnnouncement = async (item: Partial<Announcement>): Promise<boolean> => {
+    if (!currentGym) return false;
     const created = await createAnnouncement(currentGym.slug, item);
     if (created) {
       setAnnouncements(prev => [created, ...prev]);
@@ -254,6 +265,7 @@ export default function App() {
   };
 
   const handleDeleteAnnouncement = async (id: string): Promise<boolean> => {
+    if (!currentGym) return false;
     const success = await deleteAnnouncement(currentGym.slug, id);
     if (success) {
       setAnnouncements(prev => prev.filter(a => a.id !== id));
@@ -262,13 +274,13 @@ export default function App() {
     return false;
   };
 
-  const theme = THEME_COLOR_CONFIG[currentGym.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
+  const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-zinc-100 flex flex-col font-['Plus_Jakarta_Sans'] antialiased selection:bg-cyan-400 selection:text-black">
       
       {/* SaaS Student Dedicated Header Banner if accessed directly via student URL */}
-      {isDirectStudentLink && (
+      {isDirectStudentLink && currentGym && (
         <div className="bg-gradient-to-r from-cyan-950/80 via-zinc-900 to-cyan-950/80 border-b border-cyan-500/20 px-4 py-2 text-center text-xs text-zinc-300 flex items-center justify-center gap-2">
           <span className="text-base">{currentGym.logoEmoji}</span>
           <span>Você está visualizando a lotação oficial de <strong className="text-white">{currentGym.name}</strong></span>
@@ -283,7 +295,7 @@ export default function App() {
       )}
 
       {/* Top Banner Alert if the selected gym is blocked / suspended by SaaS Admin */}
-      {(occupancy.isSystemBlocked || currentGym.isSystemBlocked) && (
+      {currentGym && (occupancy.isSystemBlocked || currentGym.isSystemBlocked) && (
         <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-950 border-b border-rose-500/50 px-4 py-3 text-center text-xs text-rose-200 flex items-center justify-center gap-2.5 shadow-lg">
           <Lock className="w-4 h-4 text-rose-400 shrink-0" />
           <span>
@@ -307,7 +319,7 @@ export default function App() {
         occupancy={occupancy}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onRefresh={() => loadGymData(currentGym.slug, false)}
+        onRefresh={() => currentGym && loadGymData(currentGym.slug, false)}
         isRefreshing={isRefreshing}
         soundEnabled={soundEnabled}
         setSoundEnabled={setSoundEnabled}
@@ -326,8 +338,85 @@ export default function App() {
       {/* Main Content Container */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-3.5 sm:px-6 py-4 sm:py-6 space-y-6 pb-28 md:pb-8">
         
+        {/* Onboarding State if no gym is registered and not on SaaS Admin */}
+        {!currentGym && activeTab !== 'saas_admin' && (
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 text-center max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-500/10 border border-cyan-500/30 text-4xl shadow-xl shadow-cyan-500/10">
+              ⚡
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                <Sparkles className="w-3.5 h-3.5" />
+                Ambiente Limpo & Pronto
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black font-['Outfit'] text-white">
+                Cadastre sua Academia
+              </h2>
+              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed max-w-xl mx-auto">
+                Nenhum dado pré-carregado. Adicione agora as informações da sua academia (nome, capacidade máxima, cores e horários) para começar a monitorar a lotação em tempo real e gerar o link exclusivo para seus alunos.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <button
+                id="onboarding-register-gym-btn"
+                type="button"
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold text-sm transition-all shadow-lg shadow-cyan-400/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Cadastrar Minha Academia</span>
+              </button>
+
+              <button
+                id="onboarding-login-btn"
+                type="button"
+                onClick={() => setIsLoginModalOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-semibold text-sm transition-all cursor-pointer"
+              >
+                <Lock className="w-4 h-4 text-zinc-400" />
+                <span>Entrar com Minha Conta</span>
+              </button>
+            </div>
+
+            {/* Quick overview grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 text-left w-full">
+              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
+                  <Smartphone className="w-4 h-4" />
+                  Link dos Alunos
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Página leve em tempo real para alunos consultarem a lotação antes de treinar.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                  <Cpu className="w-4 h-4" />
+                  Catracas & ESP32
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Firmware C++ pronto para controlar relés e registrar entradas e saídas.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                  <Building2 className="w-4 h-4" />
+                  Gestão & SaaS
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Painel de recepção, avisos aos alunos, faturas e controle de assinaturas.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab 1: Student View (Alunos) */}
-        {activeTab === 'student' && (
+        {currentGym && activeTab === 'student' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Real-time Occupancy Visual Meter */}
@@ -360,7 +449,7 @@ export default function App() {
         )}
 
         {/* Tab 2: Reception View (Controle Manual de Catracas & Gestão da Unidade) */}
-        {activeTab === 'reception' && (
+        {currentGym && activeTab === 'reception' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Live Occupancy Status Card with quick sim */}
@@ -391,7 +480,7 @@ export default function App() {
         )}
 
         {/* Tab 3: ESP32 Hardware Panel & Firmware Generator */}
-        {activeTab === 'esp32' && (
+        {currentGym && activeTab === 'esp32' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Live Occupancy Status Card */}
@@ -440,19 +529,23 @@ export default function App() {
       />
 
       {/* SaaS Modal 2: Share Gym Student Link & QR Code */}
-      <GymShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        gym={currentGym}
-      />
+      {currentGym && (
+        <GymShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          gym={currentGym}
+        />
+      )}
 
       {/* SaaS Modal 3: Customize Gym Profile */}
-      <GymCustomizerModal
-        isOpen={isCustomizeModalOpen}
-        onClose={() => setIsCustomizeModalOpen(false)}
-        gym={currentGym}
-        onGymUpdated={handleGymUpdated}
-      />
+      {currentGym && (
+        <GymCustomizerModal
+          isOpen={isCustomizeModalOpen}
+          onClose={() => setIsCustomizeModalOpen(false)}
+          gym={currentGym}
+          onGymUpdated={handleGymUpdated}
+        />
+      )}
 
       {/* SaaS Modal 4: Gym Login, Self-Service Registration & Password Recovery */}
       <GymLoginModal
@@ -464,7 +557,7 @@ export default function App() {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);
         }}
-        currentGym={currentGym}
+        currentGym={currentGym || undefined}
         availableGyms={gyms}
       />
 
