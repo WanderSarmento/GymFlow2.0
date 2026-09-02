@@ -23,6 +23,7 @@ interface NavbarProps {
   onOpenLoginModal: () => void;
   onOpenSupabaseModal: () => void;
   onLogout: () => void;
+  isDirectStudentLink: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -42,7 +43,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenLoginModal,
   onOpenSupabaseModal,
-  onLogout
+  onLogout,
+  isDirectStudentLink
 }) => {
   const [time, setTime] = useState<string>('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -95,63 +97,67 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
 
-          {/* Active Gym Selector Dropdown */}
-          <GymSwitcher
-            gyms={gyms}
-            currentGym={currentGym}
-            onSelectGym={onSelectGym}
-            onOpenRegisterModal={onOpenRegisterModal}
-            onOpenShareModal={onOpenShareModal}
-            onOpenCustomizeModal={onOpenCustomizeModal}
-            isAdminMode={activeTab === 'reception'}
-          />
+          {/* Active Gym Selector Dropdown (Hidden for students) */}
+          {(!isDirectStudentLink || currentUser) && (
+            <GymSwitcher
+              gyms={gyms}
+              currentGym={currentGym}
+              onSelectGym={onSelectGym}
+              onOpenRegisterModal={onOpenRegisterModal}
+              onOpenShareModal={onOpenShareModal}
+              onOpenCustomizeModal={onOpenCustomizeModal}
+              isAdminMode={activeTab === 'reception'}
+            />
+          )}
         </div>
 
-        {/* Desktop View Switcher Mode Tabs */}
-        <nav className="hidden md:flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50">
-          <button
-            id="tab-student-view"
-            type="button"
-            onClick={() => setActiveTab('student')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-              activeTab === 'student' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Alunos
-          </button>
-          <button
-            id="tab-reception-view"
-            type="button"
-            onClick={() => setActiveTab('reception')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-              activeTab === 'reception' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Recepção
-          </button>
-          <button
-            id="tab-esp32-view"
-            type="button"
-            onClick={() => setActiveTab('esp32')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-              activeTab === 'esp32' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            Hardware
-          </button>
-          {isSuperAdmin && (
+        {/* Desktop View Switcher Mode Tabs (Only visible when logged in) */}
+        {currentUser && (
+          <nav className="hidden md:flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50">
             <button
-              id="tab-saas-admin-view"
+              id="tab-student-view"
               type="button"
-              onClick={() => setActiveTab('saas_admin')}
+              onClick={() => setActiveTab('student')}
               className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                activeTab === 'saas_admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:text-indigo-300'
+                activeTab === 'student' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              Master
+              Alunos
             </button>
-          )}
-        </nav>
+            <button
+              id="tab-reception-view"
+              type="button"
+              onClick={() => setActiveTab('reception')}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                activeTab === 'reception' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Recepção
+            </button>
+            <button
+              id="tab-esp32-view"
+              type="button"
+              onClick={() => setActiveTab('esp32')}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                activeTab === 'esp32' ? 'bg-zinc-100 text-black shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              Hardware
+            </button>
+            {isSuperAdmin && (
+              <button
+                id="tab-saas-admin-view"
+                type="button"
+                onClick={() => setActiveTab('saas_admin')}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  activeTab === 'saas_admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:text-indigo-300'
+                }`}
+              >
+                Master
+              </button>
+            )}
+          </nav>
+        )}
 
         {/* Right utility items: Supabase, Auth, Clock, Sound, Refresh */}
         <div className="flex items-center gap-3">
@@ -215,17 +221,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setUserDropdownOpen(false);
-                setActiveTab('saas_admin');
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-indigo-300 hover:text-white hover:bg-indigo-950/60 transition-colors text-left font-bold cursor-pointer"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Painel Master SaaS</span>
-            </button>
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUserDropdownOpen(false);
+                  setActiveTab('saas_admin');
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-indigo-300 hover:text-white hover:bg-indigo-950/60 transition-colors text-left font-bold cursor-pointer"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Painel Master SaaS</span>
+              </button>
+            )}
 
             <button
               type="button"

@@ -65,7 +65,7 @@ export default function App() {
   const [gyms, setGyms] = useState<GymProfile[]>(INITIAL_GYMS);
   const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
-  const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('student');
+  const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDirectStudentLink, setIsDirectStudentLink] = useState(false);
@@ -201,6 +201,14 @@ export default function App() {
   // Auth Handlers
   const handleLoginSuccess = (user: AuthUser) => {
     setCurrentUser(user);
+    
+    // Auto-direct based on role
+    if (user.role === 'superadmin') {
+      setActiveTab('saas_admin');
+    } else {
+      setActiveTab('reception');
+    }
+
     if (user.gymSlug) {
       const match = gyms.find(g => g.slug === user.gymSlug || g.id === user.gymId);
       if (match) {
@@ -274,6 +282,13 @@ export default function App() {
     return false;
   };
 
+  // Filtered gyms list based on user role
+  const visibleGyms = React.useMemo(() => {
+    if (!currentUser) return gyms; // Show all if not logged in (e.g. initial loading or student view)
+    if (currentUser.role === 'superadmin') return gyms;
+    return gyms.filter(g => g.id === currentUser.gymId || g.slug === currentUser.gymSlug);
+  }, [gyms, currentUser]);
+
   const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
 
   return (
@@ -314,94 +329,101 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Fixed Header Navbar */}
-      <Navbar
-        occupancy={occupancy}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onRefresh={() => currentGym && loadGymData(currentGym.slug, false)}
-        isRefreshing={isRefreshing}
-        soundEnabled={soundEnabled}
-        setSoundEnabled={setSoundEnabled}
-        gyms={gyms}
-        currentGym={currentGym}
-        onSelectGym={handleSelectGym}
-        onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
-        onOpenShareModal={() => setIsShareModalOpen(true)}
-        onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
-        currentUser={currentUser}
-        onOpenLoginModal={() => setIsLoginModalOpen(true)}
-        onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
-        onLogout={handleLogout}
-      />
+      {/* Top Fixed Header Navbar (Hidden for students) */}
+      {!isDirectStudentLink && activeTab !== 'student' && (
+        <Navbar
+          occupancy={occupancy}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onRefresh={() => currentGym && loadGymData(currentGym.slug, false)}
+          isRefreshing={isRefreshing}
+          soundEnabled={soundEnabled}
+          setSoundEnabled={setSoundEnabled}
+          gyms={visibleGyms}
+          currentGym={currentGym}
+          onSelectGym={handleSelectGym}
+          onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+          onOpenShareModal={() => setIsShareModalOpen(true)}
+          onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
+          currentUser={currentUser}
+          onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
+          onLogout={handleLogout}
+          isDirectStudentLink={isDirectStudentLink}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8">
+      <main className={`mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8 ${isDirectStudentLink || activeTab === 'student' ? 'pt-12' : ''}`}>
         
-        {/* Onboarding View (Empty State) */}
-        {!currentGym && activeTab !== 'saas_admin' && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Unified Login Portal (Only shown if not logged in and not looking at a specific gym via URL) */}
+        {!currentUser && !isDirectStudentLink && (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-4">
-              <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-                Cadastre sua Academia
+              <div className="mx-auto w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center text-3xl font-black mb-6 shadow-2xl">
+                ⚡
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
+                Bem-vindo ao GymFlow
               </h2>
-              <p className="text-zinc-500 text-sm sm:text-lg max-w-xl mx-auto font-medium">
-                Sua plataforma SaaS para monitoramento de lotação em tempo real.
+              <p className="text-zinc-500 text-sm sm:text-lg max-w-md mx-auto font-medium">
+                Sua plataforma central de gestão e monitoramento de lotação para academias.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button
-                id="onboarding-register-gym-btn"
-                type="button"
-                onClick={() => setIsRegisterModalOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 cursor-pointer"
-              >
-                Nova Academia
-              </button>
+            <div className="w-full max-w-sm p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white">Acesse sua Conta</h3>
+                <p className="text-xs text-zinc-500">Gerencie sua academia ou acesse o painel master.</p>
+              </div>
 
               <button
-                id="onboarding-login-btn"
+                id="portal-login-btn"
                 type="button"
                 onClick={() => setIsLoginModalOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-zinc-900 text-zinc-400 font-bold text-sm border border-zinc-800 hover:text-white hover:border-zinc-600 transition-all cursor-pointer"
+                className="w-full py-4 rounded-2xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 cursor-pointer"
               >
-                Entrar
+                Entrar no Painel
               </button>
+
+              <div className="flex items-center gap-4 py-2">
+                <div className="h-px flex-1 bg-zinc-800" />
+                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">OU</span>
+                <div className="h-px flex-1 bg-zinc-800" />
+              </div>
+
+              <div className="text-center">
+                <p className="text-xs text-zinc-500 mb-4">Deseja cadastrar sua academia?</p>
+                <button
+                  type="button"
+                  onClick={() => setIsRegisterModalOpen(true)}
+                  className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                >
+                  Criar Nova Academia
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Tab 1: Student View (Alunos) */}
+        {/* Tab 1: Student View (Alunos) - Purely Informational */}
         {currentGym && activeTab === 'student' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            
-            {/* Real-time Occupancy Visual Meter */}
-            <LiveOccupancyCard
-              occupancy={occupancy}
-              isStudentView={true}
-            />
-
-            {/* Weekly Movement Prediction Chart & Best Hours */}
-            <CrowdPredictorChart />
-
-            {/* Workout Optimizer & Operating Hours Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className="lg:col-span-7">
-                <StudentWorkoutPlanner occupancy={occupancy} />
-              </div>
-              <div className="lg:col-span-5">
-                <OperatingHoursCard gym={currentGym} />
-              </div>
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col items-center text-center space-y-2 mb-4">
+              <div className="text-4xl mb-2">{currentGym.logoEmoji || '⚡'}</div>
+              <h2 className="text-2xl font-bold text-white">{currentGym.name}</h2>
+              <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Situação em Tempo Real</p>
             </div>
-
-            {/* Gym Notice Board & Announcements (Read-only for students) */}
-            <AnnouncementsBoard
-              announcements={announcements}
-              onAddAnnouncement={handleAddAnnouncement}
-              onDeleteAnnouncement={handleDeleteAnnouncement}
-              isAdminMode={false}
-            />
+            
+            <LiveOccupancyCard occupancy={occupancy} isStudentView={true} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <OperatingHoursCard gym={currentGym} />
+              <AnnouncementsBoard 
+                announcements={announcements}
+                isAdminMode={false}
+              />
+            </div>
           </div>
         )}
 
@@ -421,6 +443,7 @@ export default function App() {
               occupancy={occupancy}
               onAction={handleTurnstileAction}
               onUpdateCapacity={handleUpdateCapacity}
+              onOpenShareModal={() => setIsShareModalOpen(true)}
             />
 
             {/* Announcements manager */}
@@ -471,12 +494,14 @@ export default function App() {
 
       </main>
 
-      {/* Mobile Fixed Bottom Navigation Bar (Hidden on Desktop) */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        occupancy={occupancy}
-      />
+      {/* Mobile Fixed Bottom Navigation Bar (Hidden on Desktop & Hidden for Students) */}
+      {currentUser && !isDirectStudentLink && activeTab !== 'student' && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          occupancy={occupancy}
+        />
+      )}
 
       {/* SaaS Modal 1: Register New Gym */}
       <GymRegistrationModal

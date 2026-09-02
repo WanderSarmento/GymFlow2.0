@@ -551,31 +551,24 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
+                  onClick={() => handleUsePreset('ricardo@ironpeak.com')}
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>🏋️‍♂️ Iron Peak</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUsePreset('mariana@zenith.com')}
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-violet-400 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>🧘‍♀️ Zenith Fitness</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleUsePreset('admin@gymflow.com', 'admin123')}
                   className="px-2.5 py-1.5 rounded-xl bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/40 text-[11px] text-indigo-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer font-semibold shadow-sm"
                 >
                   <span>👑 Master SaaS Admin</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('carlos@fitflow.com.br')}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>⚡ FitFlow Moema</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('renato@ironmuscle.com.br')}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>🔥 Iron Muscle</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('juliana@powerfit24h.com')}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>💎 PowerFit 24h</span>
                 </button>
               </div>
             </div>

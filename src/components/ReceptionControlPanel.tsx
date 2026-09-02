@@ -14,7 +14,8 @@ import {
   Activity,
   Zap,
   Info,
-  Clock
+  Clock,
+  Share2
 } from 'lucide-react';
 import { OccupancyData, AccessLog } from '../types';
 
@@ -22,12 +23,14 @@ interface ReceptionControlPanelProps {
   occupancy: OccupancyData;
   onAction: (action: string, value?: any, notes?: string) => Promise<any>;
   onUpdateCapacity: (capacity: number) => Promise<any>;
+  onOpenShareModal: () => void;
 }
 
 export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
   occupancy,
   onAction,
-  onUpdateCapacity
+  onUpdateCapacity,
+  onOpenShareModal
 }) => {
   const [guestName, setGuestName] = useState('');
   const [guestReason, setGuestReason] = useState('Aula Experimental');
@@ -105,6 +108,16 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              id="reception-share-link-btn"
+              type="button"
+              onClick={onOpenShareModal}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
+            >
+              <Share2 className="w-3 h-3" />
+              <span>Link Alunos</span>
+            </button>
+
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider border ${
               occupancy.turnstileLocked
                 ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
