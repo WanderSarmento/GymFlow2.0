@@ -14,7 +14,8 @@ import {
   GymSaaSAccount,
   SaaSMetrics,
   CreateSaaSGymInput,
-  UserRole
+  UserRole,
+  SaaSPlanConfig
 } from './src/types';
 
 interface GymUserRecord {
@@ -86,6 +87,12 @@ const usersStore = new Map<string, GymUserRecord>();
 const activeTokensStore = new Map<string, GymUserRecord>();
 const passwordResetsStore = new Map<string, { email: string; code: string; expiresAt: number; gymSlug: string }>();
 const saasAccountsStore = new Map<string, SaaSServerAccount>();
+const saasPlansStore = new Map<string, SaaSPlanConfig>();
+
+// Seed initial SaaS plans from static data
+Object.entries(SAAS_PLANS).forEach(([id, plan]) => {
+  saasPlansStore.set(id, { ...plan });
+});
 
 // Seed Master SaaS SuperAdmin user
 const masterAdminRecord: GymUserRecord = {
@@ -191,7 +198,7 @@ INITIAL_GYMS.forEach((gym, index) => {
 
   // Seed SaaS Subscription Account
   let planId: 'starter' | 'pro' | 'enterprise' = index === 0 ? 'pro' : index === 1 ? 'enterprise' : 'starter';
-  let planConfig = SAAS_PLANS[planId];
+  let planConfig = saasPlansStore.get(planId) || SAAS_PLANS[planId];
   let status: 'active' | 'trial' | 'overdue' | 'blocked' = index === 2 ? 'trial' : 'active';
   let monthlyFee = planConfig.price;
   let nextDueDate = index === 0 ? '2026-09-15' : index === 1 ? '2026-09-25' : '2026-09-05';
@@ -802,7 +809,7 @@ async function startServer() {
     activeTokensStore.set(authToken, ownerUserRecord);
 
     // Register SaaS subscription account for new gym (15 days trial)
-    const planConfig = SAAS_PLANS.starter;
+    const planConfig = saasPlansStore.get('starter') || SAAS_PLANS.starter;
     const trialDueDate = new Date();
     trialDueDate.setDate(trialDueDate.getDate() + 15);
     const trialDueDateStr = trialDueDate.toISOString().split('T')[0];
@@ -2185,6 +2192,46 @@ void sendHeartbeat() {
     gymsStore.delete(req.params.gymId);
 
     res.json({ success: true, message: 'Academia removida permanentemente do SaaS.' });
+  });
+
+  // SaaS Plan Management (SuperAdmin only)
+  app.get('/api/saas/plans', (req: Request, res: Response) => {
+    res.json({ plans: Array.from(saasPlansStore.values()) });
+  });
+
+  app.post('/api/saas/plans/:planId', (req: Request, res: Response) => {
+    const user = getAuthUserFromRequest(req);
+    if (!user || user.role !== 'superadmin') {
+      res.status(403).json({ success: false, message: 'Acesso negado: Apenas o Administrador Geral pode editar planos.' });
+      return;
+    }
+
+    const { planId } = req.params;
+    const planUpdate: Partial<SaaSPlanConfig> = req.body;
+    
+    const existing = saasPlansStore.get(planId);
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'Plano não encontrado.' });
+      return;
+    }
+
+    const updated = { ...existing, ...planUpdate };
+    saasPlansStore.set(planId, updated);
+
+    // Also update current account plan names and fees for those on this plan if they were default
+    for (const account of saasAccountsStore.values()) {
+      if (account.plan === planId) {
+        account.planName = updated.name;
+        // Note: we might not want to update monthlyFee for existing accounts automatically, 
+        // but for this demo let's keep them in sync if requested or just leave it.
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Plano ${updated.name} atualizado com sucesso!`,
+      plan: updated
+    });
   });
 
   // ==========================================

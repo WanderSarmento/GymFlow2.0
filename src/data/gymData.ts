@@ -1,4 +1,4 @@
-import { Announcement, DaySchedule, DayCrowdStats, GymProfile } from '../types';
+import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } from '../types';
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
@@ -315,17 +315,6 @@ export const WEEKLY_CROWD_DATA: Record<number, DayCrowdStats> = {
     ]
   }
 };
-
-export interface SaaSPlanConfig {
-  id: 'starter' | 'pro' | 'enterprise';
-  name: string;
-  price: number;
-  badge: string;
-  description: string;
-  turnstilesLimit: number;
-  features: string[];
-  recommended?: boolean;
-}
 
 export const SAAS_PLANS: Record<string, SaaSPlanConfig> = {
   starter: {

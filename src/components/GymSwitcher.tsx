@@ -65,63 +65,35 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
       {/* Gym Pill Trigger */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <button
-          id="gym-switcher-trigger-btn"
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-zinc-900/90 hover:bg-zinc-800 text-white transition-all shadow-sm ${theme.border} text-xs sm:text-sm font-medium`}
-          aria-expanded={isOpen}
-          aria-haspopup="true"
-        >
-          <span className="text-base sm:text-lg leading-none">{currentGym.logoEmoji || '⚡'}</span>
-          <div className="flex flex-col text-left">
-            <span className="font-semibold text-white truncate max-w-[120px] sm:max-w-[180px] leading-tight">
-              {currentGym.name}
-            </span>
-            <span className="text-[10px] text-zinc-400 truncate max-w-[120px] sm:max-w-[180px] leading-tight">
-              {currentGym.city ? `${currentGym.city} • ${currentGym.slug}` : currentGym.slug}
-            </span>
-          </div>
-          <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-
-        {/* Quick Action Buttons */}
-        <button
-          id="share-student-link-quick-btn"
-          type="button"
-          onClick={onOpenShareModal}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-medium transition-colors"
-          title="Compartilhar link da academia para alunos"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-          <span>Link Alunos</span>
-        </button>
-
-        {isAdminMode && (
-          <button
-            id="customize-gym-quick-btn"
-            type="button"
-            onClick={onOpenCustomizeModal}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
-            title="Personalizar dados e cores da academia"
-          >
-            <Sliders className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Editar Academia</span>
-          </button>
-        )}
-      </div>
+      <button
+        id="gym-switcher-trigger-btn"
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer group"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+      >
+        <span className="text-lg leading-none opacity-80 group-hover:opacity-100 transition-opacity">
+          {currentGym.logoEmoji || '⚡'}
+        </span>
+        <div className="flex flex-col text-left">
+          <span className="font-bold text-xs truncate max-w-[120px] sm:max-w-[160px] leading-tight">
+            {currentGym.name}
+          </span>
+          <span className="text-[10px] text-zinc-500 truncate max-w-[120px] sm:max-w-[160px] leading-tight font-medium uppercase tracking-wider">
+            {currentGym.city || currentGym.slug}
+          </span>
+        </div>
+        <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 sm:w-80 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
           
-          <div className="px-3 py-2 border-b border-zinc-800/80 mb-1.5 flex items-center justify-between">
-            <span className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
-              Academias Cadastradas
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">
-              {gyms.length} ativas
+          <div className="px-3 py-2 border-b border-zinc-800/80 mb-1.5">
+            <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+              ACADEMIAS ({gyms.length})
             </span>
           </div>
 
@@ -129,8 +101,7 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
           <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {gyms.map((g) => {
               const isSelected = g.id === currentGym.id;
-              const gTheme = THEME_COLOR_CONFIG[g.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
-
+              
               return (
                 <button
                   key={g.id}
@@ -140,27 +111,26 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
                     onSelectGym(g);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all ${
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
                     isSelected 
-                      ? 'bg-zinc-800 text-white font-medium border border-zinc-700' 
-                      : 'hover:bg-zinc-800/50 text-zinc-300'
+                      ? 'bg-zinc-900 text-white border border-zinc-800' 
+                      : 'hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <span className="text-xl shrink-0">{g.logoEmoji || '⚡'}</span>
+                  <div className="flex items-center gap-3 truncate">
+                    <span className="text-lg shrink-0 opacity-80">{g.logoEmoji || '⚡'}</span>
                     <div className="truncate">
-                      <div className="text-xs font-semibold text-white truncate flex items-center gap-1.5">
+                      <div className="text-xs font-bold truncate">
                         {g.name}
-                        {isSelected && <span className={`w-1.5 h-1.5 rounded-full ${gTheme.primary.split(' ')[0]}`} />}
                       </div>
-                      <div className="text-[10px] text-zinc-400 truncate">
-                        {g.neighborhood || g.city || g.slug} • Max: {g.maxCapacity}
+                      <div className="text-[10px] text-zinc-500 truncate font-medium">
+                        {g.city || g.slug}
                       </div>
                     </div>
                   </div>
 
                   {isSelected && (
-                    <Check className="w-4 h-4 text-cyan-400 shrink-0 ml-2" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 ml-2" />
                   )}
                 </button>
               );
@@ -176,10 +146,10 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
                 setIsOpen(false);
                 onOpenRegisterModal();
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors uppercase tracking-widest"
             >
-              <Plus className="w-4 h-4" />
-              <span>Cadastrar Nova Academia (SaaS)</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nova Academia</span>
             </button>
 
             <button
@@ -189,10 +159,10 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
                 setIsOpen(false);
                 onOpenShareModal();
               }}
-              className="w-full sm:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors uppercase tracking-widest"
             >
-              <Share2 className="w-4 h-4 text-cyan-400" />
-              <span>Compartilhar Link da Academia</span>
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Link Público</span>
             </button>
 
             {isAdminMode && (
@@ -203,10 +173,10 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
                   setIsOpen(false);
                   onOpenCustomizeModal();
                 }}
-                className="w-full sm:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors uppercase tracking-widest"
               >
-                <Sliders className="w-4 h-4 text-zinc-400" />
-                <span>Personalizar Dados da Academia</span>
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Configurar</span>
               </button>
             )}
           </div>

@@ -571,4 +571,32 @@ export async function deleteSaaSGym(gymId: string): Promise<{ success: boolean; 
   }
 }
 
+export async function fetchSaaSPlans(): Promise<{ plans: import('../types').SaaSPlanConfig[] }> {
+  try {
+    const res = await fetch('/api/saas/plans', {
+      headers: getAuthHeaders()
+    });
+    return await res.json();
+  } catch (err: any) {
+    console.error('Erro ao buscar planos SaaS:', err);
+    return { plans: [] };
+  }
+}
+
+export async function updateSaaSPlan(
+  planId: string, 
+  plan: Partial<import('../types').SaaSPlanConfig>
+): Promise<{ success: boolean; message: string; plan?: import('../types').SaaSPlanConfig }> {
+  try {
+    const res = await fetch(`/api/saas/plans/${encodeURIComponent(planId)}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(plan)
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Erro ao atualizar plano SaaS' };
+  }
+}
+
 

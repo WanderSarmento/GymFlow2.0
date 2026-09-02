@@ -37,7 +37,8 @@ import {
   CreateSaaSGymInput,
   SaaSPlanId,
   AuthUser,
-  GymProfile
+  GymProfile,
+  SaaSPlanConfig
 } from '../types';
 import {
   fetchSaaSMetrics,
@@ -48,7 +49,9 @@ import {
   paySaaSInvoice,
   createSaaSInvoice,
   extendSaaSTrial,
-  deleteSaaSGym
+  deleteSaaSGym,
+  fetchSaaSPlans,
+  updateSaaSPlan
 } from '../services/api';
 import { SAAS_PLANS } from '../data/gymData';
 
@@ -62,9 +65,10 @@ interface SaaSAdminDashboardProps {
 export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal, onClose }: SaaSAdminDashboardProps) {
   const [metrics, setMetrics] = useState<SaaSMetrics | null>(null);
   const [gyms, setGyms] = useState<GymSaaSAccount[]>([]);
+  const [plans, setPlans] = useState<SaaSPlanConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'gyms' | 'invoices' | 'new_gym'>('gyms');
+  const [activeTab, setActiveTab] = useState<'gyms' | 'invoices' | 'new_gym' | 'plans'>('gyms');
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +80,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
   const [selectedGymForBlock, setSelectedGymForBlock] = useState<GymSaaSAccount | null>(null);
   const [blockReasonInput, setBlockReasonInput] = useState('');
   const [selectedGymForPlan, setSelectedGymForPlan] = useState<GymSaaSAccount | null>(null);
+  const [editingPlan, setEditingPlan] = useState<SaaSPlanConfig | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -104,9 +109,10 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const [m, g] = await Promise.all([fetchSaaSMetrics(), fetchSaaSGyms()]);
+      const [m, g, p] = await Promise.all([fetchSaaSMetrics(), fetchSaaSGyms(), fetchSaaSPlans()]);
       if (m) setMetrics(m);
       if (g) setGyms(g);
+      if (p?.plans) setPlans(p.plans);
     } catch (err) {
       console.error('Erro ao carregar dados do SaaS Master:', err);
     } finally {
@@ -219,6 +225,24 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
       }
     } catch (err: any) {
       showNotification('error', err.message || 'Erro ao alterar plano');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateSaaSPlanDetails = async (planId: string, planData: Partial<SaaSPlanConfig>) => {
+    setActionLoading(true);
+    try {
+      const res = await updateSaaSPlan(planId, planData);
+      if (res.success) {
+        showNotification('success', res.message);
+        setEditingPlan(null);
+        await loadData(true);
+      } else {
+        showNotification('error', res.message);
+      }
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erro ao atualizar plano');
     } finally {
       setActionLoading(false);
     }
@@ -522,6 +546,19 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
         >
           <Plus className="w-4 h-4" />
           <span>Cadastrar Nova Academia</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('plans')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            activeTab === 'plans'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Configuração de Planos</span>
         </button>
       </div>
 
@@ -1009,6 +1046,203 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: CONFIGURAÇÃO DE PLANOS */}
+      {/* ========================================================================= */}
+      {activeTab === 'plans' && (
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-white">Configuração Global de Planos SaaS</h3>
+              <p className="text-xs text-zinc-400">Edite os preços, descrições e recursos disponíveis para as academias em cada plano.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(plans.length > 0 ? plans : Object.values(SAAS_PLANS)).map(plan => (
+              <div key={plan.id} className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-6 flex flex-col h-full hover:border-indigo-500/50 transition">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{plan.badge}</span>
+                    <h4 className="text-xl font-bold text-white tracking-tight">{plan.name}</h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingPlan(plan)}
+                    className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="mb-6">
+                  <div className="text-3xl font-black text-white">
+                    R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    <span className="text-sm text-zinc-500 font-normal">/mês</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-zinc-400 mb-6 flex-1">
+                  {plan.description}
+                </p>
+
+                <div className="space-y-2 mb-6">
+                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Recursos Inclusos</div>
+                  {plan.features.map((feature, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-zinc-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 text-xs text-zinc-300 pt-1 border-t border-zinc-800 mt-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Limite de {plan.turnstilesLimit} catracas</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setEditingPlan(plan)}
+                  className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-indigo-600 text-white text-xs font-bold transition flex items-center justify-center gap-2"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Editar Definições
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODALS */}
+      {/* ========================================================================= */}
+
+      {/* Modal: Edit SaaS Plan */}
+      {editingPlan && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Editar Plano SaaS</h3>
+                  <p className="text-xs text-zinc-400">Modificar definições de {editingPlan.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingPlan(null)} className="text-zinc-500 hover:text-white transition">✕</button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const features = formData.get('features')?.toString().split('\n').filter(f => f.trim()) || [];
+              
+              handleUpdateSaaSPlanDetails(editingPlan.id, {
+                name: formData.get('name')?.toString(),
+                price: Number(formData.get('price')),
+                badge: formData.get('badge')?.toString(),
+                description: formData.get('description')?.toString(),
+                turnstilesLimit: Number(formData.get('turnstilesLimit')),
+                features
+              });
+            }} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Nome do Plano</label>
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    defaultValue={editingPlan.name}
+                    className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Preço Mensal (R$)</label>
+                  <input
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    required
+                    defaultValue={editingPlan.price}
+                    className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Badge / Selo</label>
+                  <input
+                    name="badge"
+                    type="text"
+                    required
+                    defaultValue={editingPlan.badge}
+                    className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Limite de Catracas</label>
+                  <input
+                    name="turnstilesLimit"
+                    type="number"
+                    required
+                    defaultValue={editingPlan.turnstilesLimit}
+                    className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Descrição Curta</label>
+                <textarea
+                  name="description"
+                  required
+                  rows={2}
+                  defaultValue={editingPlan.description}
+                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5 flex justify-between">
+                  <span>Recursos Inclusos</span>
+                  <span className="text-[10px] text-zinc-600">Um por linha</span>
+                </label>
+                <textarea
+                  name="features"
+                  required
+                  rows={4}
+                  defaultValue={editingPlan.features.join('\n')}
+                  className="w-full px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingPlan(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  <span>Salvar Alterações</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

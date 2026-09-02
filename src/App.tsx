@@ -277,7 +277,7 @@ export default function App() {
   const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-zinc-100 flex flex-col font-['Plus_Jakarta_Sans'] antialiased selection:bg-cyan-400 selection:text-black">
+    <div className="min-h-screen bg-[#0C0C0D] text-white selection:bg-indigo-500/30 font-['Outfit']">
       
       {/* SaaS Student Dedicated Header Banner if accessed directly via student URL */}
       {isDirectStudentLink && currentGym && (
@@ -335,82 +335,39 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Main Content Container */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-3.5 sm:px-6 py-4 sm:py-6 space-y-6 pb-28 md:pb-8">
+      {/* Main Content Area */}
+      <main className="mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8">
         
-        {/* Onboarding State if no gym is registered and not on SaaS Admin */}
+        {/* Onboarding View (Empty State) */}
         {!currentGym && activeTab !== 'saas_admin' && (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 text-center max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-500/10 border border-cyan-500/30 text-4xl shadow-xl shadow-cyan-500/10">
-              ⚡
-            </div>
-
-            <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                <Sparkles className="w-3.5 h-3.5" />
-                Ambiente Limpo & Pronto
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-black font-['Outfit'] text-white">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-4">
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
                 Cadastre sua Academia
               </h2>
-              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed max-w-xl mx-auto">
-                Nenhum dado pré-carregado. Adicione agora as informações da sua academia (nome, capacidade máxima, cores e horários) para começar a monitorar a lotação em tempo real e gerar o link exclusivo para seus alunos.
+              <p className="text-zinc-500 text-sm sm:text-lg max-w-xl mx-auto font-medium">
+                Sua plataforma SaaS para monitoramento de lotação em tempo real.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <button
                 id="onboarding-register-gym-btn"
                 type="button"
                 onClick={() => setIsRegisterModalOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-zinc-950 font-bold text-sm transition-all shadow-lg shadow-cyan-400/20 cursor-pointer"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>+ Cadastrar Minha Academia</span>
+                Nova Academia
               </button>
 
               <button
                 id="onboarding-login-btn"
                 type="button"
                 onClick={() => setIsLoginModalOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-semibold text-sm transition-all cursor-pointer"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-zinc-900 text-zinc-400 font-bold text-sm border border-zinc-800 hover:text-white hover:border-zinc-600 transition-all cursor-pointer"
               >
-                <Lock className="w-4 h-4 text-zinc-400" />
-                <span>Entrar com Minha Conta</span>
+                Entrar
               </button>
-            </div>
-
-            {/* Quick overview grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 text-left w-full">
-              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-                <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
-                  <Smartphone className="w-4 h-4" />
-                  Link dos Alunos
-                </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Página leve em tempo real para alunos consultarem a lotação antes de treinar.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
-                  <Cpu className="w-4 h-4" />
-                  Catracas & ESP32
-                </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Firmware C++ pronto para controlar relés e registrar entradas e saídas.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
-                  <Building2 className="w-4 h-4" />
-                  Gestão & SaaS
-                </div>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Painel de recepção, avisos aos alunos, faturas e controle de assinaturas.
-                </p>
-              </div>
             </div>
           </div>
         )}

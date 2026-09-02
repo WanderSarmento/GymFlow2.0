@@ -164,6 +164,17 @@ export interface SaaSInvoice {
   notes?: string;
 }
 
+export interface SaaSPlanConfig {
+  id: SaaSPlanId;
+  name: string;
+  price: number;
+  badge: string;
+  description: string;
+  turnstilesLimit: number;
+  features: string[];
+  recommended?: boolean;
+}
+
 export interface GymSaaSAccount {
   gymId: string;
   gymSlug: string;
