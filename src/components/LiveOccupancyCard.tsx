@@ -107,15 +107,15 @@ export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
   return (
     <div id="live-occupancy-card" className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-[#121214] p-8 sm:p-10 transition-all duration-300">
       
-      {/* Subtle status indicator dot in top right */}
-      <div className="absolute right-8 top-8">
+      {/* Status indicator - Header on mobile to prevent overlap with gauge, absolute on desktop */}
+      <div className="mb-6 md:mb-0 md:absolute md:right-8 md:top-8 flex justify-center md:justify-end">
         <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusConfig.badgeBg}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.ringColor.replace('stroke', 'bg')}`}></span>
           {statusConfig.label}
         </div>
       </div>
       
-      <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 md:gap-16">
+      <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-16">
         
         {/* Left: Minimalist Circular Gauge */}
         <div className="flex flex-col items-center justify-center">
@@ -143,7 +143,7 @@ export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
             </svg>
 
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="font-['Plus_Jakarta_Sans'] text-7xl font-light tracking-tighter text-white">
+              <span className="font-['Outfit'] text-6xl sm:text-7xl font-light tracking-tighter text-white">
                 {occupancy.currentCount}
               </span>
               <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
