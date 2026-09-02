@@ -138,6 +138,106 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
           </div>
         </div>
 
+        {/* Fast Adjustment & Calibration Bar */}
+        <div className="mt-6 rounded-2xl bg-gray-950 p-4 sm:p-5 border border-gray-800">
+          <div className="flex flex-col gap-4">
+            
+            {/* Quick +/- buttons */}
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2.5">
+                Ajuste Rápido de Contagem:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleTriggerAction('adjust_count', -5)}
+                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
+                >
+                  -5
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerAction('adjust_count', -1)}
+                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
+                >
+                  -1
+                </button>
+                <div className="min-h-[44px] px-4 py-2 bg-black border border-gray-800 rounded-xl flex items-center justify-center gap-1.5">
+                  <span className="text-xs text-gray-500">Atual: </span>
+                  <strong className="text-base font-mono text-cyan-400 font-bold">{occupancy.currentCount}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerAction('adjust_count', 1)}
+                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
+                >
+                  +1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerAction('adjust_count', 5)}
+                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
+                >
+                  +5
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerAction('reset_count')}
+                  className="min-h-[44px] flex items-center gap-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 text-xs font-bold uppercase transition-colors cursor-pointer active:scale-95 ml-auto sm:ml-0"
+                  title="Zerar contagem da sala"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Zerar Sala</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Set exact count & max capacity */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-800">
+              
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Definir exato:</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="300"
+                  value={customCountInput}
+                  onChange={(e) => setCustomCountInput(e.target.value)}
+                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSetExactCount}
+                  className="min-h-[44px] rounded-xl bg-gray-800 hover:bg-gray-700 px-4 py-2 text-xs font-bold uppercase text-white transition-colors cursor-pointer active:scale-95"
+                >
+                  Aplicar
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 sm:border-l sm:border-gray-800 sm:pl-3">
+                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Capacidade Máx:</span>
+                <input
+                  type="number"
+                  min="10"
+                  max="500"
+                  value={maxCapacityInput}
+                  onChange={(e) => setMaxCapacityInput(e.target.value)}
+                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveMaxCapacity}
+                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 px-4 py-2 text-xs font-bold uppercase text-black transition-colors cursor-pointer active:scale-95"
+                >
+                  Salvar
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
         {/* Big Virtual Action Buttons Grid */}
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
@@ -253,106 +353,6 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
             </div>
           </button>
 
-        </div>
-
-        {/* Fast Adjustment & Calibration Bar */}
-        <div className="mt-6 rounded-2xl bg-gray-950 p-4 sm:p-5 border border-gray-800">
-          <div className="flex flex-col gap-4">
-            
-            {/* Quick +/- buttons */}
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2.5">
-                Ajuste Rápido de Contagem:
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleTriggerAction('adjust_count', -5)}
-                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
-                >
-                  -5
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTriggerAction('adjust_count', -1)}
-                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
-                >
-                  -1
-                </button>
-                <div className="min-h-[44px] px-4 py-2 bg-black border border-gray-800 rounded-xl flex items-center justify-center gap-1.5">
-                  <span className="text-xs text-gray-500">Atual: </span>
-                  <strong className="text-base font-mono text-cyan-400 font-bold">{occupancy.currentCount}</strong>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTriggerAction('adjust_count', 1)}
-                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
-                >
-                  +1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTriggerAction('adjust_count', 5)}
-                  className="min-h-[44px] min-w-[44px] rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3.5 py-2 text-xs font-mono font-bold text-gray-300 transition-colors cursor-pointer active:scale-95"
-                >
-                  +5
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTriggerAction('reset_count')}
-                  className="min-h-[44px] flex items-center gap-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 text-xs font-bold uppercase transition-colors cursor-pointer active:scale-95 ml-auto sm:ml-0"
-                  title="Zerar contagem da sala"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Zerar Sala</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Set exact count & max capacity */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-800">
-              
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Definir exato:</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={customCountInput}
-                  onChange={(e) => setCustomCountInput(e.target.value)}
-                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleSetExactCount}
-                  className="min-h-[44px] rounded-xl bg-gray-800 hover:bg-gray-700 px-4 py-2 text-xs font-bold uppercase text-white transition-colors cursor-pointer active:scale-95"
-                >
-                  Aplicar
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 sm:border-l sm:border-gray-800 sm:pl-3">
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Capacidade Máx:</span>
-                <input
-                  type="number"
-                  min="10"
-                  max="500"
-                  value={maxCapacityInput}
-                  onChange={(e) => setMaxCapacityInput(e.target.value)}
-                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveMaxCapacity}
-                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 px-4 py-2 text-xs font-bold uppercase text-black transition-colors cursor-pointer active:scale-95"
-                >
-                  Salvar
-                </button>
-              </div>
-
-            </div>
-
-          </div>
         </div>
 
       </div>
