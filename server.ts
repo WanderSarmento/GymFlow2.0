@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { createClient } from '@supabase/supabase-js';
 import { INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from './src/data/gymData';
 import {
   Announcement,
@@ -110,153 +111,171 @@ const masterAdminRecord: GymUserRecord = {
 };
 usersStore.set('admin@gymflow.com', masterAdminRecord);
 
-// Seed initial users, gyms, and SaaS financial accounts
-INITIAL_GYMS.forEach((gym, index) => {
-  // Add initial gym owner user
-  const userId = `user-${gym.slug}-${index + 1}`;
-  const ownerRecord: GymUserRecord = {
-    id: userId,
-    email: gym.ownerEmail.toLowerCase(),
-    password: 'password123', // Default sample password
-    name: gym.ownerName,
-    role: 'owner',
-    gymId: gym.id,
-    gymSlug: gym.slug,
-    gymName: gym.name,
-    phone: gym.contactPhone,
-    createdAt: new Date().toISOString()
-  };
-  usersStore.set(gym.ownerEmail.toLowerCase(), ownerRecord);
-
-  // Also add a generic reception user for each gym
-  const receptionEmail = `recepcao@${gym.slug}.com`;
-  usersStore.set(receptionEmail.toLowerCase(), {
-    id: `user-rec-${gym.slug}`,
-    email: receptionEmail.toLowerCase(),
-    password: 'password123',
-    name: `Recepção - ${gym.name}`,
-    role: 'reception',
-    gymId: gym.id,
-    gymSlug: gym.slug,
-    gymName: gym.name,
-    createdAt: new Date().toISOString()
-  });
-
-  gymsStore.set(gym.id, {
-    profile: { ...gym },
-    currentCount: gym.currentCount,
-    maxCapacity: gym.maxCapacity,
-    turnstileLocked: gym.turnstileLocked,
-    isOpen: gym.isOpen,
-    lastAccessTime: new Date(Date.now() - 1000 * 60 * (index * 4 + 2)).toISOString(),
-    lastAccessType: 'entry',
-    pendingRelayTrigger: null,
-    esp32: {
-      connected: true,
-      lastPing: new Date().toISOString(),
-      ip: `192.168.1.${140 + index * 5}`,
-      rssi: -55 - index * 3,
-      uptimeSeconds: 14200 + index * 800,
-      freeHeap: 184500 - index * 2000,
-      entryButtonPresses: 112 + index * 40,
-      exitButtonPresses: 78 + index * 25,
-      deviceName: `ESP32_CATRACA_${gym.slug.toUpperCase().replace(/-/g, '_')}`
-    },
-    accessLogs: [
-      {
-        id: `log-${gym.id}-1`,
-        gymId: gym.id,
-        timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-        type: 'entry',
-        source: 'esp32_button',
-        description: `Acesso liberado via Catraca (${gym.name})`,
-        countAfter: gym.currentCount,
-        status: 'success'
-      },
-      {
-        id: `log-${gym.id}-2`,
-        gymId: gym.id,
-        timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
-        type: 'exit',
-        source: 'esp32_button',
-        description: 'Saída registrada via Catraca Física (ESP32)',
-        countAfter: Math.max(0, gym.currentCount - 1),
-        status: 'success'
-      },
-      {
-        id: `log-${gym.id}-3`,
-        gymId: gym.id,
-        timestamp: new Date(Date.now() - 1000 * 60 * 14).toISOString(),
-        type: 'entry',
-        source: 'reception_manual',
-        description: 'Entrada liberada pela Recepção (Visitante/Experimental)',
-        countAfter: gym.currentCount,
-        status: 'success'
-      }
-    ],
-    announcements: INITIAL_ANNOUNCEMENTS.map(ann => ({ ...ann, gymId: gym.id }))
-  });
-
-  // Seed SaaS Subscription Account
-  let planId: 'starter' | 'pro' | 'enterprise' = index === 0 ? 'pro' : index === 1 ? 'enterprise' : 'starter';
-  let planConfig = saasPlansStore.get(planId) || SAAS_PLANS[planId];
-  let status: 'active' | 'trial' | 'overdue' | 'blocked' = index === 2 ? 'trial' : 'active';
-  let monthlyFee = planConfig.price;
-  let nextDueDate = index === 0 ? '2026-09-15' : index === 1 ? '2026-09-25' : '2026-09-05';
-  let lastPaymentDate = index === 2 ? null : '2026-08-15';
-  let trialEndsAt = index === 2 ? '2026-09-05' : null;
-
-  const sampleInvoices: SaaSInvoice[] = [
-    {
-      id: `inv-${gym.id}-0826`,
+function registerGymInStore(gym: GymProfile, index = 0) {
+  // Add initial gym owner user if not exists
+  const ownerEmail = gym.ownerEmail.toLowerCase();
+  if (!usersStore.has(ownerEmail)) {
+    const userId = `user-${gym.slug}-${index + 1}`;
+    usersStore.set(ownerEmail, {
+      id: userId,
+      email: ownerEmail,
+      password: 'password123',
+      name: gym.ownerName,
+      role: 'owner',
       gymId: gym.id,
+      gymSlug: gym.slug,
       gymName: gym.name,
-      amount: monthlyFee,
-      dueDate: index === 2 ? '2026-09-05' : '2026-08-15',
-      paidDate: index === 2 ? null : '2026-08-14',
-      status: index === 2 ? 'pending' : 'paid',
-      referenceMonth: '08/2026',
-      paymentMethod: index === 0 ? 'pix' : index === 1 ? 'credit_card' : undefined,
-      notes: index === 2 ? 'Fatura gerada para término do período de teste gratuito.' : 'Mensalidade quitada via PIX automatizado'
-    },
-    {
-      id: `inv-${gym.id}-0926`,
+      phone: gym.contactPhone,
+      createdAt: gym.createdAt || new Date().toISOString()
+    });
+  }
+
+  // Also add reception user if not exists
+  const receptionEmail = `recepcao@${gym.slug}.com`.toLowerCase();
+  if (!usersStore.has(receptionEmail)) {
+    usersStore.set(receptionEmail, {
+      id: `user-rec-${gym.slug}`,
+      email: receptionEmail,
+      password: 'password123',
+      name: `Recepção - ${gym.name}`,
+      role: 'reception',
       gymId: gym.id,
+      gymSlug: gym.slug,
       gymName: gym.name,
-      amount: monthlyFee,
-      dueDate: nextDueDate,
-      paidDate: null,
-      status: 'pending',
-      referenceMonth: '09/2026',
-      notes: 'Fatura mensal de renovação do SaaS'
+      createdAt: gym.createdAt || new Date().toISOString()
+    });
+  }
+
+  if (!gymsStore.has(gym.id)) {
+    gymsStore.set(gym.id, {
+      profile: { ...gym },
+      currentCount: gym.currentCount,
+      maxCapacity: gym.maxCapacity,
+      turnstileLocked: gym.turnstileLocked,
+      isOpen: gym.isOpen,
+      lastAccessTime: new Date(Date.now() - 1000 * 60 * (index * 4 + 2)).toISOString(),
+      lastAccessType: 'entry',
+      pendingRelayTrigger: null,
+      esp32: {
+        connected: true,
+        lastPing: new Date().toISOString(),
+        ip: `192.168.1.${140 + index * 5}`,
+        rssi: -55 - index * 3,
+        uptimeSeconds: 14200 + index * 800,
+        freeHeap: 184500 - index * 2000,
+        entryButtonPresses: 112 + index * 40,
+        exitButtonPresses: 78 + index * 25,
+        deviceName: `ESP32_CATRACA_${gym.slug.toUpperCase().replace(/-/g, '_')}`
+      },
+      accessLogs: [
+        {
+          id: `log-${gym.id}-1`,
+          gymId: gym.id,
+          timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
+          type: 'entry',
+          source: 'esp32_button',
+          description: `Acesso liberado via Catraca (${gym.name})`,
+          countAfter: gym.currentCount,
+          status: 'success'
+        },
+        {
+          id: `log-${gym.id}-2`,
+          gymId: gym.id,
+          timestamp: new Date(Date.now() - 1000 * 60 * 8).toISOString(),
+          type: 'exit',
+          source: 'esp32_button',
+          description: 'Saída registrada via Catraca Física (ESP32)',
+          countAfter: Math.max(0, gym.currentCount - 1),
+          status: 'success'
+        }
+      ],
+      announcements: INITIAL_ANNOUNCEMENTS.map(ann => ({ ...ann, gymId: gym.id }))
+    });
+  }
+
+  if (!saasAccountsStore.has(gym.id)) {
+    const planId: 'starter' | 'pro' | 'enterprise' = index === 0 ? 'pro' : index === 1 ? 'enterprise' : 'starter';
+    const planConfig = saasPlansStore.get(planId) || SAAS_PLANS[planId];
+    saasAccountsStore.set(gym.id, {
+      gymId: gym.id,
+      gymSlug: gym.slug,
+      gymName: gym.name,
+      ownerName: gym.ownerName,
+      ownerEmail: gym.ownerEmail,
+      ownerPhone: gym.contactPhone,
+      city: gym.city,
+      plan: planId,
+      planName: planConfig.name,
+      monthlyFee: planConfig.price,
+      status: 'active',
+      isSystemBlocked: false,
+      blockReason: undefined,
+      blockedAt: null,
+      turnstilesLimit: planConfig.turnstilesLimit,
+      maxCapacity: gym.maxCapacity,
+      lastPaymentDate: '2026-08-15',
+      nextDueDate: '2026-09-15',
+      trialEndsAt: null,
+      createdAt: gym.createdAt || new Date().toISOString(),
+      apiKey: gym.apiKey,
+      invoices: []
+    });
+  }
+}
+
+// Seed initial gyms from data
+INITIAL_GYMS.forEach((gym, index) => registerGymInStore(gym, index));
+
+async function syncGymsFromSupabase() {
+  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseUrl = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+  const supabaseKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+
+  if (!supabaseUrl || !supabaseKey) return;
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase.from('gyms').select('*');
+    if (error) {
+      console.warn('[GymFlow Server] Aviso ao consultar Supabase:', error.message);
+      return;
     }
-  ];
-
-  saasAccountsStore.set(gym.id, {
-    gymId: gym.id,
-    gymSlug: gym.slug,
-    gymName: gym.name,
-    ownerName: gym.ownerName,
-    ownerEmail: gym.ownerEmail,
-    ownerPhone: gym.contactPhone,
-    city: gym.city,
-    plan: planId,
-    planName: planConfig.name,
-    monthlyFee,
-    status,
-    isSystemBlocked: false,
-    blockReason: undefined,
-    blockedAt: null,
-    turnstilesLimit: planConfig.turnstilesLimit,
-    maxCapacity: gym.maxCapacity,
-    lastPaymentDate,
-    nextDueDate,
-    trialEndsAt,
-    createdAt: gym.createdAt,
-    apiKey: gym.apiKey,
-    invoices: sampleInvoices
-  });
-});
+    if (data && data.length > 0) {
+      data.forEach((row: any, i: number) => {
+        const gym: GymProfile = {
+          id: row.id,
+          slug: row.slug,
+          name: row.name,
+          slogan: row.slogan || 'Monitoramento de Lotação em Tempo Real',
+          city: row.city || 'São Paulo - SP',
+          neighborhood: row.neighborhood || 'Centro',
+          address: row.address || '',
+          contactPhone: row.contact_phone || '',
+          maxCapacity: row.max_capacity || 80,
+          currentCount: row.current_count || 0,
+          turnstileLocked: Boolean(row.turnstile_locked),
+          isOpen: row.is_open !== false,
+          themeColor: row.theme_color || 'cyan',
+          visualTheme: row.visual_theme || 'dark',
+          logoEmoji: row.logo_emoji || '⚡',
+          apiKey: row.api_key || generateApiKey(row.slug),
+          ownerName: row.owner_name || 'Gestor Responsável',
+          ownerEmail: row.owner_email || 'contato@academia.com',
+          createdAt: row.created_at || new Date().toISOString(),
+          operatingHours: row.operating_hours || {
+            weekdays: { open: '06:00', close: '23:00', isOpen: true },
+            saturday: { open: '07:00', close: '17:00', isOpen: true },
+            sunday: { open: '08:00', close: '14:00', isOpen: true }
+          }
+        };
+        registerGymInStore(gym, i);
+      });
+      console.log(`[GymFlow Server] ${data.length} academia(s) sincronizada(s) do Supabase.`);
+    }
+  } catch (err) {
+    console.warn('[GymFlow Server] Falha ao sincronizar com Supabase:', err);
+  }
+}
 
 function getGymStateByIdOrSlug(idOrSlug: string): GymServerState | null {
   if (!idOrSlug) return null;
@@ -359,6 +378,15 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+  app.use(express.static(path.join(process.cwd(), 'public')));
+
+  // Favicon handler
+  const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#22d3ee" fill-opacity="0.2"/></svg>`;
+  app.get(['/favicon.ico', '/favicon.svg'], (req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(faviconSvg);
+  });
 
   // CORS middleware
   app.use((req, res, next) => {
@@ -878,7 +906,10 @@ async function startServer() {
 
   // 3. Get single gym profile & real-time occupancy (by id or slug)
   app.get('/api/gyms/:gymIdOrSlug', (req: Request, res: Response) => {
-    const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
+    let gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
+    if (!gymState) {
+      gymState = getDefaultGymState();
+    }
     if (!gymState) {
       res.status(404).json({ success: false, message: 'Academia não encontrada.' });
       return;
@@ -2252,6 +2283,8 @@ void sendHeartbeat() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  await syncGymsFromSupabase();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);

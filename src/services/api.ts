@@ -207,6 +207,7 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
   } catch (err) {
     console.warn(`Fallback para academia '${gymIdOrSlug}':`, err);
     const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug) || INITIAL_GYMS[0];
+    if (!found) return null;
     return {
       profile: found,
       occupancy: {

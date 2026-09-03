@@ -2,7 +2,86 @@ import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } 
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
-export const INITIAL_GYMS: GymProfile[] = [];
+export const INITIAL_GYMS: GymProfile[] = [
+  {
+    id: 'gym-fitflow-moema',
+    slug: 'fitflow-moema',
+    name: 'FitFlow Club Moema',
+    slogan: 'Sua academia inteligente de alta performance',
+    city: 'São Paulo - SP',
+    neighborhood: 'Moema Nobre',
+    address: 'Av. Ibirapuera, 2450',
+    contactPhone: '(11) 98765-4321',
+    maxCapacity: 85,
+    currentCount: 38,
+    turnstileLocked: false,
+    isOpen: true,
+    themeColor: 'cyan',
+    visualTheme: 'dark',
+    logoEmoji: '⚡',
+    apiKey: 'GF_KEY_A0C0501F16BC4E31',
+    ownerName: 'Carlos Henrique Gestor',
+    ownerEmail: 'carlos@fitflow.com.br',
+    createdAt: '2026-08-29T14:47:46.393Z',
+    operatingHours: {
+      weekdays: { open: '06:00', close: '23:00', isOpen: true },
+      saturday: { open: '07:00', close: '17:00', isOpen: true },
+      sunday: { open: '08:00', close: '14:00', isOpen: true }
+    }
+  },
+  {
+    id: 'gym-iron-muscle-ct',
+    slug: 'iron-muscle-ct',
+    name: 'Iron Muscle CT',
+    slogan: 'Centro de Treinamento e Força Bruta',
+    city: 'Curitiba - PR',
+    neighborhood: 'Batel',
+    address: 'Rua Bispo Dom José, 1800',
+    contactPhone: '(41) 99887-1122',
+    maxCapacity: 120,
+    currentCount: 65,
+    turnstileLocked: false,
+    isOpen: true,
+    themeColor: 'amber',
+    visualTheme: 'dark',
+    logoEmoji: '🔥',
+    apiKey: 'GF_KEY_IRON_MUSCLE_8821',
+    ownerName: 'Marina Silva',
+    ownerEmail: 'marina@ironmuscle.com.br',
+    createdAt: '2026-08-29T14:47:46.393Z',
+    operatingHours: {
+      weekdays: { open: '05:30', close: '23:30', isOpen: true },
+      saturday: { open: '08:00', close: '18:00', isOpen: true },
+      sunday: { open: '09:00', close: '14:00', isOpen: true }
+    }
+  },
+  {
+    id: 'gym-powerfit-barra',
+    slug: 'powerfit-barra',
+    name: 'PowerFit 24h Barra',
+    slogan: 'Energia sem limites, 24 horas por dia',
+    city: 'Rio de Janeiro - RJ',
+    neighborhood: 'Barra da Tijuca',
+    address: 'Av. das Américas, 4200',
+    contactPhone: '(21) 97123-4567',
+    maxCapacity: 95,
+    currentCount: 22,
+    turnstileLocked: false,
+    isOpen: true,
+    themeColor: 'emerald',
+    visualTheme: 'dark',
+    logoEmoji: '💪',
+    apiKey: 'GF_KEY_POWERFIT_9912',
+    ownerName: 'Rodrigo Fonseca',
+    ownerEmail: 'rodrigo@powerfit.com.br',
+    createdAt: '2026-08-29T14:47:46.393Z',
+    operatingHours: {
+      weekdays: { open: '00:00', close: '23:59', isOpen: true },
+      saturday: { open: '00:00', close: '23:59', isOpen: true },
+      sunday: { open: '00:00', close: '23:59', isOpen: true }
+    }
+  }
+];
 
 export const THEME_COLOR_CONFIG: Record<string, {
   name: string;
