@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Lock, 
@@ -36,7 +36,7 @@ interface GymLoginModalProps {
   onOpenRegisterModal?: () => void;
   currentGym?: GymProfile;
   availableGyms?: GymProfile[];
-  initialMode?: 'login' | 'register';
+  initialMode?: 'login' | 'register' | 'forgot_request';
 }
 
 type AuthMode = 'login' | 'register' | 'forgot_request' | 'forgot_reset' | 'register_success';
@@ -100,6 +100,15 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [previewCodeNotice, setPreviewCodeNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+      setPreviewCodeNotice(null);
+    }
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 

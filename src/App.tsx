@@ -75,6 +75,7 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCustomizeModalOpen, setIsCustomizeModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'login' | 'register' | 'forgot_request'>('login');
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
 
   // Core occupancy and telemetry state
@@ -388,7 +389,10 @@ export default function App() {
               <button
                 id="portal-login-btn"
                 type="button"
-                onClick={() => setIsLoginModalOpen(true)}
+                onClick={() => {
+                  setLoginModalMode('login');
+                  setIsLoginModalOpen(true);
+                }}
                 className="w-full py-4 rounded-2xl bg-white text-black font-bold text-sm hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 cursor-pointer"
               >
                 Entrar no Painel
@@ -401,13 +405,17 @@ export default function App() {
               </div>
 
               <div className="text-center">
-                <p className="text-xs text-zinc-500 mb-4">Deseja cadastrar sua academia?</p>
+                <p className="text-xs text-zinc-500 mb-3">Esqueceu sua senha de acesso?</p>
                 <button
                   type="button"
-                  onClick={() => setIsRegisterModalOpen(true)}
-                  className="text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                  id="portal-forgot-password-btn"
+                  onClick={() => {
+                    setLoginModalMode('forgot_request');
+                    setIsLoginModalOpen(true);
+                  }}
+                  className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
                 >
-                  Criar Nova Academia
+                  Recuperar a senha
                 </button>
               </div>
             </div>
@@ -550,6 +558,7 @@ export default function App() {
         }}
         currentGym={currentGym || undefined}
         availableGyms={gyms}
+        initialMode={loginModalMode}
       />
 
       {/* SaaS Modal 5: Supabase Connection & SQL Schema Export */}
