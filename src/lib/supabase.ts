@@ -3,6 +3,12 @@ import { SupabaseConfigStatus } from '../types';
 
 let supabaseInstance: SupabaseClient | null = null;
 
+// Clean and normalize Supabase project URL (strips trailing slashes and /rest/v1 if pasted)
+export function cleanSupabaseUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  return rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+}
+
 // Get Supabase credentials from Env or LocalStorage overrides
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
   const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -11,9 +17,10 @@ export function getSupabaseCredentials(): { url: string; anonKey: string } {
   const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('gymflow_supabase_url') || '' : '';
   const storedKey = typeof window !== 'undefined' ? localStorage.getItem('gymflow_supabase_anon_key') || '' : '';
 
+  const rawUrl = storedUrl || envUrl;
   return {
-    url: storedUrl || envUrl,
-    anonKey: storedKey || envKey
+    url: cleanSupabaseUrl(rawUrl),
+    anonKey: (storedKey || envKey).trim()
   };
 }
 
@@ -48,8 +55,9 @@ export function getSupabaseClient(): SupabaseClient | null {
 
 // Reset instance if user updates custom config
 export function updateSupabaseCredentials(url: string, anonKey: string): SupabaseClient | null {
+  const sanitizedUrl = cleanSupabaseUrl(url);
   if (typeof window !== 'undefined') {
-    if (url) localStorage.setItem('gymflow_supabase_url', url.trim());
+    if (sanitizedUrl) localStorage.setItem('gymflow_supabase_url', sanitizedUrl);
     else localStorage.removeItem('gymflow_supabase_url');
 
     if (anonKey) localStorage.setItem('gymflow_supabase_anon_key', anonKey.trim());
@@ -62,7 +70,8 @@ export function updateSupabaseCredentials(url: string, anonKey: string): Supabas
 
 // Test connection live against Supabase
 export async function testSupabaseConnection(customUrl?: string, customKey?: string): Promise<SupabaseConfigStatus> {
-  const { url, anonKey } = customUrl && customKey ? { url: customUrl, anonKey: customKey } : getSupabaseCredentials();
+  const { url: rawUrl, anonKey } = customUrl && customKey ? { url: customUrl, anonKey: customKey.trim() } : getSupabaseCredentials();
+  const url = cleanSupabaseUrl(rawUrl);
 
   if (!url || !anonKey) {
     return {
