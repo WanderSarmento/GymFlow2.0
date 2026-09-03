@@ -196,7 +196,10 @@ CREATE INDEX IF NOT EXISTS idx_password_resets_email ON public.password_resets(e
 -- 9. FUNÇÕES ATÔMICAS DE CATRACA (Com Proteção de Bloqueio SaaS)
 -- =========================================================================
 CREATE OR REPLACE FUNCTION public.record_gym_entry(p_gym_id TEXT, p_source TEXT DEFAULT 'esp32_button', p_client_ip TEXT DEFAULT NULL)
-RETURNS JSONB AS $$
+RETURNS JSONB 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     v_gym public.gyms%ROWTYPE;
     v_new_count INTEGER;
@@ -241,7 +244,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION public.record_gym_exit(p_gym_id TEXT, p_source TEXT DEFAULT 'esp32_button', p_client_ip TEXT DEFAULT NULL)
-RETURNS JSONB AS $$
+RETURNS JSONB 
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     v_gym public.gyms%ROWTYPE;
     v_new_count INTEGER;
@@ -276,8 +282,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Permissões de Execução nas Funções para o cliente Supabase e hardware
+GRANT EXECUTE ON FUNCTION public.record_gym_entry TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.record_gym_exit TO anon, authenticated, service_role;
+
 -- =========================================================================
--- 10. ROW LEVEL SECURITY (RLS) - Idempotente
+-- 10. ROW LEVEL SECURITY (RLS) E PERMISSÕES DE ACESSO
 -- =========================================================================
 ALTER TABLE public.gyms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gym_users ENABLE ROW LEVEL SECURITY;
@@ -286,13 +296,57 @@ ALTER TABLE public.saas_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.access_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.esp32_devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public Read Gyms" ON public.gyms;
-CREATE POLICY "Public Read Gyms" ON public.gyms FOR SELECT USING (true);
+-- Políticas para GYMS (Leitura pública para alunos e recepção; gravação irrestrita para gestão/catracas)
+DROP POLICY IF EXISTS "Gyms Read Policy" ON public.gyms;
+CREATE POLICY "Gyms Read Policy" ON public.gyms FOR SELECT TO anon, authenticated, service_role USING (true);
 
-DROP POLICY IF EXISTS "Public Read Announcements" ON public.announcements;
-CREATE POLICY "Public Read Announcements" ON public.announcements FOR SELECT USING (active = true);
+DROP POLICY IF EXISTS "Gyms Insert Policy" ON public.gyms;
+CREATE POLICY "Gyms Insert Policy" ON public.gyms FOR INSERT TO anon, authenticated, service_role WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Public Read SaaS Accounts" ON public.saas_accounts;
-CREATE POLICY "Public Read SaaS Accounts" ON public.saas_accounts FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Gyms Update Policy" ON public.gyms;
+CREATE POLICY "Gyms Update Policy" ON public.gyms FOR UPDATE TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para GYM_USERS
+DROP POLICY IF EXISTS "Gym Users All" ON public.gym_users;
+CREATE POLICY "Gym Users All" ON public.gym_users FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para ACCESS_LOGS (Permite envio de logs por catracas e leitura pelo painel)
+DROP POLICY IF EXISTS "Access Logs All" ON public.access_logs;
+CREATE POLICY "Access Logs All" ON public.access_logs FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para ANNOUNCEMENTS (Mural de avisos)
+DROP POLICY IF EXISTS "Announcements Read" ON public.announcements;
+CREATE POLICY "Announcements Read" ON public.announcements FOR SELECT TO anon, authenticated, service_role USING (true);
+
+DROP POLICY IF EXISTS "Announcements Manage" ON public.announcements;
+CREATE POLICY "Announcements Manage" ON public.announcements FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para ESP32_DEVICES (Telemetria)
+DROP POLICY IF EXISTS "ESP32 Devices All" ON public.esp32_devices;
+CREATE POLICY "ESP32 Devices All" ON public.esp32_devices FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para SAAS_ACCOUNTS & SAAS_INVOICES
+DROP POLICY IF EXISTS "SaaS Accounts All" ON public.saas_accounts;
+CREATE POLICY "SaaS Accounts All" ON public.saas_accounts FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "SaaS Invoices All" ON public.saas_invoices;
+CREATE POLICY "SaaS Invoices All" ON public.saas_invoices FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- Políticas para PASSWORD_RESETS
+DROP POLICY IF EXISTS "Password Resets All" ON public.password_resets;
+CREATE POLICY "Password Resets All" ON public.password_resets FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+
+-- =========================================================================
+-- 11. CONCESSÃO DE PERMISSÕES DE TABELA (SCHEMA PUBLIC)
+-- =========================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
 `;
