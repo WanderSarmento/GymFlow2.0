@@ -206,16 +206,61 @@ export async function checkSupabaseStatus(): Promise<SupabaseConfigStatus> {
   }
 }
 
+function mapSupabaseGymRow(row: any): GymProfile {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    slogan: row.slogan || 'Monitoramento de Lotação em Tempo Real',
+    city: row.city || 'São Paulo - SP',
+    neighborhood: row.neighborhood || 'Centro',
+    address: row.address || '',
+    contactPhone: row.contact_phone || '',
+    maxCapacity: Number(row.max_capacity) || 80,
+    currentCount: Number(row.current_count) || 0,
+    turnstileLocked: Boolean(row.turnstile_locked),
+    isOpen: row.is_open !== false,
+    themeColor: row.theme_color || 'cyan',
+    visualTheme: row.visual_theme || 'dark',
+    logoEmoji: row.logo_emoji || '⚡',
+    operatingHours: row.operating_hours || {
+      weekdays: { open: '06:00', close: '23:00', isOpen: true },
+      saturday: { open: '07:00', close: '17:00', isOpen: true },
+      sunday: { open: '08:00', close: '14:00', isOpen: true }
+    },
+    apiKey: row.api_key || '',
+    ownerName: row.owner_name || '',
+    ownerEmail: row.owner_email || '',
+    createdAt: row.created_at || new Date().toISOString()
+  };
+}
+
+const offlineFallbackNotified = new Set<string>();
+
 export async function fetchGyms(): Promise<GymProfile[]> {
   try {
     const res = await fetch('/api/gyms');
-    if (!res.ok) throw new Error('Falha ao listar academias');
-    const data = await parseJsonResponse<{ gyms: GymProfile[] }>(res, { gyms: INITIAL_GYMS });
-    return data.gyms || INITIAL_GYMS;
+    if (res.ok) {
+      const data = await parseJsonResponse<{ gyms: GymProfile[] }>(res, { gyms: INITIAL_GYMS });
+      if (data.gyms && data.gyms.length > 0) {
+        return data.gyms;
+      }
+    }
   } catch (err) {
-    console.warn('Usando academias iniciais offline:', err);
-    return INITIAL_GYMS;
+    // Attempt Supabase fallback if API route is unavailable
   }
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('gyms').select('*').order('name');
+      if (data && data.length > 0 && !error) {
+        return data.map(mapSupabaseGymRow);
+      }
+    } catch {}
+  }
+
+  return INITIAL_GYMS;
 }
 
 export async function registerGym(input: CreateGymInput): Promise<{ success: boolean; message: string; gym?: GymProfile; publicStudentUrl?: string; apiKey?: string; user?: AuthUser; token?: string }> {
@@ -244,46 +289,144 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
     const res = await fetch(`/api/gyms/${encodeURIComponent(gymIdOrSlug)}`, {
       headers: getAuthHeaders()
     });
-    if (!res.ok) throw new Error('Academia não encontrada');
-    const data = await parseJsonResponse<{ profile: GymProfile; occupancy: OccupancyData; announcements: Announcement[]; accessLogs: AccessLog[] } | null>(res, null);
-    if (!data) throw new Error('Dados de academia não puderam ser carregados');
-    return data;
-  } catch (err) {
-    console.warn(`Fallback para academia '${gymIdOrSlug}':`, err);
-    const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug) || INITIAL_GYMS[0];
-    if (!found) return null;
-    return {
-      profile: found,
-      occupancy: {
-        gymId: found.id,
-        gymName: found.name,
-        gymSlug: found.slug,
-        themeColor: found.themeColor,
-        logoEmoji: found.logoEmoji,
-        slogan: found.slogan,
-        city: found.city,
-        neighborhood: found.neighborhood,
-        visualTheme: found.visualTheme || 'dark',
-        currentCount: found.currentCount,
-        maxCapacity: found.maxCapacity,
-        status: 'low',
-        percentage: Math.round((found.currentCount / found.maxCapacity) * 100),
-        turnstileLocked: false,
-        isOpen: found.isOpen,
-        openingTimeToday: found.operatingHours.weekdays.open,
-        closingTimeToday: found.operatingHours.weekdays.close,
-        lastAccessTime: new Date().toISOString(),
-        lastAccessType: 'entry',
-        esp32Connected: true,
-        esp32LastPing: new Date().toISOString(),
-        esp32DeviceName: `ESP32_CATRACA_${found.slug.toUpperCase()}`,
-        esp32Ip: '192.168.1.145',
-        pendingRelayTrigger: null
-      },
-      announcements: INITIAL_ANNOUNCEMENTS.map(a => ({ ...a, gymId: found.id })),
-      accessLogs: []
-    };
+    if (res.ok) {
+      const data = await parseJsonResponse<{ profile: GymProfile; occupancy: OccupancyData; announcements: Announcement[]; accessLogs: AccessLog[] } | null>(res, null);
+      if (data) return data;
+    }
+  } catch {
+    // Graceful fallback to Supabase or local initial dataset
   }
+
+  // Fallback 1: Direct query to Supabase if credentials exist
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data: gymRow, error } = await supabase
+        .from('gyms')
+        .select('*')
+        .or(`slug.eq.${gymIdOrSlug},id.eq.${gymIdOrSlug}`)
+        .maybeSingle();
+
+      if (gymRow && !error) {
+        const profile = mapSupabaseGymRow(gymRow);
+        const { data: annRows } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('gym_id', gymRow.id)
+          .order('pinned', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        const { data: logRows } = await supabase
+          .from('access_logs')
+          .select('*')
+          .eq('gym_id', gymRow.id)
+          .order('timestamp', { ascending: false })
+          .limit(30);
+
+        const announcements: Announcement[] = (annRows || []).map((a: any) => ({
+          id: a.id,
+          gymId: a.gym_id,
+          title: a.title,
+          content: a.content,
+          category: a.category,
+          priority: a.priority,
+          date: a.date,
+          author: a.author,
+          pinned: Boolean(a.pinned),
+          active: a.active !== false
+        }));
+
+        const accessLogs: AccessLog[] = (logRows || []).map((l: any) => ({
+          id: l.id,
+          gymId: l.gym_id,
+          timestamp: l.timestamp,
+          type: l.type,
+          source: l.source,
+          description: l.description,
+          countAfter: Number(l.count_after),
+          status: l.status
+        }));
+
+        const maxCap = Math.max(1, profile.maxCapacity);
+        const pct = Math.min(100, Math.round((profile.currentCount / maxCap) * 100));
+
+        return {
+          profile,
+          occupancy: {
+            gymId: profile.id,
+            gymName: profile.name,
+            gymSlug: profile.slug,
+            themeColor: profile.themeColor,
+            logoEmoji: profile.logoEmoji,
+            slogan: profile.slogan,
+            city: profile.city,
+            neighborhood: profile.neighborhood,
+            visualTheme: profile.visualTheme || 'dark',
+            currentCount: profile.currentCount,
+            maxCapacity: profile.maxCapacity,
+            status: pct > 85 ? 'high' : pct > 50 ? 'moderate' : 'low',
+            percentage: pct,
+            turnstileLocked: profile.turnstileLocked,
+            isOpen: profile.isOpen,
+            openingTimeToday: profile.operatingHours.weekdays.open,
+            closingTimeToday: profile.operatingHours.weekdays.close,
+            lastAccessTime: accessLogs[0]?.timestamp || new Date().toISOString(),
+            lastAccessType: (accessLogs[0]?.type === 'entry' ? 'entry' : accessLogs[0]?.type === 'exit' ? 'exit' : 'manual'),
+            esp32Connected: true,
+            esp32LastPing: new Date().toISOString(),
+            esp32DeviceName: `ESP32_${profile.slug.toUpperCase()}`,
+            esp32Ip: '192.168.1.100',
+            pendingRelayTrigger: null
+          },
+          announcements: announcements.length > 0 ? announcements : INITIAL_ANNOUNCEMENTS.map(a => ({ ...a, gymId: profile.id })),
+          accessLogs
+        };
+      }
+    } catch {
+      // Fall through to initial dataset
+    }
+  }
+
+  // Fallback 2: Local demo dataset
+  if (!offlineFallbackNotified.has(gymIdOrSlug)) {
+    offlineFallbackNotified.add(gymIdOrSlug);
+    console.info(`[GymFlow] Operando com dados locais para academia '${gymIdOrSlug}'.`);
+  }
+
+  const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug) || INITIAL_GYMS[0];
+  if (!found) return null;
+
+  return {
+    profile: found,
+    occupancy: {
+      gymId: found.id,
+      gymName: found.name,
+      gymSlug: found.slug,
+      themeColor: found.themeColor,
+      logoEmoji: found.logoEmoji,
+      slogan: found.slogan,
+      city: found.city,
+      neighborhood: found.neighborhood,
+      visualTheme: found.visualTheme || 'dark',
+      currentCount: found.currentCount,
+      maxCapacity: found.maxCapacity,
+      status: 'low',
+      percentage: Math.round((found.currentCount / found.maxCapacity) * 100),
+      turnstileLocked: false,
+      isOpen: found.isOpen,
+      openingTimeToday: found.operatingHours.weekdays.open,
+      closingTimeToday: found.operatingHours.weekdays.close,
+      lastAccessTime: new Date().toISOString(),
+      lastAccessType: 'entry',
+      esp32Connected: true,
+      esp32LastPing: new Date().toISOString(),
+      esp32DeviceName: `ESP32_CATRACA_${found.slug.toUpperCase()}`,
+      esp32Ip: '192.168.1.145',
+      pendingRelayTrigger: null
+    },
+    announcements: INITIAL_ANNOUNCEMENTS.map(a => ({ ...a, gymId: found.id })),
+    accessLogs: []
+  };
 }
 
 export async function updateGymSettings(gymIdOrSlug: string, settings: Partial<GymProfile>): Promise<{ success: boolean; message: string; profile?: GymProfile }> {

@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import { INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from './src/data/gymData';
 import {
@@ -373,14 +372,29 @@ function generateApiKey(slug: string): string {
   return `GF_KEY_${slug.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_${rand}`;
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
+const PORT = 3000;
 
-  app.use(express.json());
-  app.use(express.static(path.join(process.cwd(), 'public')));
+app.use(express.json());
+app.use(express.static(path.join(process.cwd(), 'public')));
 
-  // Favicon handler
+// URL Normalizer for Serverless environments (like Vercel rewrites)
+app.use((req, res, next) => {
+  if (
+    !req.url.startsWith('/api') &&
+    (req.url.startsWith('/gyms') ||
+      req.url.startsWith('/auth') ||
+      req.url.startsWith('/saas') ||
+      req.url.startsWith('/supabase') ||
+      req.url.startsWith('/access-logs') ||
+      req.url.startsWith('/health'))
+  ) {
+    req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+  }
+  next();
+});
+
+// Favicon handler
   const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#22d3ee" fill-opacity="0.2"/></svg>`;
   app.get(['/favicon.ico', '/favicon.svg'], (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'image/svg+xml');
@@ -2292,29 +2306,37 @@ void sendHeartbeat() {
   });
 
   // ==========================================
-  // VITE DEV MIDDLEWARE / STATIC PRODUCTION
+  // SERVER BOOTSTRAP (STANDALONE & DEV MODE)
   // ==========================================
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req: Request, res: Response) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+  async function startServer() {
+    if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } else if (!process.env.VERCEL) {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req: Request, res: Response) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+
+    await syncGymsFromSupabase();
+
+    if (!process.env.VERCEL) {
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
+      });
+    }
+  }
+
+  if (!process.env.VERCEL) {
+    startServer().catch(err => {
+      console.error('[GymFlow SaaS Server] Failed to start:', err);
     });
   }
 
-  await syncGymsFromSupabase();
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
-  });
-}
-
-startServer().catch(err => {
-  console.error('[GymFlow SaaS Server] Failed to start:', err);
-});
+  export default app;
