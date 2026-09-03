@@ -390,45 +390,6 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
           </button>
         </div>
 
-        {/* Tab Switcher: Login / Cadastre-se */}
-        {mode !== 'register_success' && mode !== 'forgot_reset' && (
-          <div className="flex items-center gap-1 p-1 bg-zinc-900/90 rounded-2xl border border-zinc-800 mb-4 shrink-0">
-            <button
-              id="switch-tab-login-btn"
-              type="button"
-              onClick={() => {
-                resetMessages();
-                setMode('login');
-              }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                mode === 'login' || mode === 'forgot_request'
-                  ? 'bg-cyan-400 text-black shadow-md font-black'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Lock className="h-3.5 w-3.5" />
-              <span>Já Tenho Conta (Entrar)</span>
-            </button>
-
-            <button
-              id="switch-tab-register-btn"
-              type="button"
-              onClick={() => {
-                resetMessages();
-                setMode('register');
-              }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                mode === 'register'
-                  ? 'bg-cyan-400 text-black shadow-md font-black'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Building2 className="h-3.5 w-3.5" />
-              <span>Cadastrar Academia</span>
-            </button>
-          </div>
-        )}
-
         {/* Error / Success Notifications */}
         {errorMessage && (
           <div className="mb-4 flex items-start gap-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 p-3.5 text-xs text-rose-400 shrink-0 animate-in fade-in">
