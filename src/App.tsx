@@ -444,6 +444,7 @@ export default function App() {
               onAction={handleTurnstileAction}
               onUpdateCapacity={handleUpdateCapacity}
               onOpenShareModal={() => setIsShareModalOpen(true)}
+              onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
             />
 
             {/* Announcements manager */}

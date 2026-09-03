@@ -93,64 +93,68 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
           
           <div className="px-3 py-2 border-b border-zinc-800/80 mb-1.5">
             <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
-              ACADEMIAS ({gyms.length})
+              {isAdminMode ? 'ACADEMIA ATUAL' : `ACADEMIAS (${gyms.length})`}
             </span>
           </div>
 
-          {/* List of Gyms */}
-          <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-            {gyms.map((g) => {
-              const isSelected = g.id === currentGym.id;
-              
-              return (
-                <button
-                  key={g.id}
-                  id={`select-gym-${g.slug}-btn`}
-                  type="button"
-                  onClick={() => {
-                    onSelectGym(g);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
-                    isSelected 
-                      ? 'bg-zinc-900 text-white border border-zinc-800' 
-                      : 'hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 truncate">
-                    <span className="text-lg shrink-0 opacity-80">{g.logoEmoji || '⚡'}</span>
-                    <div className="truncate">
-                      <div className="text-xs font-bold truncate">
-                        {g.name}
-                      </div>
-                      <div className="text-[10px] text-zinc-500 truncate font-medium">
-                        {g.city || g.slug}
+          {/* List of Gyms - Only visible if not in reception/admin mode */}
+          {!isAdminMode && (
+            <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar border-b border-zinc-800/80 pb-2 mb-2">
+              {gyms.map((g) => {
+                const isSelected = g.id === currentGym.id;
+                
+                return (
+                  <button
+                    key={g.id}
+                    id={`select-gym-${g.slug}-btn`}
+                    type="button"
+                    onClick={() => {
+                      onSelectGym(g);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
+                      isSelected 
+                        ? 'bg-zinc-900 text-white border border-zinc-800' 
+                        : 'hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 truncate">
+                      <span className="text-lg shrink-0 opacity-80">{g.logoEmoji || '⚡'}</span>
+                      <div className="truncate">
+                        <div className="text-xs font-bold truncate">
+                          {g.name}
+                        </div>
+                        <div className="text-[10px] text-zinc-500 truncate font-medium">
+                          {g.city || g.slug}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {isSelected && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 ml-2" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                    {isSelected && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 ml-2" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* SaaS Actions inside dropdown */}
-          <div className="mt-2 pt-2 border-t border-zinc-800/80 space-y-1">
-            <button
-              id="dropdown-open-register-btn"
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                onOpenRegisterModal();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors uppercase tracking-widest"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nova Academia</span>
-            </button>
+          <div className="space-y-1">
+            {!isAdminMode && (
+              <button
+                id="dropdown-open-register-btn"
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenRegisterModal();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors uppercase tracking-widest"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nova Academia</span>
+              </button>
+            )}
 
             <button
               id="dropdown-open-share-btn"

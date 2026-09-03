@@ -24,13 +24,15 @@ interface ReceptionControlPanelProps {
   onAction: (action: string, value?: any, notes?: string) => Promise<any>;
   onUpdateCapacity: (capacity: number) => Promise<any>;
   onOpenShareModal: () => void;
+  onOpenCustomizeModal: () => void;
 }
 
 export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
   occupancy,
   onAction,
   onUpdateCapacity,
-  onOpenShareModal
+  onOpenShareModal,
+  onOpenCustomizeModal
 }) => {
   const [guestName, setGuestName] = useState('');
   const [guestReason, setGuestReason] = useState('Aula Experimental');
@@ -116,6 +118,16 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
             >
               <Share2 className="w-3 h-3" />
               <span>Link Alunos</span>
+            </button>
+
+            <button
+              id="reception-edit-profile-btn"
+              type="button"
+              onClick={onOpenCustomizeModal}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-500/20 transition-colors cursor-pointer"
+            >
+              <Sliders className="w-3 h-3" />
+              <span>Editar Perfil</span>
             </button>
 
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider border ${
