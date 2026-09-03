@@ -542,35 +542,11 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
               )}
             </button>
 
-            {/* Quick Demo Credentials */}
+            {/* Support Notice */}
             <div className="mt-4 pt-3 border-t border-zinc-900">
-              <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                Acesso Rápido de Teste (1-Clique):
+              <p className="text-[11px] font-medium text-zinc-500 leading-relaxed">
+                Problemas com o acesso? Entre em contato com o suporte do administrador master da rede.
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('ricardo@ironpeak.com')}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>🏋️‍♂️ Iron Peak</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('mariana@zenith.com')}
-                  className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-violet-400 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>🧘‍♀️ Zenith Fitness</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleUsePreset('admin@gymflow.com', 'admin123')}
-                  className="px-2.5 py-1.5 rounded-xl bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-500/40 text-[11px] text-indigo-300 hover:text-white transition-colors flex items-center gap-1 cursor-pointer font-semibold shadow-sm"
-                >
-                  <span>👑 Master SaaS Admin</span>
-                </button>
-              </div>
             </div>
 
             <div className="pt-1 text-center">

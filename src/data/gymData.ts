@@ -2,56 +2,7 @@ import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } 
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
-export const INITIAL_GYMS: GymProfile[] = [
-  {
-    id: 'gym-1',
-    name: 'Iron Peak Gym',
-    slug: 'iron-peak',
-    ownerName: 'Ricardo Silva',
-    ownerEmail: 'ricardo@ironpeak.com',
-    contactPhone: '(11) 98888-7777',
-    city: 'São Paulo',
-    neighborhood: 'Vila Olímpia',
-    maxCapacity: 120,
-    currentCount: 42,
-    logoEmoji: '🏋️‍♂️',
-    slogan: 'Alta Performance & Força',
-    themeColor: 'cyan',
-    isOpen: true,
-    turnstileLocked: false,
-    apiKey: 'sk_live_iron_peak_001',
-    operatingHours: {
-      weekdays: { open: '06:00', close: '23:00', isOpen: true },
-      saturday: { open: '08:00', close: '18:00', isOpen: true },
-      sunday: { open: '09:00', close: '14:00', isOpen: true }
-    },
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'gym-2',
-    name: 'Zenith Fitness',
-    slug: 'zenith-fitness',
-    ownerName: 'Mariana Costa',
-    ownerEmail: 'mariana@zenith.com',
-    contactPhone: '(21) 97777-6666',
-    city: 'Rio de Janeiro',
-    neighborhood: 'Ipanema',
-    maxCapacity: 60,
-    currentCount: 15,
-    logoEmoji: '🧘‍♀️',
-    slogan: 'Equilíbrio para o seu corpo',
-    themeColor: 'violet',
-    isOpen: true,
-    turnstileLocked: false,
-    apiKey: 'sk_live_zenith_002',
-    operatingHours: {
-      weekdays: { open: '07:00', close: '22:00', isOpen: true },
-      saturday: { open: '08:00', close: '16:00', isOpen: true },
-      sunday: { open: '08:00', close: '12:00', isOpen: true }
-    },
-    createdAt: new Date().toISOString()
-  }
-];
+export const INITIAL_GYMS: GymProfile[] = [];
 
 export const THEME_COLOR_CONFIG: Record<string, {
   name: string;
