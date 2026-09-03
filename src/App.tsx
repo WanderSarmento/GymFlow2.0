@@ -337,8 +337,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Fixed Header Navbar (Hidden for students) */}
-      {!isDirectStudentLink && activeTab !== 'student' && (
+      {/* Top Fixed Header Navbar (Hidden for students and login screen) */}
+      {currentUser && !isDirectStudentLink && activeTab !== 'student' && (
         <Navbar
           occupancy={occupancy}
           activeTab={activeTab}

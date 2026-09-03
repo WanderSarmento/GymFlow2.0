@@ -549,21 +549,6 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
               </p>
             </div>
 
-            <div className="pt-1 text-center">
-              <p className="text-xs text-zinc-400">
-                Ainda não tem cadastro?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetMessages();
-                    setMode('register');
-                  }}
-                  className="text-cyan-400 hover:underline font-bold cursor-pointer"
-                >
-                  Cadastre sua academia aqui
-                </button>
-              </p>
-            </div>
           </form>
         )}
 
