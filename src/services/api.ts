@@ -50,6 +50,31 @@ export function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+/**
+ * Safely parses HTTP response as JSON.
+ * Protects against non-OK HTML pages (e.g. 404, 502, "The page cannot be found")
+ * or non-JSON payloads, preventing:
+ * SyntaxError: Unexpected token 'T', "The page c"... is not valid JSON
+ */
+async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
+  try {
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await res.text().catch(() => '');
+      console.warn('[GymFlow API] Resposta recebida não é JSON:', res.status, contentType, text.slice(0, 100));
+      return fallback;
+    }
+    const text = await res.text();
+    if (!text || !text.trim()) {
+      return fallback;
+    }
+    return JSON.parse(text) as T;
+  } catch (err) {
+    console.warn('[GymFlow API] Erro ao decodificar JSON:', err);
+    return fallback;
+  }
+}
+
 export async function loginUser(credentials: LoginCredentials): Promise<{ success: boolean; message: string; user?: AuthUser; token?: string }> {
   // If Supabase is connected, optionally try Supabase Auth first, fallback to API
   const supabase = getSupabaseClient();
@@ -92,7 +117,13 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials)
     });
-    const data = await res.json();
+    const fallbackMsg = res.ok
+      ? 'Resposta inválida do servidor.'
+      : `Servidor da aplicação indisponível ou erro HTTP (${res.status}). Aguarde alguns instantes.`;
+    const data = await parseJsonResponse<{ success: boolean; message: string; user?: AuthUser; token?: string }>(res, {
+      success: false,
+      message: fallbackMsg
+    });
     if (data.success && data.user) {
       saveAuthSession(data.user, data.token);
     }
@@ -100,7 +131,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
   } catch (err: any) {
     return {
       success: false,
-      message: err?.message || 'Não foi possível conectar ao servidor de autenticação.'
+      message: 'Não foi possível conectar ao servidor de autenticação. Verifique sua rede.'
     };
   }
 }
@@ -127,7 +158,10 @@ export async function requestPasswordRecovery(email: string): Promise<{ success:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível solicitar código de recuperação neste momento.'
+    });
   } catch (err: any) {
     return {
       success: false,
@@ -143,7 +177,10 @@ export async function resetPasswordWithCode(payload: PasswordResetRequest): Prom
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível redefinir a senha neste momento.'
+    });
   } catch (err: any) {
     return {
       success: false,
@@ -153,17 +190,19 @@ export async function resetPasswordWithCode(payload: PasswordResetRequest): Prom
 }
 
 export async function checkSupabaseStatus(): Promise<SupabaseConfigStatus> {
+  const fallbackStatus: SupabaseConfigStatus = {
+    isConfigured: isSupabaseConfigured(),
+    hasAnonKey: isSupabaseConfigured(),
+    status: isSupabaseConfigured() ? 'connected' : 'not_configured',
+    message: 'Status verificado localmente.'
+  };
+
   try {
     const res = await fetch('/api/supabase/status');
-    if (!res.ok) throw new Error('Falha ao checar status');
-    return await res.json();
+    if (!res.ok) return fallbackStatus;
+    return await parseJsonResponse(res, fallbackStatus);
   } catch {
-    return {
-      isConfigured: isSupabaseConfigured(),
-      hasAnonKey: isSupabaseConfigured(),
-      status: isSupabaseConfigured() ? 'connected' : 'not_configured',
-      message: 'Status verificado localmente.'
-    };
+    return fallbackStatus;
   }
 }
 
@@ -171,8 +210,8 @@ export async function fetchGyms(): Promise<GymProfile[]> {
   try {
     const res = await fetch('/api/gyms');
     if (!res.ok) throw new Error('Falha ao listar academias');
-    const data = await res.json();
-    return data.gyms;
+    const data = await parseJsonResponse<{ gyms: GymProfile[] }>(res, { gyms: INITIAL_GYMS });
+    return data.gyms || INITIAL_GYMS;
   } catch (err) {
     console.warn('Usando academias iniciais offline:', err);
     return INITIAL_GYMS;
@@ -186,7 +225,10 @@ export async function registerGym(input: CreateGymInput): Promise<{ success: boo
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input)
     });
-    const data = await res.json();
+    const data = await parseJsonResponse<{ success: boolean; message: string; gym?: GymProfile; publicStudentUrl?: string; apiKey?: string; user?: AuthUser; token?: string }>(res, {
+      success: false,
+      message: 'Não foi possível registrar a academia. Resposta inválida do servidor.'
+    });
     if (data.success && data.user) {
       saveAuthSession(data.user, data.token);
     }
@@ -203,7 +245,9 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error('Academia não encontrada');
-    return await res.json();
+    const data = await parseJsonResponse<{ profile: GymProfile; occupancy: OccupancyData; announcements: Announcement[]; accessLogs: AccessLog[] } | null>(res, null);
+    if (!data) throw new Error('Dados de academia não puderam ser carregados');
+    return data;
   } catch (err) {
     console.warn(`Fallback para academia '${gymIdOrSlug}':`, err);
     const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug) || INITIAL_GYMS[0];
@@ -249,7 +293,7 @@ export async function updateGymSettings(gymIdOrSlug: string, settings: Partial<G
       headers: getAuthHeaders(),
       body: JSON.stringify(settings)
     });
-    return await res.json();
+    return await parseJsonResponse(res, { success: false, message: 'Erro ao salvar alterações no servidor.' });
   } catch (err) {
     console.error('Erro ao atualizar configurações da academia:', err);
     return { success: false, message: 'Erro ao salvar alterações.' };
@@ -263,7 +307,8 @@ export async function fetchOccupancy(gymIdOrSlug?: string): Promise<OccupancyDat
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error('Falha ao carregar dados de lotação');
-    const data = await res.json();
+    const data = await parseJsonResponse<any>(res, null);
+    if (!data) throw new Error('Dados de lotação inválidos');
     return data.occupancy || data;
   } catch (err) {
     console.warn('Usando estado local para lotação:', err);
@@ -305,7 +350,7 @@ export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true
       headers: getAuthHeaders(),
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
-    return await res.json();
+    return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });
   } catch (err) {
     console.error('Erro ao enviar entrada ESP32:', err);
     return { success: false, message: 'Erro de conexão com o servidor', currentCount: 0 };
@@ -320,7 +365,7 @@ export async function triggerESP32Exit(gymIdOrSlug?: string, isSimulator = true)
       headers: getAuthHeaders(),
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
-    return await res.json();
+    return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });
   } catch (err) {
     console.error('Erro ao enviar saída ESP32:', err);
     return { success: false, message: 'Erro de conexão com o servidor', currentCount: 0 };
@@ -340,7 +385,7 @@ export async function sendTurnstileAction(
       headers: getAuthHeaders(),
       body: JSON.stringify({ action, value, notes, operator: 'Recepção (Painel Web)' })
     });
-    return await res.json();
+    return await parseJsonResponse(res, { success: false, message: 'Erro de comunicação com o servidor', currentCount: 0 });
   } catch (err) {
     console.error('Erro ao executar ação na catraca:', err);
     return { success: false, message: 'Erro de comunicação', currentCount: 0 };
@@ -356,8 +401,8 @@ export async function fetchAccessLogs(gymIdOrSlug?: string): Promise<AccessLog[]
     const res = await fetch('/api/access-logs', {
       headers: getAuthHeaders()
     });
-    if (!res.ok) throw new Error('Falha ao obter logs de acesso');
-    const data = await res.json();
+    if (!res.ok) return [];
+    const data = await parseJsonResponse<{ logs: AccessLog[] }>(res, { logs: [] });
     return data.logs || [];
   } catch (err) {
     return [];
@@ -370,9 +415,9 @@ export async function fetchAnnouncements(gymIdOrSlug?: string): Promise<Announce
     const res = await fetch(url, {
       headers: getAuthHeaders()
     });
-    if (!res.ok) throw new Error('Falha ao obter comunicados');
-    const data = await res.json();
-    return data.announcements || [];
+    if (!res.ok) return INITIAL_ANNOUNCEMENTS;
+    const data = await parseJsonResponse<{ announcements: Announcement[] }>(res, { announcements: INITIAL_ANNOUNCEMENTS });
+    return data.announcements || INITIAL_ANNOUNCEMENTS;
   } catch (err) {
     return INITIAL_ANNOUNCEMENTS;
   }
@@ -386,9 +431,9 @@ export async function createAnnouncement(gymIdOrSlug: string, announcement: Part
       headers: getAuthHeaders(),
       body: JSON.stringify(announcement)
     });
-    if (!res.ok) throw new Error('Erro ao criar comunicado');
-    const data = await res.json();
-    return data.announcement;
+    if (!res.ok) return null;
+    const data = await parseJsonResponse<{ announcement: Announcement } | null>(res, null);
+    return data?.announcement || null;
   } catch (err) {
     console.error(err);
     return null;
@@ -423,8 +468,8 @@ export async function fetchESP32ArduinoCode(gymIdOrSlug?: string, serverUrl?: st
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error('Erro ao gerar código');
-    const data = await res.json();
-    return data.code;
+    const data = await parseJsonResponse<{ code: string } | null>(res, null);
+    return data?.code || '// Falha ao carregar código C++ do ESP32';
   } catch (err) {
     return '// Falha ao carregar código C++ do ESP32 (Acesso restrito à administração da academia)';
   }
@@ -444,8 +489,8 @@ export async function fetchSaaSMetrics(): Promise<import('../types').SaaSMetrics
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error('Não autorizado para métricas do SaaS');
-    const data = await res.json();
-    return data.metrics;
+    const data = await parseJsonResponse<{ metrics: import('../types').SaaSMetrics } | null>(res, null);
+    return data?.metrics || null;
   } catch (err) {
     console.error('Erro ao buscar métricas SaaS:', err);
     return null;
@@ -458,7 +503,7 @@ export async function fetchSaaSGyms(): Promise<import('../types').GymSaaSAccount
       headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error('Não autorizado para gerenciar academias');
-    const data = await res.json();
+    const data = await parseJsonResponse<{ gyms: import('../types').GymSaaSAccount[] }>(res, { gyms: [] });
     return data.gyms || [];
   } catch (err) {
     console.error('Erro ao buscar contas SaaS de academias:', err);
@@ -473,8 +518,10 @@ export async function createSaaSGym(input: import('../types').CreateSaaSGymInput
       headers: getAuthHeaders(),
       body: JSON.stringify(input)
     });
-    const data = await res.json();
-    return data;
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível cadastrar a academia no SaaS. Resposta do servidor indisponível.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao cadastrar academia no SaaS' };
   }
@@ -490,7 +537,10 @@ export async function updateSaaSSubscription(
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível atualizar a assinatura no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao atualizar assinatura' };
   }
@@ -507,7 +557,10 @@ export async function toggleSaaSGymBlock(
       headers: getAuthHeaders(),
       body: JSON.stringify({ blocked, reason })
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível alterar o bloqueio da academia no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao alterar bloqueio da academia' };
   }
@@ -524,7 +577,10 @@ export async function paySaaSInvoice(
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível registrar o pagamento no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao registrar pagamento da fatura' };
   }
@@ -540,7 +596,10 @@ export async function createSaaSInvoice(
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível emitir a fatura no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao emitir fatura avulsa' };
   }
@@ -556,7 +615,10 @@ export async function extendSaaSTrial(
       headers: getAuthHeaders(),
       body: JSON.stringify({ days })
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível estender o período de teste no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao estender período de teste' };
   }
@@ -568,7 +630,10 @@ export async function deleteSaaSGym(gymId: string): Promise<{ success: boolean; 
       method: 'DELETE',
       headers: getAuthHeaders()
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível remover a academia do sistema.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao remover academia do sistema' };
   }
@@ -579,7 +644,7 @@ export async function fetchSaaSPlans(): Promise<{ plans: import('../types').SaaS
     const res = await fetch('/api/saas/plans', {
       headers: getAuthHeaders()
     });
-    return await res.json();
+    return await parseJsonResponse(res, { plans: [] });
   } catch (err: any) {
     console.error('Erro ao buscar planos SaaS:', err);
     return { plans: [] };
@@ -596,7 +661,10 @@ export async function updateSaaSPlan(
       headers: getAuthHeaders(),
       body: JSON.stringify(plan)
     });
-    return await res.json();
+    return await parseJsonResponse(res, {
+      success: false,
+      message: 'Não foi possível atualizar o plano no servidor.'
+    });
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao atualizar plano SaaS' };
   }

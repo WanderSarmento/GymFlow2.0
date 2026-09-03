@@ -3,10 +3,33 @@ import { SupabaseConfigStatus } from '../types';
 
 let supabaseInstance: SupabaseClient | null = null;
 
-// Clean and normalize Supabase project URL (strips trailing slashes and /rest/v1 if pasted)
+// Clean and normalize Supabase project URL
 export function cleanSupabaseUrl(rawUrl: string): string {
   if (!rawUrl) return '';
-  return rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+  let url = rawUrl.trim();
+
+  // If user pasted a dashboard URL (e.g. https://supabase.com/dashboard/project/rwcqjaxwxbujkxdayifn)
+  const dashboardMatch = url.match(/supabase\.com\/dashboard\/project\/([a-zA-Z0-9_-]+)/i);
+  if (dashboardMatch && dashboardMatch[1]) {
+    return `https://${dashboardMatch[1]}.supabase.co`;
+  }
+
+  // If user pasted just the project ID (e.g. rwcqjaxwxbujkxdayifn)
+  if (/^[a-z0-9]{20}$/i.test(url)) {
+    return `https://${url}.supabase.co`;
+  }
+
+  // Strip trailing endpoints like /rest/v1, /auth/v1, /gyms, trailing slashes
+  url = url
+    .replace(/\/rest\/v1(\/.*)?$/i, '')
+    .replace(/\/auth\/v1(\/.*)?$/i, '')
+    .replace(/\/+$/, '');
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+
+  return url;
 }
 
 // Get Supabase credentials from Env or LocalStorage overrides
@@ -115,12 +138,21 @@ export async function testSupabaseConnection(customUrl?: string, customKey?: str
       message: 'Conexão com o Supabase estabelecida e tabelas verificadas com sucesso!'
     };
   } catch (err: any) {
+    const rawMsg = err?.message || String(err);
+    let friendlyMessage = `Erro de rede ou URL inválida: ${rawMsg}`;
+    
+    if (rawMsg.includes('Unexpected token') || rawMsg.includes('is not valid JSON') || rawMsg.includes('The page')) {
+      friendlyMessage = 'A URL informada não respondeu com a API REST do Supabase (o servidor retornou uma página web/HTML em vez de JSON). Certifique-se de usar a URL do projeto (https://[projeto].supabase.co) e não o link do painel/dashboard.';
+    } else if (rawMsg.includes('Failed to fetch')) {
+      friendlyMessage = 'Não foi possível conectar ao endereço do Supabase. Verifique a conexão com a internet e se a URL está correta.';
+    }
+
     return {
       isConfigured: false,
       url,
       hasAnonKey: true,
       status: 'error',
-      message: `Erro de rede ou URL inválida: ${err?.message || err}`
+      message: friendlyMessage
     };
   }
 }

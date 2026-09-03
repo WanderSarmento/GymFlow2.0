@@ -2268,6 +2268,30 @@ void sendHeartbeat() {
   });
 
   // ==========================================
+  // API FALLBACK & ERROR HANDLERS
+  // (Ensures all /api/* requests ALWAYS return JSON, never HTML)
+  // ==========================================
+  app.all('/api/*', (req: Request, res: Response) => {
+    res.status(404).json({
+      success: false,
+      message: `Rota da API não encontrada: ${req.method} ${req.path}`
+    });
+  });
+
+  app.use((err: any, req: Request, res: Response, next: any) => {
+    if (req.path.startsWith('/api/')) {
+      console.error('[GymFlow API Error]', err);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno no servidor da API.',
+        error: err?.message || 'Internal Server Error'
+      });
+      return;
+    }
+    next(err);
+  });
+
+  // ==========================================
   // VITE DEV MIDDLEWARE / STATIC PRODUCTION
   // ==========================================
   if (process.env.NODE_ENV !== 'production') {
