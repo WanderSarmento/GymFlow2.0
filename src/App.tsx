@@ -290,9 +290,17 @@ export default function App() {
   }, [gyms, currentUser]);
 
   const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
+  const visualTheme = currentGym?.visualTheme || 'dark';
 
   return (
-    <div className="min-h-screen bg-[#0C0C0D] text-white selection:bg-indigo-500/30 font-['Outfit']">
+    <div 
+      data-theme={visualTheme}
+      className={`min-h-screen selection:bg-indigo-500/30 font-['Outfit'] transition-colors duration-500 ${
+        visualTheme === 'light' 
+          ? 'bg-white text-zinc-900' 
+          : 'bg-[#0C0C0D] text-white'
+      }`}
+    >
       
       {/* SaaS Student Dedicated Header Banner if accessed directly via student URL */}
       {isDirectStudentLink && currentGym && (

@@ -27,6 +27,7 @@ export interface GymProfile {
   ownerName: string;
   ownerEmail: string;
   createdAt: string;
+  visualTheme?: 'dark' | 'light';
   operatingHours: GymOperatingHours;
 }
 
@@ -50,6 +51,7 @@ export interface OccupancyData {
   esp32LastPing: string | null;
   esp32DeviceName: string;
   esp32Ip: string;
+  visualTheme?: 'dark' | 'light';
   pendingRelayTrigger: 'entry' | 'exit' | null;
   slogan?: string;
   city?: string;

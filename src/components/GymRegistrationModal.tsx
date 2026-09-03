@@ -12,6 +12,8 @@ import {
   Users, 
   ShieldCheck, 
   Cpu, 
+  Sun,
+  Moon,
   QrCode
 } from 'lucide-react';
 import { CreateGymInput, GymProfile } from '../types';
@@ -44,6 +46,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
     initialCount: 15,
     themeColor: 'cyan',
     logoEmoji: '⚡',
+    visualTheme: 'dark',
     ownerName: '',
     ownerEmail: '',
     operatingHours: {
@@ -326,6 +329,54 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                       );
                     })}
                   </div>
+                </div>
+              </div>
+
+              {/* Visual Theme Selection */}
+              <div className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-800">
+                <label className="block text-xs font-medium text-zinc-300 mb-2.5">
+                  Ambiente e Visibilidade (Tema do Painel)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, visualTheme: 'dark' })}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      formData.visualTheme === 'dark'
+                        ? 'bg-zinc-800 border-cyan-400 text-white shadow-lg'
+                        : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      formData.visualTheme === 'dark' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-zinc-800 text-zinc-600'
+                    }`}>
+                      <Moon className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold">Modo Dark</div>
+                      <div className="text-[10px] opacity-60">Padrão do GymFlow</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, visualTheme: 'light' })}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      formData.visualTheme === 'light'
+                        ? 'bg-white border-cyan-500 text-zinc-900 shadow-lg'
+                        : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      formData.visualTheme === 'light' ? 'bg-cyan-100 text-cyan-600' : 'bg-zinc-800 text-zinc-600'
+                    }`}>
+                      <Sun className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold">Contraste Alto</div>
+                      <div className="text-[10px] opacity-60">Para locais iluminados</div>
+                    </div>
+                  </button>
                 </div>
               </div>
 
