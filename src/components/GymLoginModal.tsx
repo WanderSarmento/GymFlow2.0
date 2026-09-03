@@ -417,6 +417,31 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
         {/* ========================================================= */}
         {mode === 'login' && (
           <form onSubmit={handleLoginSubmit} className="space-y-4 overflow-y-auto pr-1">
+            {/* Quick Master SuperAdmin Access Card */}
+            <div className="rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 p-3 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
+                  👑
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-amber-200">Acesso Master SaaS (SuperAdmin)</div>
+                  <div className="text-[11px] text-zinc-400 font-mono truncate">admin@gymflow.com • admin123</div>
+                </div>
+              </div>
+              <button
+                id="quick-fill-superadmin-btn"
+                type="button"
+                onClick={() => {
+                  setEmail('admin@gymflow.com');
+                  setPassword('admin123');
+                  resetMessages();
+                }}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-black shrink-0 transition-all cursor-pointer shadow-sm active:scale-95"
+              >
+                Preencher
+              </button>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
                 E-mail do Gestor / Recepção

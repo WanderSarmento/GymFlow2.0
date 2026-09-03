@@ -380,7 +380,10 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 
 // URL Normalizer for Serverless environments (like Vercel rewrites)
 app.use((req, res, next) => {
-  if (
+  const matched = (req.headers['x-matched-path'] as string) || (req.headers['x-vercel-matched-path'] as string);
+  if (matched && typeof matched === 'string' && matched.startsWith('/api')) {
+    req.url = matched;
+  } else if (
     !req.url.startsWith('/api') &&
     (req.url.startsWith('/gyms') ||
       req.url.startsWith('/auth') ||
@@ -464,14 +467,14 @@ app.use((req, res, next) => {
     if (!user && (cleanEmail === 'admin@gymflow.com' || cleanEmail === 'demo@gymflow.com')) {
       const defaultGym = getDefaultGymState();
       user = {
-        id: 'user-admin-master',
+        id: cleanEmail === 'admin@gymflow.com' ? 'user-master-superadmin-1' : 'user-admin-master',
         email: cleanEmail,
-        password: 'password123',
-        name: 'Administrador Master',
-        role: 'owner',
-        gymId: defaultGym.profile.id,
-        gymSlug: defaultGym.profile.slug,
-        gymName: defaultGym.profile.name,
+        password: cleanEmail === 'admin@gymflow.com' ? 'admin123' : 'password123',
+        name: cleanEmail === 'admin@gymflow.com' ? 'Administrador Geral SaaS' : 'Administrador Master',
+        role: cleanEmail === 'admin@gymflow.com' ? 'superadmin' : 'owner',
+        gymId: cleanEmail === 'admin@gymflow.com' ? 'saas-root' : defaultGym.profile.id,
+        gymSlug: cleanEmail === 'admin@gymflow.com' ? 'master-saas' : defaultGym.profile.slug,
+        gymName: cleanEmail === 'admin@gymflow.com' ? 'GymFlow SaaS Master Hub' : defaultGym.profile.name,
         createdAt: new Date().toISOString()
       };
       usersStore.set(cleanEmail, user);

@@ -89,17 +89,40 @@ export default function App() {
     async function initGyms() {
       const urlParams = new URLSearchParams(window.location.search);
       const gymParam = urlParams.get('gym') || (window.location.hash.includes('gym=') ? window.location.hash.split('gym=')[1]?.split('&')[0] : null);
-      const viewParam = urlParams.get('view');
+      const viewParam = urlParams.get('view')?.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
 
-      if (viewParam === 'student') {
+      // Check if accessing SuperAdmin/SaaS Master via pathname, query, or hash
+      const isSuperAdminRoute =
+        viewParam === 'saas' ||
+        viewParam === 'admin' ||
+        viewParam === 'superadmin' ||
+        viewParam === 'master' ||
+        pathname === '/admin' ||
+        pathname.startsWith('/admin/') ||
+        pathname === '/superadmin' ||
+        pathname.startsWith('/superadmin/') ||
+        pathname === '/super-admin' ||
+        pathname.startsWith('/super-admin/') ||
+        pathname === '/saas' ||
+        pathname.startsWith('/saas/') ||
+        pathname === '/master' ||
+        pathname.startsWith('/master/') ||
+        hash.includes('admin') ||
+        hash.includes('superadmin') ||
+        hash.includes('saas') ||
+        hash.includes('master');
+
+      if (isSuperAdminRoute) {
+        setActiveTab('saas_admin');
+      } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
         setActiveTab('student');
         if (gymParam) setIsDirectStudentLink(true);
-      } else if (viewParam === 'reception') {
+      } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception')) {
         setActiveTab('reception');
-      } else if (viewParam === 'esp32') {
+      } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
         setActiveTab('esp32');
-      } else if (viewParam === 'saas' || viewParam === 'admin' || viewParam === 'superadmin') {
-        setActiveTab('saas_admin');
       }
 
       const allGyms = await fetchGyms();

@@ -144,18 +144,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Hardware
             </button>
-            {isSuperAdmin && (
-              <button
-                id="tab-saas-admin-view"
-                type="button"
-                onClick={() => setActiveTab('saas_admin')}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  activeTab === 'saas_admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:text-indigo-300'
-                }`}
-              >
-                Master
-              </button>
-            )}
+            <button
+              id="tab-saas-admin-view"
+              type="button"
+              onClick={() => setActiveTab('saas_admin')}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'saas_admin'
+                  ? 'bg-amber-400 text-black shadow-md font-black'
+                  : isSuperAdmin
+                    ? 'text-amber-300 hover:text-amber-200 bg-amber-950/40 border border-amber-500/30'
+                    : 'text-zinc-400 hover:text-amber-300 hover:bg-zinc-900/80'
+              }`}
+              title="Painel de Administração Geral do SaaS (SuperAdmin)"
+            >
+              <span className="text-[11px]">👑</span>
+              <span>Master</span>
+            </button>
           </nav>
         )}
 
