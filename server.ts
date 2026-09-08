@@ -91,8 +91,17 @@ const passwordResetsStore = new Map<string, { email: string; code: string; expir
 const saasAccountsStore = new Map<string, SaaSServerAccount>();
 const saasPlansStore = new Map<string, SaaSPlanConfig>();
 
-// File persistence path
-const STORAGE_PATH = path.join(process.cwd(), 'gym_data.json');
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.VERCEL_ENV ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+
+// File persistence path: on serverless platforms (Vercel, AWS Lambda), root filesystem is read-only
+const STORAGE_PATH = isServerless
+  ? path.join('/tmp', 'gym_data.json')
+  : path.join(process.cwd(), 'gym_data.json');
 
 function saveGymsToFile() {
   try {
@@ -608,19 +617,30 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 
 // URL Normalizer for Serverless environments (like Vercel rewrites)
 app.use((req, res, next) => {
-  const matched = (req.headers['x-matched-path'] as string) || (req.headers['x-vercel-matched-path'] as string);
-  if (matched && typeof matched === 'string' && matched.startsWith('/api')) {
-    req.url = matched;
-  } else if (
-    !req.url.startsWith('/api') &&
-    (req.url.startsWith('/gyms') ||
+  // If req.url was stripped or rewritten to just '/api' or '/', try to recover the full original path
+  if (req.url === '/api' || req.url === '/' || req.url === '') {
+    const original = (req.headers['x-forwarded-uri'] as string) || 
+                     (req.headers['x-original-url'] as string) ||
+                     (req.headers['x-vercel-original-url'] as string);
+    if (original && typeof original === 'string' && original.startsWith('/api')) {
+      req.url = original;
+    }
+  } else if (!req.url.startsWith('/api')) {
+    // If Vercel stripped the /api prefix, e.g. req.url is /gyms/fitflow-moema
+    if (
+      req.url.startsWith('/gyms') ||
       req.url.startsWith('/auth') ||
       req.url.startsWith('/saas') ||
       req.url.startsWith('/supabase') ||
       req.url.startsWith('/access-logs') ||
-      req.url.startsWith('/health'))
-  ) {
-    req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+      req.url.startsWith('/health') ||
+      req.url.startsWith('/turnstile') ||
+      req.url.startsWith('/esp32') ||
+      req.url.startsWith('/announcements') ||
+      req.url.startsWith('/occupancy')
+    ) {
+      req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+    }
   }
   next();
 });
@@ -2642,9 +2662,9 @@ void sendHeartbeat() {
 
   // ==========================================
   // API FALLBACK & ERROR HANDLERS
-  // (Ensures all /api/* requests ALWAYS return JSON, never HTML)
+  // (Ensures all /api and /api/* requests ALWAYS return JSON, never HTML)
   // ==========================================
-  app.all('/api/*', (req: Request, res: Response) => {
+  app.all(['/api', '/api/*'], (req: Request, res: Response) => {
     res.status(404).json({
       success: false,
       message: `Rota da API não encontrada: ${req.method} ${req.path}`
@@ -2652,7 +2672,7 @@ void sendHeartbeat() {
   });
 
   app.use((err: any, req: Request, res: Response, next: any) => {
-    if (req.path.startsWith('/api/')) {
+    if (req.path.startsWith('/api') || req.url.startsWith('/api')) {
       console.error('[GymFlow API Error]', err);
       res.status(500).json({
         success: false,
@@ -2668,14 +2688,14 @@ void sendHeartbeat() {
   // SERVER BOOTSTRAP (STANDALONE & DEV MODE)
   // ==========================================
   async function startServer() {
-    if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    if (process.env.NODE_ENV !== 'production' && !isServerless) {
       const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
       });
       app.use(vite.middlewares);
-    } else if (!process.env.VERCEL) {
+    } else if (!isServerless) {
       const distPath = path.join(process.cwd(), 'dist');
       app.use(express.static(distPath));
       app.get('*', (req: Request, res: Response) => {
@@ -2683,7 +2703,7 @@ void sendHeartbeat() {
       });
     }
 
-    if (!process.env.VERCEL) {
+    if (!isServerless) {
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
         
@@ -2695,7 +2715,7 @@ void sendHeartbeat() {
     }
   }
 
-  if (!process.env.VERCEL) {
+  if (!isServerless) {
     startServer().catch(err => {
       console.error('[GymFlow SaaS Server] Failed to start:', err);
     });

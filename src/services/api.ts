@@ -58,6 +58,11 @@ export function getAuthHeaders(): Record<string, string> {
  */
 async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
   try {
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.warn(`[GymFlow API] Requisição retornou HTTP ${res.status}:`, text.slice(0, 100));
+      return fallback;
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       const text = await res.text().catch(() => '');
