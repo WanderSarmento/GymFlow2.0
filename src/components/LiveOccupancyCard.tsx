@@ -20,6 +20,20 @@ export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
 
   // Status styling configurations
   const getStatusConfig = () => {
+    if (!occupancy.isOpen) {
+      return {
+        label: 'Academia Fechada',
+        badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
+        colorText: 'text-rose-400',
+        ringColor: 'stroke-rose-500',
+        gradient: 'from-rose-500 to-red-600',
+        icon: Lock,
+        headline: 'A academia está fechada no momento',
+        advice: 'Confira os horários de funcionamento abaixo para planejar seu próximo treino.',
+        waitEstimate: 'Fechado'
+      };
+    }
+
     if (occupancy.turnstileLocked) {
       return {
         label: 'Catracas Bloqueadas',

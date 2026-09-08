@@ -93,8 +93,10 @@ export function updateSupabaseCredentials(url: string, anonKey: string): Supabas
 
 // Test connection live against Supabase
 export async function testSupabaseConnection(customUrl?: string, customKey?: string): Promise<SupabaseConfigStatus> {
-  const { url: rawUrl, anonKey } = customUrl && customKey ? { url: customUrl, anonKey: customKey.trim() } : getSupabaseCredentials();
+  const { url: rawUrl, anonKey } = (customUrl && customKey) ? { url: customUrl, anonKey: customKey.trim() } : getSupabaseCredentials();
   const url = cleanSupabaseUrl(rawUrl);
+
+  console.log('[GymFlow Supabase] Iniciando teste para:', url);
 
   if (!url || !anonKey) {
     return {
@@ -105,28 +107,55 @@ export async function testSupabaseConnection(customUrl?: string, customKey?: str
     };
   }
 
+  // Basic validation
+  if (!url.includes('.supabase.co') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+    return {
+      isConfigured: false,
+      hasAnonKey: true,
+      status: 'error',
+      message: 'A URL não parece ser uma URL válida de um projeto Supabase (deve terminar em .supabase.co).'
+    };
+  }
+
   try {
-    const testClient = createClient(url, anonKey);
-    // Simple light query to check connection
-    const { error } = await testClient.from('gyms').select('count', { count: 'exact', head: true });
+    const testClient = createClient(url, anonKey, {
+      auth: { persistSession: false }
+    });
+
+    // Try a simple ping to the health endpoint or a simple select
+    const { error } = await testClient.from('gyms').select('id').limit(1);
 
     if (error) {
-      // If table doesn't exist yet, it's connected to Supabase project, but needs schema migration
-      if (error.code === '42P01' || error.message.includes('relation "public.gyms" does not exist')) {
+      console.error('[GymFlow Supabase] Erro retornado pela API:', error);
+      
+      // Table doesn't exist - this is a PARTIAL SUCCESS (connected but needs schema)
+      if (error.code === '42P01' || error.message?.includes('relation "public.gyms" does not exist')) {
         return {
           isConfigured: true,
           url,
           hasAnonKey: true,
           status: 'connected',
-          message: 'Conectado ao Supabase com sucesso! (Aviso: Execute o Script SQL para criar as tabelas)'
+          message: 'CONECTADO! O projeto foi encontrado, mas as tabelas ainda não foram criadas. Clique na aba "Script SQL" e execute o código no Supabase.'
         };
       }
+
+      // Invalid Key
+      if (error.code === '401' || error.code === 'PGRST301' || error.message?.includes('JWT')) {
+        return {
+          isConfigured: false,
+          url,
+          hasAnonKey: true,
+          status: 'error',
+          message: 'Erro de Autenticação: A "Anon Key" informada é inválida ou expirou.'
+        };
+      }
+
       return {
         isConfigured: false,
         url,
         hasAnonKey: true,
         status: 'error',
-        message: `Falha na autenticação Supabase: ${error.message}`
+        message: `Erro do Supabase (${error.code}): ${error.message}`
       };
     }
 
@@ -135,16 +164,17 @@ export async function testSupabaseConnection(customUrl?: string, customKey?: str
       url,
       hasAnonKey: true,
       status: 'connected',
-      message: 'Conexão com o Supabase estabelecida e tabelas verificadas com sucesso!'
+      message: 'CONEXÃO TOTAL! Supabase conectado e tabelas prontas para uso.'
     };
   } catch (err: any) {
+    console.error('[GymFlow Supabase] Erro de rede/exceção:', err);
     const rawMsg = err?.message || String(err);
-    let friendlyMessage = `Erro de rede ou URL inválida: ${rawMsg}`;
+    let friendlyMessage = `Erro de rede: ${rawMsg}`;
     
-    if (rawMsg.includes('Unexpected token') || rawMsg.includes('is not valid JSON') || rawMsg.includes('The page')) {
-      friendlyMessage = 'A URL informada não respondeu com a API REST do Supabase (o servidor retornou uma página web/HTML em vez de JSON). Certifique-se de usar a URL do projeto (https://[projeto].supabase.co) e não o link do painel/dashboard.';
-    } else if (rawMsg.includes('Failed to fetch')) {
-      friendlyMessage = 'Não foi possível conectar ao endereço do Supabase. Verifique a conexão com a internet e se a URL está correta.';
+    if (rawMsg.includes('Failed to fetch')) {
+      friendlyMessage = 'Não foi possível alcançar o servidor do Supabase. Verifique se a URL está correta e se você tem acesso à internet.';
+    } else if (rawMsg.includes('Unexpected token') || rawMsg.includes('HTML')) {
+      friendlyMessage = 'A URL informada retornou uma página web em vez de uma API. Certifique-se de copiar a "Project URL" e não a URL do painel de controle.';
     }
 
     return {

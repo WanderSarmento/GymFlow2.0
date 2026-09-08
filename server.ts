@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 import { INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from './src/data/gymData';
 import {
@@ -89,6 +90,183 @@ const activeTokensStore = new Map<string, GymUserRecord>();
 const passwordResetsStore = new Map<string, { email: string; code: string; expiresAt: number; gymSlug: string }>();
 const saasAccountsStore = new Map<string, SaaSServerAccount>();
 const saasPlansStore = new Map<string, SaaSPlanConfig>();
+
+// File persistence path
+const STORAGE_PATH = path.join(process.cwd(), 'gym_data.json');
+
+function saveGymsToFile() {
+  try {
+    const dataToSave = Array.from(gymsStore.values()).map(g => ({
+      profile: g.profile,
+      currentCount: g.currentCount,
+      maxCapacity: g.maxCapacity,
+      turnstileLocked: g.turnstileLocked,
+      isOpen: g.isOpen
+    }));
+    fs.writeFileSync(STORAGE_PATH, JSON.stringify(dataToSave, null, 2));
+    console.log('[GymFlow Persistence] Dados das academias salvos em arquivo.');
+  } catch (err) {
+    console.error('[GymFlow Persistence] Erro ao salvar em arquivo:', err);
+  }
+}
+
+function loadGymsFromFile() {
+  try {
+    if (fs.existsSync(STORAGE_PATH)) {
+      const fileData = fs.readFileSync(STORAGE_PATH, 'utf-8');
+      const savedGyms = JSON.parse(fileData);
+      
+      savedGyms.forEach((saved: any) => {
+        gymsStore.set(saved.profile.id, {
+          ...saved,
+          accessLogs: [],
+          lastAccessTime: null,
+          lastAccessType: null,
+          pendingRelayTrigger: null,
+          esp32: {
+            connected: false,
+            lastPing: null,
+            ip: '',
+            rssi: 0,
+            uptimeSeconds: 0,
+            freeHeap: 0,
+            deviceName: 'ESP32_DEVICE',
+            entryButtonPresses: 0,
+            exitButtonPresses: 0
+          }
+        });
+      });
+      console.log(`[GymFlow Persistence] ${savedGyms.length} academias carregadas do arquivo.`);
+      return true;
+    }
+  } catch (err) {
+    console.error('[GymFlow Persistence] Erro ao carregar do arquivo:', err);
+  }
+  return false;
+}
+
+// In-memory config for Supabase (allows dynamic configuration from UI)
+let dynamicSupabaseConfig = {
+  url: '',
+  key: ''
+};
+
+// Supabase Admin Client for Backend Persistence (Bypasses RLS if service_role is used)
+const getSupabaseAdmin = () => {
+  const url = (dynamicSupabaseConfig.url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const key = (dynamicSupabaseConfig.key || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+  
+  if (!url || !key) return null;
+  
+  try {
+    return createClient(url, key, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+  } catch (err) {
+    console.error('[GymFlow Supabase] Erro ao inicializar admin client:', err);
+    return null;
+  }
+};
+
+async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<AccessLog>) {
+  const gymState = gymsStore.get(gymId);
+  if (!gymState) return;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  try {
+    // 1. Update Gym Profile & Count
+    await supabase.from('gyms').upsert({
+      id: gymState.profile.id,
+      slug: gymState.profile.slug,
+      name: gymState.profile.name,
+      slogan: gymState.profile.slogan,
+      city: gymState.profile.city,
+      neighborhood: gymState.profile.neighborhood,
+      address: gymState.profile.address,
+      contact_phone: gymState.profile.contactPhone,
+      max_capacity: gymState.maxCapacity,
+      current_count: gymState.currentCount,
+      turnstile_locked: gymState.turnstileLocked,
+      is_open: gymState.isOpen,
+      theme_color: gymState.profile.themeColor,
+      logo_emoji: gymState.profile.logoEmoji,
+      api_key: gymState.profile.apiKey,
+      owner_name: gymState.profile.ownerName,
+      owner_email: gymState.profile.ownerEmail,
+      operating_hours: gymState.profile.operatingHours,
+      updated_at: new Date().toISOString()
+    });
+
+    // 2. Persist Access Log if provided
+    if (logEntry) {
+      await supabase.from('access_logs').insert({
+        gym_id: gymState.profile.id,
+        type: logEntry.type,
+        source: logEntry.source || 'api_sync',
+        description: logEntry.description,
+        count_after: gymState.currentCount,
+        status: logEntry.status || 'success'
+      });
+    }
+
+    // 3. Persist Owner User if it's a new gym
+    const ownerEmail = gymState.profile.ownerEmail.toLowerCase();
+    const ownerUser = usersStore.get(ownerEmail);
+    if (ownerUser) {
+      await supabase.from('gym_users').upsert({
+        id: ownerUser.id.startsWith('user-') ? undefined : ownerUser.id, // Only use UUID if it looks like one
+        gym_id: gymState.profile.id,
+        email: ownerUser.email,
+        full_name: ownerUser.name,
+        role: ownerUser.role,
+        phone: ownerUser.phone
+      }, { onConflict: 'email' });
+    }
+  } catch (err) {
+    console.warn(`[GymFlow Supabase] Falha ao persistir estado da academia ${gymId}:`, err);
+  }
+}
+
+async function persistSaaSAccountToSupabase(gymId: string, invoice?: SaaSInvoice) {
+  const account = saasAccountsStore.get(gymId);
+  if (!account) return;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
+
+  try {
+    // 1. Upsert SaaS Account
+    await supabase.from('saas_accounts').upsert({
+      gym_id: account.gymId,
+      plan_tier: account.plan,
+      monthly_price: account.monthlyFee,
+      payment_status: account.status === 'active' ? 'paid' : account.status,
+      next_billing_date: account.nextDueDate,
+      trial_ends_at: account.trialEndsAt,
+      updated_at: new Date().toISOString()
+    });
+
+    // 2. Insert Invoice if provided
+    if (invoice) {
+      await supabase.from('saas_invoices').upsert({
+        id: invoice.id,
+        gym_id: invoice.gymId,
+        reference_month: invoice.referenceMonth,
+        amount: invoice.amount,
+        due_date: invoice.dueDate,
+        status: invoice.status,
+        paid_at: invoice.paidDate
+      });
+    }
+  } catch (err) {
+    console.warn(`[GymFlow Supabase] Falha ao persistir conta SaaS ${gymId}:`, err);
+  }
+}
 
 // Seed initial SaaS plans from static data
 Object.entries(SAAS_PLANS).forEach(([id, plan]) => {
@@ -222,25 +400,24 @@ function registerGymInStore(gym: GymProfile, index = 0) {
   }
 }
 
-// Seed initial gyms from data
-INITIAL_GYMS.forEach((gym, index) => registerGymInStore(gym, index));
+// Seed initial gyms from data (Only if storage file doesn't exist)
+if (!loadGymsFromFile()) {
+  INITIAL_GYMS.forEach((gym, index) => registerGymInStore(gym, index));
+}
 
 async function syncGymsFromSupabase() {
-  const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const supabaseUrl = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
-  const supabaseKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return;
 
-  if (!supabaseUrl || !supabaseKey) return;
+  console.log('[GymFlow Supabase] Sincronizando dados...');
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data, error } = await supabase.from('gyms').select('*');
-    if (error) {
-      console.warn('[GymFlow Server] Aviso ao consultar Supabase:', error.message);
-      return;
-    }
-    if (data && data.length > 0) {
-      data.forEach((row: any, i: number) => {
+    // 1. Sync Gyms
+    const { data: gyms, error: gymsError } = await supabase.from('gyms').select('*');
+    if (gymsError) throw gymsError;
+
+    if (gyms && gyms.length > 0) {
+      gyms.forEach((row: any, i: number) => {
         const gym: GymProfile = {
           id: row.id,
           slug: row.slug,
@@ -257,7 +434,7 @@ async function syncGymsFromSupabase() {
           themeColor: row.theme_color || 'cyan',
           visualTheme: row.visual_theme || 'dark',
           logoEmoji: row.logo_emoji || '⚡',
-          apiKey: row.api_key || generateApiKey(row.slug),
+          apiKey: row.api_key || `GF_KEY_${row.slug.toUpperCase().replace(/-/g, '_')}`,
           ownerName: row.owner_name || 'Gestor Responsável',
           ownerEmail: row.owner_email || 'contato@academia.com',
           createdAt: row.created_at || new Date().toISOString(),
@@ -269,10 +446,61 @@ async function syncGymsFromSupabase() {
         };
         registerGymInStore(gym, i);
       });
-      console.log(`[GymFlow Server] ${data.length} academia(s) sincronizada(s) do Supabase.`);
     }
+
+    // 2. Sync SaaS Accounts
+    const { data: saasAccounts, error: saasError } = await supabase.from('saas_accounts').select('*');
+    if (!saasError && saasAccounts) {
+      saasAccounts.forEach((row: any) => {
+        const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
+        if (gymState) {
+          saasAccountsStore.set(row.gym_id, {
+            gymId: row.gym_id,
+            gymSlug: gymState.profile.slug,
+            gymName: gymState.profile.name,
+            ownerName: gymState.profile.ownerName,
+            ownerEmail: gymState.profile.ownerEmail,
+            city: gymState.profile.city,
+            plan: row.plan_tier as any,
+            planName: row.plan_tier.toUpperCase(),
+            monthlyFee: Number(row.monthly_price),
+            status: row.payment_status === 'paid' ? 'active' : row.payment_status as any,
+            isSystemBlocked: Boolean(gymState.profile.isSystemBlocked),
+            turnstilesLimit: 2,
+            maxCapacity: gymState.maxCapacity,
+            nextDueDate: row.next_billing_date || new Date(Date.now() + 30 * 86400000).toISOString(),
+            createdAt: row.created_at || new Date().toISOString(),
+            apiKey: gymState.profile.apiKey || '',
+            invoices: []
+          });
+        }
+      });
+    }
+
+    // 3. Sync Users
+    const { data: users, error: usersError } = await supabase.from('gym_users').select('*');
+    if (!usersError && users) {
+      users.forEach((row: any) => {
+        const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
+        if (gymState) {
+          usersStore.set(row.email.toLowerCase(), {
+            id: row.id,
+            email: row.email,
+            password: 'password123', // Senha padrão para usuários syncados (deve ser alterada no primeiro login)
+            name: row.full_name,
+            role: row.role as any,
+            gymId: row.gym_id,
+            gymSlug: gymState.profile.slug,
+            gymName: gymState.profile.name,
+            createdAt: row.created_at || new Date().toISOString()
+          });
+        }
+      });
+    }
+
+    console.log(`[GymFlow Supabase] Sincronização concluída: ${gyms?.length || 0} academias.`);
   } catch (err) {
-    console.warn('[GymFlow Server] Falha ao sincronizar com Supabase:', err);
+    console.warn('[GymFlow Supabase] Erro durante sincronização:', err);
   }
 }
 
@@ -690,6 +918,79 @@ app.use((req, res, next) => {
     });
   });
 
+  app.post('/api/supabase/config', (req: Request, res: Response) => {
+    const { url, key } = req.body;
+    if (!url || !key) {
+      res.status(400).json({ success: false, message: 'URL e Chave são obrigatórios' });
+      return;
+    }
+    
+    dynamicSupabaseConfig = { url, key };
+    console.log('[GymFlow Supabase] Configuração atualizada via API:', url);
+    
+    // Trigger sync in background
+    syncGymsFromSupabase().catch(err => {
+      console.error('[GymFlow Supabase] Sync failed after config update:', err);
+    });
+    
+    res.json({ success: true, message: 'Configuração do servidor atualizada!' });
+  });
+
+  app.post('/api/supabase/test', async (req: Request, res: Response) => {
+    const { url, key } = req.body;
+    
+    console.log('[GymFlow Supabase Test] Recebida tentativa de conexão:', { url });
+
+    if (!url || !key) {
+      console.warn('[GymFlow Supabase Test] Falha: URL ou Chave ausentes');
+      res.status(400).json({ success: false, message: 'URL e Chave são obrigatórios' });
+      return;
+    }
+
+    try {
+      const supabase = createClient(url, key, {
+        auth: { persistSession: false }
+      });
+      
+      console.log('[GymFlow Supabase Test] Chamando select no Supabase...');
+      const { data, error } = await supabase.from('gyms').select('id').limit(1);
+      
+      if (error) {
+        console.error('[GymFlow Supabase Test] Erro do Supabase:', error);
+        
+        // Table doesn't exist (Connected but no schema)
+        if (error.code === '42P01' || error.message?.includes('relation "public.gyms" does not exist')) {
+          res.json({ 
+            success: true, 
+            connected: true, 
+            needsSchema: true, 
+            message: 'CONECTADO! O projeto foi encontrado, mas as tabelas não foram criadas. Clique na aba "Script SQL" e execute o código no Supabase.' 
+          });
+          return;
+        }
+
+        // Auth error
+        if (error.code === '401' || error.code === 'PGRST301' || error.message?.includes('JWT')) {
+          res.status(401).json({ 
+            success: false, 
+            connected: false, 
+            message: 'Erro de Autenticação: A "Anon Key" informada é inválida ou expirou.' 
+          });
+          return;
+        }
+
+        res.status(400).json({ success: false, connected: false, message: `Erro ${error.code}: ${error.message}` });
+        return;
+      }
+      
+      console.log('[GymFlow Supabase Test] Sucesso total!');
+      res.json({ success: true, connected: true, needsSchema: false, message: 'CONEXÃO TOTAL! Supabase conectado e tabelas prontas para uso.' });
+    } catch (err: any) {
+      console.error('[GymFlow Supabase Test] Erro crítico de exceção:', err);
+      res.status(500).json({ success: false, message: `Erro interno no servidor: ${err.message}` });
+    }
+  });
+
   // ==========================================
   // SAAS MULTI-TENANT GYM MANAGEMENT
   // ==========================================
@@ -1016,6 +1317,8 @@ app.use((req, res, next) => {
       operatingHours
     } = req.body;
 
+    console.log(`[GymFlow API] Atualizando configurações para ${req.params.gymIdOrSlug}:`, req.body);
+
     if (name) gymState.profile.name = name.trim();
     if (slogan !== undefined) gymState.profile.slogan = slogan.trim();
     if (city) gymState.profile.city = city.trim();
@@ -1035,6 +1338,16 @@ app.use((req, res, next) => {
       gymState.isOpen = isOpen;
       gymState.profile.isOpen = isOpen;
     }
+
+    // Persist to Supabase if configured - Don't await to not block the response
+    persistGymStateToSupabase(gymState.profile.id).catch(err => {
+      console.warn('[GymFlow Supabase] Falha silenciosa na persistência:', err);
+    });
+    
+    // Save to local file as backup
+    saveGymsToFile();
+
+    console.log(`[GymFlow API] Configurações de ${gymState.profile.name} salvas com sucesso.`);
 
     res.json({
       success: true,
@@ -1134,6 +1447,16 @@ app.use((req, res, next) => {
         status = 'warning';
         break;
 
+      case 'toggle_open':
+        gymState.isOpen = !gymState.isOpen;
+        gymState.profile.isOpen = gymState.isOpen;
+        message = gymState.isOpen
+          ? `Academia marcada como ABERTA pela recepção (${operator})`
+          : `Academia marcada como FECHADA pela recepção (${operator})`;
+        logType = 'manual_adjust';
+        status = gymState.isOpen ? 'success' : 'warning';
+        break;
+
       default:
         res.status(400).json({ success: false, message: 'Ação inválida' });
         return;
@@ -1151,6 +1474,9 @@ app.use((req, res, next) => {
     };
     gymState.accessLogs.unshift(log);
     if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
+
+    // Persist to Supabase
+    persistGymStateToSupabase(gymState.profile.id, log);
 
     res.json({
       success: true,
@@ -1263,6 +1589,9 @@ app.use((req, res, next) => {
     gymState.accessLogs.unshift(log);
     if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
 
+    // Persist to Supabase
+    persistGymStateToSupabase(gymState.profile.id, log);
+
     res.json({
       success: true,
       granted: true,
@@ -1308,6 +1637,9 @@ app.use((req, res, next) => {
     gymState.accessLogs.unshift(log);
     if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
 
+    // Persist to Supabase
+    persistGymStateToSupabase(gymState.profile.id, log);
+
     res.json({
       success: true,
       granted: true,
@@ -1336,6 +1668,26 @@ app.use((req, res, next) => {
     if (typeof uptime === 'number') gymState.esp32.uptimeSeconds = uptime;
     if (typeof freeHeap === 'number') gymState.esp32.freeHeap = freeHeap;
     if (deviceName) gymState.esp32.deviceName = deviceName;
+
+    // Persist Telemetry to Supabase
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      supabase.from('esp32_devices').upsert({
+        gym_id: gymState.profile.id,
+        device_name: gymState.esp32.deviceName,
+        device_key: req.headers['x-gym-key'] || 'default',
+        ip_address: gymState.esp32.ip,
+        rssi: gymState.esp32.rssi,
+        uptime_seconds: gymState.esp32.uptimeSeconds,
+        free_heap: gymState.esp32.freeHeap,
+        entry_count: gymState.esp32.entryButtonPresses,
+        exit_count: gymState.esp32.exitButtonPresses,
+        last_ping: gymState.esp32.lastPing,
+        status: 'online'
+      }).then(({ error }) => {
+        if (error) console.warn('[GymFlow Supabase] Erro ao persistir telemetria ESP32:', error.message);
+      });
+    }
 
     const command = gymState.pendingRelayTrigger;
     if (command) {
@@ -2019,6 +2371,10 @@ void sendHeartbeat() {
     };
     saasAccountsStore.set(gymId, saasAccount);
 
+    // Persist everything to Supabase
+    persistGymStateToSupabase(gymId, newGymState.accessLogs[0]);
+    persistSaaSAccountToSupabase(gymId, initialInvoice);
+
     res.status(201).json({
       success: true,
       message: `Academia ${newProfile.name} cadastrada com sucesso com plano ${planConfig.name}!`,
@@ -2327,11 +2683,14 @@ void sendHeartbeat() {
       });
     }
 
-    await syncGymsFromSupabase();
-
     if (!process.env.VERCEL) {
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
+        
+        // Sync from Supabase in background after server is up
+        syncGymsFromSupabase().catch(err => {
+          console.error('[GymFlow Supabase] Background sync failed:', err);
+        });
       });
     }
   }

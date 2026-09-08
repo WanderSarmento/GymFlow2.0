@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Dumbbell, Shield, Cpu, Volume2, VolumeX, RefreshCw, Plus, Sparkles, Lock, User, LogOut, Database, ChevronDown, Check, ShieldAlert } from 'lucide-react';
+import { Dumbbell, Shield, Cpu, RefreshCw, Plus, Sparkles, Lock, User, LogOut, Database, ChevronDown, Check, ShieldAlert } from 'lucide-react';
 import { OccupancyData, GymProfile, AuthUser } from '../types';
 import { GymSwitcher } from './GymSwitcher';
 import { THEME_COLOR_CONFIG } from '../data/gymData';
@@ -11,8 +11,6 @@ interface NavbarProps {
   setActiveTab: (tab: 'student' | 'reception' | 'esp32' | 'saas_admin') => void;
   onRefresh: () => void;
   isRefreshing: boolean;
-  soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
   gyms: GymProfile[];
   currentGym: GymProfile | null;
   onSelectGym: (gym: GymProfile) => void;
@@ -32,8 +30,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onRefresh,
   isRefreshing,
-  soundEnabled,
-  setSoundEnabled,
   gyms,
   currentGym,
   onSelectGym,

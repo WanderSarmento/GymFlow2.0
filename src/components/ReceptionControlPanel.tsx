@@ -15,7 +15,8 @@ import {
   Zap,
   Info,
   Clock,
-  Share2
+  Share2,
+  Power
 } from 'lucide-react';
 import { OccupancyData, AccessLog } from '../types';
 
@@ -110,6 +111,21 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              id="reception-toggle-open-btn"
+              type="button"
+              onClick={() => handleTriggerAction('toggle_open')}
+              disabled={isExecuting}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer active:scale-95 ${
+                occupancy.isOpen
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+              }`}
+            >
+              <Power className="w-3 h-3" />
+              <span>{occupancy.isOpen ? 'Aberta' : 'Fechada'}</span>
+            </button>
+
             <button
               id="reception-share-link-btn"
               type="button"

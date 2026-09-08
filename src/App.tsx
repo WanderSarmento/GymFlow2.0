@@ -15,6 +15,7 @@ import { GymCustomizerModal } from './components/GymCustomizerModal';
 import { GymLoginModal } from './components/GymLoginModal';
 import { SupabaseIntegrationModal } from './components/SupabaseIntegrationModal';
 import { SaaSAdminDashboard } from './components/SaaSAdminDashboard';
+import { isSupabaseConfigured } from './lib/supabase';
 import {
   fetchGyms,
   fetchGymDetails,
@@ -31,9 +32,8 @@ import {
   clearAuthSession
 } from './services/api';
 import { OccupancyData, AccessLog, Announcement, GymProfile, AuthUser } from './types';
-import { soundFx } from './utils/audio';
 import { INITIAL_GYMS, THEME_COLOR_CONFIG } from './data/gymData';
-import { Dumbbell, Shield, Cpu, Share2, Plus, Sparkles, Building2, ExternalLink, Sliders, ShieldAlert, Lock, AlertTriangle, Smartphone } from 'lucide-react';
+import { Dumbbell, Shield, Cpu, Share2, Plus, Sparkles, Building2, ExternalLink, Sliders, ShieldAlert, Lock, AlertTriangle, Smartphone, Database } from 'lucide-react';
 
 const DEFAULT_EMPTY_OCCUPANCY: OccupancyData = {
   gymId: '',
@@ -66,7 +66,6 @@ export default function App() {
   const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDirectStudentLink, setIsDirectStudentLink] = useState(false);
 
@@ -77,12 +76,34 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'register' | 'forgot_request'>('login');
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isSupabaseActive, setIsSupabaseActive] = useState(() => isSupabaseConfigured());
+  const [supabaseStatus, setSupabaseStatus] = useState<'connected' | 'error' | 'not_configured'>('not_configured');
 
   // Core occupancy and telemetry state
   const [occupancy, setOccupancy] = useState<OccupancyData>(DEFAULT_EMPTY_OCCUPANCY);
 
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  useEffect(() => {
+    async function checkSupabase() {
+      try {
+        const response = await fetch('/api/supabase/status');
+        const data = await response.json();
+        if (data.isConfigured) {
+          setIsSupabaseActive(true);
+          setSupabaseStatus('connected');
+        } else {
+          setIsSupabaseActive(isSupabaseConfigured());
+          setSupabaseStatus(isSupabaseConfigured() ? 'connected' : 'not_configured');
+        }
+      } catch (err) {
+        console.warn('Falha ao verificar status do Supabase no servidor');
+        setIsSupabaseActive(isSupabaseConfigured());
+      }
+    }
+    checkSupabase();
+  }, [isSupabaseModalOpen]);
 
   // 1. Initial URL detection and Gym listing load
   useEffect(() => {
@@ -154,13 +175,6 @@ export default function App() {
         }
 
         if (details.occupancy) {
-          // Play sound effect on new access event if count changed
-          if (details.occupancy.lastAccessTime !== occupancy.lastAccessTime) {
-            if (soundEnabled) {
-              if (details.occupancy.lastAccessType === 'entry') soundFx.playEntry();
-              else if (details.occupancy.lastAccessType === 'exit') soundFx.playExit();
-            }
-          }
           setOccupancy(details.occupancy);
         }
 
@@ -177,7 +191,7 @@ export default function App() {
     } finally {
       if (!silent) setIsRefreshing(false);
     }
-  }, [occupancy.lastAccessTime, soundEnabled]);
+  }, [occupancy.lastAccessTime]);
 
   // Initial load when currentGym is ready
   useEffect(() => {
@@ -249,7 +263,6 @@ export default function App() {
   // Handlers for ESP32 Simulation
   const handleSimulateEntry = async () => {
     if (!currentGym) return;
-    if (soundEnabled) soundFx.playEntry();
     const res = await triggerESP32Entry(currentGym.slug, true);
     await loadGymData(currentGym.slug, true);
     return res;
@@ -257,7 +270,6 @@ export default function App() {
 
   const handleSimulateExit = async () => {
     if (!currentGym) return;
-    if (soundEnabled) soundFx.playExit();
     const res = await triggerESP32Exit(currentGym.slug, true);
     await loadGymData(currentGym.slug, true);
     return res;
@@ -266,11 +278,6 @@ export default function App() {
   // Handlers for Reception Actions
   const handleTurnstileAction = async (action: string, value?: any, notes?: string) => {
     if (!currentGym) return;
-    if (soundEnabled) {
-      if (action.includes('entry')) soundFx.playEntry();
-      else if (action.includes('exit')) soundFx.playExit();
-      else if (action.includes('lock')) soundFx.playAlert();
-    }
     const res = await sendTurnstileAction(currentGym.slug, action, value, notes);
     await loadGymData(currentGym.slug, true);
     return res;
@@ -369,8 +376,6 @@ export default function App() {
           setActiveTab={setActiveTab}
           onRefresh={() => currentGym && loadGymData(currentGym.slug, false)}
           isRefreshing={isRefreshing}
-          soundEnabled={soundEnabled}
-          setSoundEnabled={setSoundEnabled}
           gyms={visibleGyms}
           currentGym={currentGym}
           onSelectGym={handleSelectGym}
@@ -449,8 +454,23 @@ export default function App() {
         {currentGym && activeTab === 'student' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col items-center text-center space-y-2 mb-4">
-              <div className="text-4xl mb-2">{currentGym.logoEmoji || '⚡'}</div>
-              <h2 className="text-2xl font-bold text-white">{currentGym.name}</h2>
+              <div className="text-4xl mb-2 relative">
+                {currentGym.logoEmoji || '⚡'}
+                {isSupabaseActive && (
+                  <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-950 border-2 border-emerald-500 shadow-lg shadow-emerald-500/40">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-center">
+                <h2 className="text-2xl font-bold text-white leading-tight">{currentGym.name}</h2>
+                {isSupabaseActive && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-400/10 text-[10px] font-bold text-emerald-400 border border-emerald-400/20 mt-1 uppercase tracking-widest">
+                    <Database className="h-2.5 w-2.5" />
+                    Supabase Ativo
+                  </span>
+                )}
+              </div>
               <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Situação em Tempo Real</p>
             </div>
             

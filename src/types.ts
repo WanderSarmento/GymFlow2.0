@@ -27,6 +27,9 @@ export interface GymProfile {
   ownerName: string;
   ownerEmail: string;
   createdAt: string;
+  isSystemBlocked?: boolean;
+  blockReason?: string;
+  blockedAt?: string | null;
   visualTheme?: 'dark' | 'light';
   operatingHours: GymOperatingHours;
 }

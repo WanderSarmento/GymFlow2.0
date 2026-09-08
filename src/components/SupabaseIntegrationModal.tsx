@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Database, Check, Copy, Download, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Sparkles, Terminal, Shield, Key, Server, Cpu } from 'lucide-react';
 import { SUPABASE_SQL_SCHEMA } from '../data/supabaseSchema';
-import { getSupabaseCredentials, updateSupabaseCredentials, testSupabaseConnection, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabaseCredentials, updateSupabaseCredentials, testSupabaseConnection, isSupabaseConfigured, cleanSupabaseUrl } from '../lib/supabase';
 import { SupabaseConfigStatus } from '../types';
 
 interface SupabaseIntegrationModalProps {
@@ -27,16 +27,13 @@ export const SupabaseIntegrationModal: React.FC<SupabaseIntegrationModalProps> =
 
   useEffect(() => {
     if (isOpen) {
+      console.log('[GymFlow Supabase] Modal de integração aberto.');
       const creds = getSupabaseCredentials();
       setSupabaseUrl(creds.url || '');
       setSupabaseAnonKey(creds.anonKey || '');
       setTestResult(null);
       setSaveSuccess(false);
-
-      // Auto test if already configured
-      if (creds.url && creds.anonKey) {
-        testSupabaseConnection().then(setTestResult);
-      }
+      setIsTesting(false);
     }
   }, [isOpen]);
 
@@ -59,28 +56,97 @@ export const SupabaseIntegrationModal: React.FC<SupabaseIntegrationModalProps> =
   };
 
   const handleTestConnection = async () => {
-    setIsTesting(true);
-    setTestResult(null);
-    try {
-      const result = await testSupabaseConnection(supabaseUrl.trim(), supabaseAnonKey.trim());
-      setTestResult(result);
-    } catch (err: any) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       setTestResult({
         isConfigured: false,
         hasAnonKey: Boolean(supabaseAnonKey),
+        status: 'not_configured',
+        message: 'Por favor, preencha a URL e a Chave Anônima.'
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    setTestResult(null);
+    
+    try {
+      console.log('[GymFlow Supabase] Testando conexão via servidor...', { url: supabaseUrl });
+      
+      // Update global client state
+      updateSupabaseCredentials(supabaseUrl.trim(), supabaseAnonKey.trim());
+      
+      // Call server-side test endpoint
+      const response = await fetch('/api/supabase/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: supabaseUrl.trim(), key: supabaseAnonKey.trim() })
+      });
+      
+      const serverResult = await response.json();
+      console.log('[GymFlow Supabase] Resultado do servidor:', serverResult);
+      
+      if (serverResult.success) {
+        setTestResult({
+          isConfigured: true,
+          url: supabaseUrl,
+          hasAnonKey: true,
+          status: 'connected',
+          message: serverResult.message
+        });
+        
+        // Success! Keep it in local storage
+        localStorage.setItem('gymflow_supabase_url', cleanSupabaseUrl(supabaseUrl));
+        localStorage.setItem('gymflow_supabase_anon_key', supabaseAnonKey.trim());
+      } else {
+        setTestResult({
+          isConfigured: false,
+          hasAnonKey: true,
+          status: 'error',
+          message: serverResult.message || 'Falha na conexão via servidor.'
+        });
+      }
+    } catch (err: any) {
+      console.error('[GymFlow Supabase] Erro fatal:', err);
+      setTestResult({
+        isConfigured: false,
+        hasAnonKey: true,
         status: 'error',
-        message: err?.message || 'Falha ao testar conexão'
+        message: err?.message || 'Falha ao processar conexão'
       });
     } finally {
       setIsTesting(false);
     }
   };
 
-  const handleSaveConfig = () => {
-    updateSupabaseCredentials(supabaseUrl.trim(), supabaseAnonKey.trim());
-    setSaveSuccess(true);
-    handleTestConnection();
-    setTimeout(() => setSaveSuccess(false), 3000);
+  const handleSaveConfig = async () => {
+    setIsTesting(true);
+    try {
+      // 1. Update frontend state
+      updateSupabaseCredentials(supabaseUrl.trim(), supabaseAnonKey.trim());
+      
+      // 2. Update server state via API
+      const response = await fetch('/api/supabase/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: supabaseUrl.trim(), key: supabaseAnonKey.trim() })
+      });
+      
+      if (!response.ok) throw new Error('Falha ao sincronizar chaves com o servidor.');
+
+      setSaveSuccess(true);
+      handleTestConnection();
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('[GymFlow Supabase] Erro ao salvar:', err);
+      setTestResult({
+        isConfigured: false,
+        hasAnonKey: true,
+        status: 'error',
+        message: err?.message || 'Erro ao comunicar com o servidor.'
+      });
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
