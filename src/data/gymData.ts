@@ -1,4 +1,4 @@
-import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } from '../types';
+import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } from '../types.ts';
 
 export const DEFAULT_MAX_CAPACITY = 80;
 

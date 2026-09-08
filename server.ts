@@ -3,7 +3,7 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
-import { INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from './src/data/gymData';
+import { INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from './src/data/gymData.ts';
 import {
   Announcement,
   AccessLog,
@@ -18,7 +18,7 @@ import {
   CreateSaaSGymInput,
   UserRole,
   SaaSPlanConfig
-} from './src/types';
+} from './src/types.ts';
 
 interface GymUserRecord {
   id: string;
@@ -2689,7 +2689,9 @@ void sendHeartbeat() {
   // ==========================================
   async function startServer() {
     if (process.env.NODE_ENV !== 'production' && !isServerless) {
-      const { createServer: createViteServer } = await import('vite');
+      const vitePkg = 'vite';
+      const viteModule = await import(/* @vite-ignore */ vitePkg);
+      const createViteServer = viteModule.createServer;
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',

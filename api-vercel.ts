@@ -1,11 +1,11 @@
-import app from '../server.ts';
+import app from './server.ts';
 
 /**
- * Vercel Serverless Function entry point for GymFlow API.
+ * Vercel Serverless Function entry point for GymFlow SaaS API.
  * Wraps Express in a lifecycle-safe Promise to guarantee Lambda remains active
  * until the HTTP response stream is completely flushed.
  */
-export default function handler(req: any, res: any) {
+export default async function handler(req: any, res: any) {
   return new Promise<void>((resolve, reject) => {
     // Keep Serverless function alive until response is finished
     res.on('finish', () => resolve());
@@ -16,20 +16,22 @@ export default function handler(req: any, res: any) {
     });
 
     try {
-      // Normalize URL: preserve original requested path if rewritten by Vercel
-      if (req.url === '/api' || req.url === '/' || req.url === '') {
-        const originalUrl = req.headers['x-forwarded-uri'] || 
-                            req.headers['x-original-url'] || 
-                            req.headers['x-vercel-original-url'];
-        if (originalUrl && typeof originalUrl === 'string' && originalUrl.startsWith('/api')) {
-          req.url = originalUrl;
+      // Normalize URL: preserve original requested path from Vercel routing
+      const origUrl = req.headers['x-forwarded-uri'] || 
+                      req.headers['x-original-url'] || 
+                      req.headers['x-vercel-original-url'] ||
+                      req.originalUrl ||
+                      req.url;
+
+      if (origUrl && typeof origUrl === 'string') {
+        if (origUrl.startsWith('/api')) {
+          req.url = origUrl;
+        } else {
+          req.url = '/api' + (origUrl.startsWith('/') ? origUrl : '/' + origUrl);
         }
-      } else if (!req.url.startsWith('/api')) {
-        // If /api prefix was stripped by Vercel routing
-        req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
       }
 
-      // Delegate request to Express
+      // Delegate request to Express app
       app(req, res, (err: any) => {
         if (err) {
           console.error('[Vercel Express Error]', err);
