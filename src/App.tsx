@@ -109,54 +109,60 @@ export default function App() {
   // 1. Initial URL detection and Gym listing load
   useEffect(() => {
     async function initGyms() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const gymParam = urlParams.get('gym') || (window.location.hash.includes('gym=') ? window.location.hash.split('gym=')[1]?.split('&')[0] : null);
-      const viewParam = urlParams.get('view')?.toLowerCase();
-      const pathname = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const gymParam = urlParams.get('gym') || (window.location.hash.includes('gym=') ? window.location.hash.split('gym=')[1]?.split('&')[0] : null);
+        const viewParam = urlParams.get('view')?.toLowerCase();
+        const pathname = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
 
-      // Check if accessing SuperAdmin/SaaS Master via pathname, query, or hash
-      const isSuperAdminRoute =
-        viewParam === 'saas' ||
-        viewParam === 'admin' ||
-        viewParam === 'superadmin' ||
-        viewParam === 'master' ||
-        pathname === '/admin' ||
-        pathname.startsWith('/admin/') ||
-        pathname === '/superadmin' ||
-        pathname.startsWith('/superadmin/') ||
-        pathname === '/super-admin' ||
-        pathname.startsWith('/super-admin/') ||
-        pathname === '/saas' ||
-        pathname.startsWith('/saas/') ||
-        pathname === '/master' ||
-        pathname.startsWith('/master/') ||
-        hash.includes('admin') ||
-        hash.includes('superadmin') ||
-        hash.includes('saas') ||
-        hash.includes('master');
+        // Check if accessing SuperAdmin/SaaS Master via pathname, query, or hash
+        const isSuperAdminRoute =
+          viewParam === 'saas' ||
+          viewParam === 'admin' ||
+          viewParam === 'superadmin' ||
+          viewParam === 'master' ||
+          pathname === '/admin' ||
+          pathname.startsWith('/admin/') ||
+          pathname === '/superadmin' ||
+          pathname.startsWith('/superadmin/') ||
+          pathname === '/super-admin' ||
+          pathname.startsWith('/super-admin/') ||
+          pathname === '/saas' ||
+          pathname.startsWith('/saas/') ||
+          pathname === '/master' ||
+          pathname.startsWith('/master/') ||
+          hash.includes('admin') ||
+          hash.includes('superadmin') ||
+          hash.includes('saas') ||
+          hash.includes('master');
 
-      if (isSuperAdminRoute) {
-        setActiveTab('saas_admin');
-      } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
-        setActiveTab('student');
-        if (gymParam) setIsDirectStudentLink(true);
-      } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception')) {
-        setActiveTab('reception');
-      } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
-        setActiveTab('esp32');
-      }
-
-      const allGyms = await fetchGyms();
-      if (allGyms && allGyms.length > 0) {
-        setGyms(allGyms);
-        let selected = allGyms[0];
-        if (gymParam) {
-          const match = allGyms.find(g => g.slug === gymParam || g.id === gymParam);
-          if (match) selected = match;
+        if (isSuperAdminRoute) {
+          setActiveTab('saas_admin');
+        } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
+          setActiveTab('student');
+          if (gymParam) setIsDirectStudentLink(true);
+        } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception')) {
+          setActiveTab('reception');
+        } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
+          setActiveTab('esp32');
         }
-        setCurrentGym(selected);
-      } else {
+
+        const allGyms = await fetchGyms();
+        if (allGyms && allGyms.length > 0) {
+          setGyms(allGyms);
+          let selected = allGyms[0];
+          if (gymParam) {
+            const match = allGyms.find(g => g.slug === gymParam || g.id === gymParam);
+            if (match) selected = match;
+          }
+          setCurrentGym(selected);
+        } else {
+          setGyms([]);
+          setCurrentGym(null);
+        }
+      } catch (err) {
+        console.error('[GymFlow Init] Erro crítico na inicialização:', err);
         setGyms([]);
         setCurrentGym(null);
       }
@@ -495,6 +501,34 @@ export default function App() {
                 isAdminMode={false}
               />
             </div>
+          </div>
+        )}
+
+        {/* Empty state for students when gym is not found via direct link */}
+        {!currentUser && isDirectStudentLink && !currentGym && (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
+            <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl shadow-xl">
+              🔍
+            </div>
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-2xl font-bold text-white">Academia não encontrada</h3>
+              <p className="text-zinc-400 text-sm">
+                O link acessado parece estar incorreto ou a academia ainda não foi cadastrada no sistema.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setIsDirectStudentLink(false);
+                setActiveTab('reception');
+                const url = new URL(window.location.href);
+                url.searchParams.delete('gym');
+                url.searchParams.delete('view');
+                window.history.replaceState({}, '', url.toString());
+              }}
+              className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-all cursor-pointer"
+            >
+              Ir para o Portal de Acesso
+            </button>
           </div>
         )}
 
