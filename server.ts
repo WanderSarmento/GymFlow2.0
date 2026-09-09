@@ -547,27 +547,26 @@ async function syncGymsFromSupabase() {
     if (!saasError && saasAccounts) {
       saasAccounts.forEach((row: any) => {
         const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
-        if (gymState) {
-          saasAccountsStore.set(row.gym_id, {
-            gymId: row.gym_id,
-            gymSlug: gymState.profile.slug,
-            gymName: gymState.profile.name,
-            ownerName: gymState.profile.ownerName,
-            ownerEmail: gymState.profile.ownerEmail,
-            city: gymState.profile.city,
-            plan: row.plan_tier as any,
-            planName: row.plan_tier.toUpperCase(),
-            monthlyFee: Number(row.monthly_price),
-            status: row.payment_status === 'paid' ? 'active' : row.payment_status as any,
-            isSystemBlocked: Boolean(gymState.profile.isSystemBlocked),
-            turnstilesLimit: 2,
-            maxCapacity: gymState.maxCapacity,
-            nextDueDate: row.next_billing_date || new Date(Date.now() + 30 * 86400000).toISOString(),
-            createdAt: row.created_at || new Date().toISOString(),
-            apiKey: gymState.profile.apiKey || '',
-            invoices: []
-          });
-        }
+        
+        saasAccountsStore.set(row.gym_id, {
+          gymId: row.gym_id,
+          gymSlug: gymState?.profile.slug || row.gym_id,
+          gymName: gymState?.profile.name || row.gym_name || 'Academia em Sync...',
+          ownerName: gymState?.profile.ownerName || row.owner_name || 'Gestor',
+          ownerEmail: gymState?.profile.ownerEmail || row.owner_email || 'contato@academia.com',
+          city: gymState?.profile.city || row.city || 'São Paulo - SP',
+          plan: row.plan_tier as any,
+          planName: (row.plan_tier || 'pro').toUpperCase(),
+          monthlyFee: Number(row.monthly_price),
+          status: row.payment_status === 'paid' ? 'active' : row.payment_status as any,
+          isSystemBlocked: gymState ? Boolean(gymState.profile.isSystemBlocked) : false,
+          turnstilesLimit: row.turnstiles_limit || 2,
+          maxCapacity: gymState?.maxCapacity || row.max_capacity || 80,
+          nextDueDate: row.next_billing_date || new Date(Date.now() + 30 * 86400000).toISOString(),
+          createdAt: row.created_at || new Date().toISOString(),
+          apiKey: gymState?.profile.apiKey || row.api_key || '',
+          invoices: []
+        });
       });
     }
 
@@ -575,20 +574,22 @@ async function syncGymsFromSupabase() {
     const { data: users, error: usersError } = await supabase.from('gym_users').select('*');
     if (!usersError && users) {
       users.forEach((row: any) => {
+        // Encontrar o slug da academia pelo ID
         const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
-        if (gymState) {
-          usersStore.set(row.email.toLowerCase(), {
-            id: row.id,
-            email: row.email,
-            password: 'password123', // Senha padrão para usuários syncados (deve ser alterada no primeiro login)
-            name: row.full_name,
-            role: row.role as any,
-            gymId: row.gym_id,
-            gymSlug: gymState.profile.slug,
-            gymName: gymState.profile.name,
-            createdAt: row.created_at || new Date().toISOString()
-          });
-        }
+        const gymSlug = gymState?.profile.slug || 'academia-padrao';
+        const gymName = gymState?.profile.name || 'Academia';
+
+        usersStore.set(row.email.toLowerCase(), {
+          id: row.id,
+          email: row.email,
+          password: row.password || 'password123',
+          name: row.full_name || row.name,
+          role: row.role as any,
+          gymId: row.gym_id,
+          gymSlug: gymSlug,
+          gymName: gymName,
+          createdAt: row.created_at || new Date().toISOString()
+        });
       });
     }
 
@@ -2350,6 +2351,8 @@ void sendHeartbeat() {
   // 2. Get list of all gym SaaS accounts with live operational status
   app.get('/api/saas/gyms', (req: Request, res: Response) => {
     const user = getAuthUserFromRequest(req);
+    console.log(`[SaaS Master] Request from ${user?.email}, role: ${user?.role}. Current store size: ${saasAccountsStore.size}`);
+    
     if (!user || user.role !== 'superadmin') {
       res.status(403).json({ success: false, message: 'Acesso restrito ao Administrador Geral do SaaS.' });
       return;
@@ -2859,14 +2862,14 @@ void sendHeartbeat() {
       });
     }
 
+    // Sync from Supabase in background
+    syncGymsFromSupabase().catch(err => {
+      console.error('[GymFlow Supabase] Initial sync failed:', err);
+    });
+
     if (!isServerless) {
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
-        
-        // Sync from Supabase in background after server is up
-        syncGymsFromSupabase().catch(err => {
-          console.error('[GymFlow Supabase] Background sync failed:', err);
-        });
       });
     }
   }
