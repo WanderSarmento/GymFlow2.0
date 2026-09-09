@@ -183,15 +183,97 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
             
             {currentUser ? (
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative flex items-center gap-2" ref={dropdownRef}>
                 <button
                   id="user-profile-btn"
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-zinc-600 transition-all overflow-hidden cursor-pointer"
+                  title={`Usuário: ${currentUser.name}`}
                 >
                   {currentUser.name.charAt(0).toUpperCase()}
                 </button>
+
+                <button
+                  id="navbar-quick-logout-btn"
+                  type="button"
+                  onClick={onLogout}
+                  className="p-2.5 rounded-xl bg-zinc-900/80 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 transition-all cursor-pointer"
+                  title="Sair da Conta (Logout)"
+                  aria-label="Sair da Conta"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+
+                {/* User Dropdown properly nested inside dropdownRef container */}
+                {userDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95">
+                    <div className="px-3 py-2 border-b border-zinc-800/80 mb-1">
+                      <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                      <p className="text-[11px] text-zinc-400 truncate">{currentUser.email}</p>
+                      <div className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black ${
+                        isSuperAdmin
+                          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                          : 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20'
+                      } uppercase`}>
+                        {isSuperAdmin ? '👑 ADMINISTRADOR GERAL SAAS' : currentUser.gymName || 'Academia Vinculada'}
+                      </div>
+                    </div>
+
+                    {isSuperAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          setActiveTab('saas_admin');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-indigo-300 hover:text-white hover:bg-indigo-950/60 transition-colors text-left font-bold cursor-pointer"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Painel Master SaaS</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onOpenCustomizeModal();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors text-left cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Personalizar Academia</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onOpenSupabaseModal();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors text-left cursor-pointer"
+                    >
+                      <Database className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Conectar Supabase / SQL</span>
+                    </button>
+
+                    <div className="my-1 border-t border-zinc-800/80" />
+
+                    <button
+                      id="dropdown-logout-btn"
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition-colors text-left font-bold cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sair da Conta</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button
@@ -205,75 +287,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
         </div>
-
-        {/* User Dropdown */}
-        {userDropdownOpen && currentUser && (
-          <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95">
-            <div className="px-3 py-2 border-b border-zinc-800/80 mb-1">
-              <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-              <p className="text-[11px] text-zinc-400 truncate">{currentUser.email}</p>
-              <div className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black ${
-                isSuperAdmin
-                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                  : 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20'
-              } uppercase`}>
-                {isSuperAdmin ? '👑 ADMINISTRADOR GERAL SAAS' : currentUser.gymName || 'Academia Vinculada'}
-              </div>
-            </div>
-
-            {isSuperAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  setUserDropdownOpen(false);
-                  setActiveTab('saas_admin');
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-indigo-300 hover:text-white hover:bg-indigo-950/60 transition-colors text-left font-bold cursor-pointer"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Painel Master SaaS</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setUserDropdownOpen(false);
-                onOpenCustomizeModal();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors text-left cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Personalizar Academia</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setUserDropdownOpen(false);
-                onOpenSupabaseModal();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors text-left cursor-pointer"
-            >
-              <Database className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Conectar Supabase / SQL</span>
-            </button>
-
-            <div className="my-1 border-t border-zinc-800/80" />
-
-            <button
-              type="button"
-              onClick={() => {
-                setUserDropdownOpen(false);
-                onLogout();
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition-colors text-left font-bold cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sair da Conta</span>
-            </button>
-          </div>
-        )}
       </div>
     </header>
   );

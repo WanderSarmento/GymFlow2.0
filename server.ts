@@ -720,9 +720,9 @@ app.use((req, res, next) => {
         password: cleanEmail === 'admin@gymflow.com' ? 'admin123' : 'password123',
         name: cleanEmail === 'admin@gymflow.com' ? 'Administrador Geral SaaS' : 'Administrador Master',
         role: cleanEmail === 'admin@gymflow.com' ? 'superadmin' : 'owner',
-        gymId: cleanEmail === 'admin@gymflow.com' ? 'saas-root' : defaultGym.profile.id,
-        gymSlug: cleanEmail === 'admin@gymflow.com' ? 'master-saas' : defaultGym.profile.slug,
-        gymName: cleanEmail === 'admin@gymflow.com' ? 'GymFlow SaaS Master Hub' : defaultGym.profile.name,
+        gymId: cleanEmail === 'admin@gymflow.com' ? 'saas-root' : (defaultGym?.profile?.id || 'saas-root'),
+        gymSlug: cleanEmail === 'admin@gymflow.com' ? 'master-saas' : (defaultGym?.profile?.slug || 'master-saas'),
+        gymName: cleanEmail === 'admin@gymflow.com' ? 'GymFlow SaaS Master Hub' : (defaultGym?.profile?.name || 'GymFlow SaaS Master Hub'),
         createdAt: new Date().toISOString()
       };
       usersStore.set(cleanEmail, user);
@@ -1802,6 +1802,14 @@ app.use((req, res, next) => {
   app.get('/api/gyms/:gymIdOrSlug/arduino-code', (req: Request, res: Response) => {
     const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug) || getDefaultGymState();
 
+    if (!gymState) {
+      res.status(404).json({
+        success: false,
+        message: 'Nenhuma academia encontrada.'
+      });
+      return;
+    }
+
     if (!isAuthorizedForGym(req, gymState)) {
       res.status(403).json({
         success: false,
@@ -2391,7 +2399,8 @@ void sendHeartbeat() {
     };
     saasAccountsStore.set(gymId, saasAccount);
 
-    // Persist everything to Supabase
+    // Persist everything to file and Supabase
+    saveGymsToFile();
     persistGymStateToSupabase(gymId, newGymState.accessLogs[0]);
     persistSaaSAccountToSupabase(gymId, initialInvoice);
 
@@ -2399,6 +2408,7 @@ void sendHeartbeat() {
       success: true,
       message: `Academia ${newProfile.name} cadastrada com sucesso com plano ${planConfig.name}!`,
       gym: { ...saasAccount, currentCount: 0 },
+      profile: newProfile,
       apiKey
     });
   });

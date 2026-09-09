@@ -28,7 +28,8 @@ import {
   Receipt,
   Eye,
   Zap,
-  Info
+  Info,
+  LogOut
 } from 'lucide-react';
 import {
   SaaSMetrics,
@@ -60,9 +61,10 @@ interface SaaSAdminDashboardProps {
   onSelectGym: (gym: GymProfile) => void;
   onOpenLoginModal?: () => void;
   onClose?: () => void;
+  onLogout?: () => void;
 }
 
-export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal, onClose }: SaaSAdminDashboardProps) {
+export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal, onClose, onLogout }: SaaSAdminDashboardProps) {
   const [metrics, setMetrics] = useState<SaaSMetrics | null>(null);
   const [gyms, setGyms] = useState<GymSaaSAccount[]>([]);
   const [plans, setPlans] = useState<SaaSPlanConfig[]>([]);
@@ -94,7 +96,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
     address: 'Av. Paulista, 1500',
     contactPhone: '(11) 98765-4321',
     maxCapacity: 150,
-    themeColor: '#22c55e',
+    themeColor: 'cyan',
     logoEmoji: '🏋️',
     ownerName: '',
     ownerEmail: '',
@@ -254,7 +256,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
     setActionLoading(true);
     try {
       const res = await createSaaSGym(newGymForm);
-      if (res.success) {
+      if (res.success && res.profile) {
         showNotification('success', res.message);
         setNewGymForm({
           name: '',
@@ -265,7 +267,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
           address: 'Av. Paulista, 1500',
           contactPhone: '(11) 98765-4321',
           maxCapacity: 150,
-          themeColor: '#22c55e',
+          themeColor: 'cyan',
           logoEmoji: '🏋️',
           ownerName: '',
           ownerEmail: '',
@@ -274,6 +276,12 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
           monthlyFee: 299,
           trialDays: 15
         });
+        
+        // Redirect to the newly created gym's reception
+        onSelectGym(res.profile);
+      } else if (res.success) {
+        // Fallback if profile is missing
+        showNotification('success', res.message);
         setActiveTab('gyms');
         await loadData(true);
       } else {
@@ -342,12 +350,12 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 self-stretch md:self-auto">
+          <div className="flex flex-wrap items-center gap-2.5 self-stretch md:self-auto">
             <button
               type="button"
               onClick={() => loadData(true)}
               disabled={refreshing}
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-xs font-medium border border-zinc-700 transition cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
               <span>{refreshing ? 'Sincronizando...' : 'Atualizar Dados'}</span>
@@ -356,11 +364,24 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             <button
               type="button"
               onClick={() => setActiveTab('new_gym')}
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Nova Academia</span>
             </button>
+
+            {onLogout && (
+              <button
+                id="saas-header-logout-btn"
+                type="button"
+                onClick={onLogout}
+                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold border border-rose-500/30 transition cursor-pointer"
+                title="Sair da Conta de Administrador Geral e voltar ao login geral"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sair</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -402,32 +423,22 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                   ? `Você está conectado como "${currentUser.name}" (${currentUser.role}), sem privilégio de Administrador Geral do SaaS.` 
                   : 'Você ainda não fez login com a conta Master do SaaS.'}
                 <div className="text-[11px] text-amber-300/80 mt-0.5">
-                  Faça login com a conta <strong>admin@gymflow.com</strong> (senha: <code>admin123</code>) para gerenciar faturas, bloqueios e todas as academias.
+                  Faça login com suas credenciais de Administrador Geral para gerenciar faturas, bloqueios e todas as academias.
                 </div>
               </div>
             </div>
-
-            {onOpenLoginModal && (
-              <button
-                type="button"
-                onClick={onOpenLoginModal}
-                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs whitespace-nowrap shadow transition-all cursor-pointer shrink-0"
-              >
-                Fazer Login como SuperAdmin
-              </button>
-            )}
           </div>
         )}
       </div>
 
       {/* KPI Metrics Summary Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         
         {/* Card 1: MRR */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span className="font-medium">MRR (Receita Recorrente)</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between text-zinc-400 text-[10px] sm:text-xs mb-2">
+            <span className="font-semibold uppercase tracking-wider">MRR (Recorrência)</span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -435,17 +446,18 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             <div className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               R$ {metrics?.totalMRR?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
             </div>
-            <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-1">
-              <span className="text-emerald-400 font-semibold">R$ {metrics?.totalRevenueThisMonth?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span> recebidos no mês
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 flex items-center gap-1 flex-wrap">
+              <span className="text-emerald-400 font-semibold">R$ {metrics?.totalRevenueThisMonth?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}</span> 
+              <span>faturados no mês</span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Total Gyms */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span className="font-medium">Academias Conectadas</span>
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between text-zinc-400 text-[10px] sm:text-xs mb-2">
+            <span className="font-semibold uppercase tracking-wider">Academias Conectadas</span>
+            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
@@ -453,19 +465,19 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             <div className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               {metrics?.totalGyms || 0} <span className="text-xs text-zinc-500 font-normal">unidades</span>
             </div>
-            <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-2">
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="text-emerald-400 font-medium">{metrics?.activeGyms || 0} ativas</span>
-              <span>•</span>
+              <span className="text-zinc-700">•</span>
               <span className="text-amber-400 font-medium">{metrics?.trialGyms || 0} em teste</span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Inadimplência / Bloqueios */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span className="font-medium">Inadimplência & Bloqueios</span>
-            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between text-zinc-400 text-[10px] sm:text-xs mb-2">
+            <span className="font-semibold uppercase tracking-wider">Status Financeiro</span>
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
               <Ban className="w-4 h-4" />
             </div>
           </div>
@@ -476,17 +488,20 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               </span>
               <span className="text-xs text-zinc-500 font-normal">bloqueadas</span>
             </div>
-            <div className="text-[11px] text-zinc-400 mt-1">
-              Taxa de atraso: <strong className="text-rose-400">{metrics?.delinquencyRate || 0}%</strong> ({metrics?.overdueGyms || 0} pendentes)
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 flex flex-wrap gap-1">
+              <span>Inadimplência:</span> 
+              <strong className="text-rose-400">{metrics?.delinquencyRate || 0}%</strong> 
+              <span className="text-zinc-700">•</span>
+              <span>{metrics?.overdueGyms || 0} atrasadas</span>
             </div>
           </div>
         </div>
 
         {/* Card 4: Alunos Online no Brasil */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span className="font-medium">Alunos Treinando Agora</span>
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between text-zinc-400 text-[10px] sm:text-xs mb-2">
+            <span className="font-semibold uppercase tracking-wider">Tráfego em Tempo Real</span>
+            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
               <Zap className="w-4 h-4" />
             </div>
           </div>
@@ -494,8 +509,8 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             <div className="text-xl sm:text-2xl font-bold text-cyan-400 tracking-tight">
               {metrics?.totalStudentsOnline || 0}
             </div>
-            <div className="text-[11px] text-zinc-400 mt-1">
-              Catracas transmitindo telemetria em tempo real
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1">
+              Alunos atravessando catracas GymFlow agora
             </div>
           </div>
         </div>
@@ -503,33 +518,33 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 border-b border-zinc-800 pb-3 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           type="button"
           onClick={() => setActiveTab('gyms')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition whitespace-nowrap shrink-0 ${
             activeTab === 'gyms'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
               : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
           }`}
         >
-          <Building2 className="w-4 h-4" />
-          <span>Gestão de Academias ({gyms.length})</span>
+          <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Academias ({gyms.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('invoices')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition whitespace-nowrap shrink-0 ${
             activeTab === 'invoices'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
               : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
           }`}
         >
-          <Receipt className="w-4 h-4" />
-          <span>Central de Faturas & Pagamentos</span>
+          <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Faturas & Cobrança</span>
           {metrics && metrics.overdueGyms > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px]">
+            <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] sm:text-[10px]">
               {metrics.overdueGyms}
             </span>
           )}
@@ -538,27 +553,27 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
         <button
           type="button"
           onClick={() => setActiveTab('new_gym')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition whitespace-nowrap shrink-0 ${
             activeTab === 'new_gym'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
               : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
           }`}
         >
-          <Plus className="w-4 h-4" />
-          <span>Cadastrar Nova Academia</span>
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Novo Cadastro</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('plans')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+          className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition whitespace-nowrap shrink-0 ${
             activeTab === 'plans'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
               : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
           }`}
         >
-          <Layers className="w-4 h-4" />
-          <span>Configuração de Planos</span>
+          <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Planos</span>
         </button>
       </div>
 
@@ -569,40 +584,40 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
         <div className="space-y-4">
           
           {/* Filter & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 shadow-sm">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Buscar por academia, cidade, proprietário ou e-mail..."
+                placeholder="Buscar academia, cidade ou gestor..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                className="w-full pl-9 pr-4 py-2.5 bg-zinc-800/80 border border-zinc-700 rounded-xl text-[11px] sm:text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                className="w-full sm:w-auto px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[11px] sm:text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
-                <option value="all">Todos os Status</option>
+                <option value="all">Status: Todos</option>
                 <option value="active">🟢 Ativas</option>
-                <option value="trial">🟡 Em Teste (Trial)</option>
+                <option value="trial">🟡 Teste</option>
                 <option value="blocked">🔴 Bloqueadas</option>
-                <option value="overdue">🟠 Em Atraso</option>
+                <option value="overdue">🟠 Atrasadas</option>
               </select>
 
               <select
                 value={planFilter}
                 onChange={e => setPlanFilter(e.target.value)}
-                className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                className="w-full sm:w-auto px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-[11px] sm:text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
-                <option value="all">Todos os Planos</option>
-                <option value="starter">Starter (R$ 149)</option>
-                <option value="pro">Pro (R$ 299)</option>
-                <option value="enterprise">Enterprise (R$ 599)</option>
+                <option value="all">Plano: Todos</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
               </select>
             </div>
           </div>
@@ -612,6 +627,26 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
             <div className="p-12 text-center text-zinc-500 text-sm">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-400" />
               Carregando carteira de academias clientes...
+            </div>
+          ) : gyms.length === 0 ? (
+            <div className="p-12 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center mx-auto text-2xl shadow-lg">
+                ✨
+              </div>
+              <div className="space-y-1 max-w-md mx-auto">
+                <p className="font-bold text-lg text-white">Sistema Pronto para Novos Cadastros</p>
+                <p className="text-xs text-zinc-400">
+                  Todos os dados de exemplo foram removidos. O sistema está completamente limpo para você cadastrar as novas academias clientes do SaaS.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('new_gym')}
+                className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/20 inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Cadastrar Nova Academia Agora
+              </button>
             </div>
           ) : filteredGyms.length === 0 ? (
             <div className="p-12 rounded-2xl bg-zinc-900 border border-zinc-800 text-center text-zinc-400 space-y-2">
@@ -638,103 +673,111 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                     }`}
                   >
                     {/* Left: Gym Info & Owner */}
-                    <div className="space-y-1.5 min-w-[280px]">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-base font-bold text-white">{gym.gymName}</span>
+                    <div className="space-y-2 flex-1 w-full lg:w-auto">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-base sm:text-lg font-bold text-white tracking-tight">{gym.gymName}</span>
                         
                         {/* Status Badge */}
-                        {isBlocked ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] font-bold border border-rose-500/30">
-                            <Lock className="w-2.5 h-2.5" />
-                            BLOQUEADA / SUSPENSA
-                          </span>
-                        ) : gym.status === 'trial' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-                            <Clock className="w-2.5 h-2.5" />
-                            TRIAL (Até {gym.trialEndsAt ? new Date(gym.trialEndsAt).toLocaleDateString('pt-BR') : '15 dias'})
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                            <CheckCircle2 className="w-2.5 h-2.5" />
-                            ATIVA & ADIMPLENTE
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {isBlocked ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20 uppercase tracking-wide">
+                              <Lock className="w-3 h-3" />
+                              Bloqueada
+                            </span>
+                          ) : gym.status === 'trial' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20 uppercase tracking-wide">
+                              <Clock className="w-3 h-3" />
+                              Trial {gym.trialEndsAt ? `- Expira ${new Date(gym.trialEndsAt).toLocaleDateString('pt-BR')}` : ''}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase tracking-wide">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Adimplente
+                            </span>
+                          )}
 
-                        <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px] font-medium border border-zinc-700">
-                          {gym.planName || gym.plan.toUpperCase()}
-                        </span>
+                          <span className="px-2 py-1 rounded-lg bg-zinc-800 text-zinc-400 text-[10px] font-bold border border-zinc-700/50 uppercase tracking-tight">
+                            {gym.planName || gym.plan.toUpperCase()}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="text-xs text-zinc-400 flex items-center gap-2 flex-wrap">
-                        <span>👤 {gym.ownerName}</span>
-                        <span>•</span>
-                        <span>✉️ {gym.ownerEmail}</span>
-                        {gym.ownerPhone && (
-                          <>
-                            <span>•</span>
-                            <span>📱 {gym.ownerPhone}</span>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span>📍 {gym.city}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 sm:gap-x-3 text-[11px] sm:text-xs text-zinc-500">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-600">Gestor:</span>
+                          <span className="text-zinc-300 font-medium">{gym.ownerName}</span>
+                        </div>
+                        <span className="hidden sm:inline text-zinc-800">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-600">Email:</span>
+                          <span className="text-zinc-300 font-medium">{gym.ownerEmail}</span>
+                        </div>
+                        <span className="hidden sm:inline text-zinc-800">|</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-zinc-600">Cidade:</span>
+                          <span className="text-zinc-300 font-medium">{gym.city}</span>
+                        </div>
                       </div>
 
                       {/* Block Reason Warning if blocked */}
                       {isBlocked && gym.blockReason && (
-                        <div className="mt-1 text-xs text-rose-300 bg-rose-950/40 border border-rose-500/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                          <span>Motivo: {gym.blockReason}</span>
+                        <div className="mt-2 text-[11px] text-rose-300 bg-rose-500/5 border border-rose-500/20 px-3 py-2 rounded-xl flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                          <span><strong>Restrição de Acesso:</strong> {gym.blockReason}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Middle: Plan, Hardware & Billing Details */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-zinc-400 py-2 sm:py-0 border-y sm:border-y-0 sm:border-x border-zinc-800 sm:px-4">
-                      <div>
-                        <div className="text-zinc-500 text-[10px]">MENSALIDADE</div>
-                        <div className="text-sm font-bold text-white">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-4 sm:gap-6 text-xs py-4 lg:py-0 border-y lg:border-y-0 lg:border-x border-zinc-800/60 lg:px-6 w-full lg:w-auto">
+                      <div className="space-y-0.5">
+                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Mensalidade</div>
+                        <div className="text-sm font-bold text-white flex items-baseline gap-1">
                           R$ {gym.monthlyFee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          <span className="text-[10px] text-zinc-500 font-normal">/mês</span>
+                          <span className="text-[10px] text-zinc-600 font-normal">/mês</span>
                         </div>
                       </div>
 
-                      <div>
-                        <div className="text-zinc-500 text-[10px]">VENCIMENTO</div>
-                        <div className="text-xs font-semibold text-zinc-200 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-indigo-400" />
+                      <div className="space-y-0.5">
+                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Vencimento</div>
+                        <div className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-500/70" />
                           {gym.nextDueDate ? new Date(gym.nextDueDate).toLocaleDateString('pt-BR') : 'N/A'}
                         </div>
                       </div>
 
-                      <div>
-                        <div className="text-zinc-500 text-[10px]">LIMITE CATRACAS</div>
-                        <div className="text-xs font-semibold text-zinc-200">
-                          Até {gym.turnstilesLimit || planInfo.turnstilesLimit} catracas
+                      <div className="space-y-0.5 col-span-2 sm:col-span-1">
+                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Hardware</div>
+                        <div className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-cyan-500/70" />
+                          <span>{gym.turnstilesLimit || planInfo.turnstilesLimit} Catracas</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Right: Master Control Actions */}
-                    <div className="flex items-center gap-2 flex-wrap self-stretch lg:self-auto justify-end">
+                    <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap lg:flex-nowrap justify-start lg:justify-end">
                       
                       {/* View Invoices / Register Payment */}
                       <button
                         type="button"
                         onClick={() => setSelectedGymForInvoices(gym)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700 transition"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-zinc-700 transition-all hover:scale-[1.02] active:scale-95"
                       >
-                        <Receipt className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Faturas ({gym.invoices?.length || 0})</span>
+                        <Receipt className="w-4 h-4 text-indigo-400" />
+                        <span className="lg:hidden xl:inline">Faturas ({gym.invoices?.length || 0})</span>
+                        <span className="hidden lg:inline xl:hidden">Financ.</span>
                       </button>
 
                       {/* Upgrade / Change Plan */}
                       <button
                         type="button"
                         onClick={() => setSelectedGymForPlan(gym)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700 transition"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-zinc-700 transition-all hover:scale-[1.02] active:scale-95"
                       >
-                        <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>Alterar Plano</span>
+                        <Layers className="w-4 h-4 text-cyan-400" />
+                        <span className="lg:hidden xl:inline">Mudar Plano</span>
+                        <span className="hidden lg:inline xl:hidden">Plano</span>
                       </button>
 
                       {/* Extend Trial */}
@@ -742,11 +785,12 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                         <button
                           type="button"
                           onClick={() => handleExtendTrial(gym.gymId, 15)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30 transition"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/20 transition-all hover:scale-[1.02] active:scale-95"
                           title="Adicionar +15 dias de teste grátis"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                          <span>+15d Teste</span>
+                          <Sparkles className="w-4 h-4" />
+                          <span className="lg:hidden xl:inline">+15d Trial</span>
+                          <span className="hidden lg:inline xl:hidden">+15d</span>
                         </button>
                       )}
 
@@ -755,10 +799,10 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                         <button
                           type="button"
                           onClick={() => handleToggleBlock(gym, false)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-95"
                         >
-                          <Unlock className="w-3.5 h-3.5" />
-                          <span>Desbloquear Acesso</span>
+                          <Unlock className="w-4 h-4" />
+                          <span>Liberar</span>
                         </button>
                       ) : (
                         <button
@@ -767,9 +811,9 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                             setSelectedGymForBlock(gym);
                             setBlockReasonInput('Atraso no pagamento da mensalidade');
                           }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 text-xs font-semibold border border-rose-500/30 transition"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 transition-all hover:scale-[1.02] active:scale-95"
                         >
-                          <Lock className="w-3.5 h-3.5 text-rose-400" />
+                          <Lock className="w-4 h-4" />
                           <span>Bloquear</span>
                         </button>
                       )}
@@ -786,89 +830,101 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
       {/* ========================================================================= */}
       {/* TAB 2: CENTRAL DE FATURAS & PAGAMENTOS */}
       {/* ========================================================================= */}
-      {activeTab === 'invoices' && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-bold text-white">Todas as Faturas e Mensalidades dos Clientes</h3>
-              <p className="text-xs text-zinc-400">Auditoria completa de faturas geradas, recebidas via PIX/Cartão e faturas pendentes.</p>
+        {activeTab === 'invoices' && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">Fluxo de Caixa & Inadimplência</h3>
+                <p className="text-[11px] text-zinc-500">Monitoramento global de todas as faturas emitidas no sistema.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Pendente Total</div>
+                  <div className="text-sm font-bold text-rose-400">R$ {metrics?.pendingRevenue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div className="w-px h-8 bg-zinc-800 hidden sm:block"></div>
+                <div className="text-right">
+                  <div className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Faturado Mês</div>
+                  <div className="text-sm font-bold text-emerald-400">R$ {metrics?.totalRevenueThisMonth?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                </div>
+              </div>
             </div>
-            <div className="text-xs text-zinc-300 font-semibold px-3 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700">
-              Total Faturado: <span className="text-emerald-400">R$ {metrics?.totalRevenueThisMonth?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-          </div>
 
-          <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900/90">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300">
-                <thead className="bg-zinc-800/80 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
-                  <tr>
-                    <th className="p-3.5">Academia / Cliente</th>
-                    <th className="p-3.5">Ref. Mês</th>
-                    <th className="p-3.5">Valor</th>
-                    <th className="p-3.5">Vencimento</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5">Pagamento</th>
-                    <th className="p-3.5 text-right">Ação</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800">
-                  {allInvoices.map(inv => {
-                    const isPaid = inv.status === 'paid';
-                    const isPending = inv.status === 'pending';
-
-                    return (
-                      <tr key={inv.id} className="hover:bg-zinc-800/40 transition">
-                        <td className="p-3.5">
-                          <div className="font-semibold text-white">{inv.gymName}</div>
-                          <div className="text-[10px] text-zinc-500">{inv.ownerEmail}</div>
-                        </td>
-                        <td className="p-3.5 font-mono">{inv.referenceMonth}</td>
-                        <td className="p-3.5 font-bold text-white">
-                          R$ {inv.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="p-3.5 text-zinc-300">
-                          {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="p-3.5">
-                          {isPaid ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> PAGA
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
-                              <Clock className="w-2.5 h-2.5" /> PENDENTE
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-zinc-400 text-[11px]">
-                          {inv.paidDate ? (
-                            <span>{new Date(inv.paidDate).toLocaleDateString('pt-BR')} ({inv.paymentMethod?.toUpperCase() || 'PIX'})</span>
-                          ) : (
-                            <span className="text-zinc-600">Aguardando quitação</span>
-                          )}
-                        </td>
-                        <td className="p-3.5 text-right">
-                          {!isPaid && (
-                            <button
-                              type="button"
-                              onClick={() => handlePayInvoice(inv.gymId, inv.id, 'pix', true)}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition"
-                            >
-                              <DollarSign className="w-3 h-3" />
-                              <span>Dar Baixa (PIX)</span>
-                            </button>
-                          )}
-                        </td>
+            <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="bg-zinc-800/40 text-zinc-500 uppercase text-[10px] font-bold tracking-widest">
+                      <th className="px-5 py-4 border-b border-zinc-800">Academia / Referência</th>
+                      <th className="px-5 py-4 border-b border-zinc-800">Vencimento</th>
+                      <th className="px-5 py-4 border-b border-zinc-800">Valor</th>
+                      <th className="px-5 py-4 border-b border-zinc-800">Status</th>
+                      <th className="px-5 py-4 border-b border-zinc-800 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/50">
+                    {allInvoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-12 text-center text-zinc-500 text-xs italic">Nenhuma fatura encontrada no histórico.</td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    ) : (
+                      allInvoices
+                        .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
+                        .map(inv => (
+                          <tr key={inv.id} className="hover:bg-zinc-800/30 transition-colors group">
+                            <td className="px-5 py-4">
+                              <div className="text-xs font-bold text-white group-hover:text-indigo-400 transition-colors">{inv.gymName}</div>
+                              <div className="text-[10px] text-zinc-500 font-medium">Ref: {inv.referenceMonth}</div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-2 text-xs text-zinc-300">
+                                <Calendar className="w-3.5 h-3.5 text-zinc-600" />
+                                {new Date(inv.dueDate).toLocaleDateString('pt-BR')}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="text-xs font-bold text-zinc-100">
+                                R$ {inv.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              {inv.status === 'paid' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 uppercase">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Quitada
+                                </span>
+                              ) : inv.status === 'overdue' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold border border-rose-500/20 uppercase">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  Atrasada
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20 uppercase">
+                                  <Clock className="w-3 h-3" />
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              {inv.status !== 'paid' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePayInvoice(inv.gymId, inv.id, 'pix', true)}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold shadow-md shadow-emerald-600/20 transition-transform active:scale-95"
+                                >
+                                  Baixa PIX
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ========================================================================= */}
       {/* TAB 3: CADASTRAR NOVA ACADEMIA */}
@@ -880,35 +936,38 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               <Plus className="w-3.5 h-3.5" />
               Onboarding Direto de Nova Academia Cliente
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Cadastro de Academia no SaaS</h2>
-            <p className="text-xs text-zinc-400">
-              Gera automaticamente as credenciais do proprietário, provisiona a chave API de hardware para a catraca e cria o contrato SaaS inicial.
+            <h2 className="text-xl font-bold text-white tracking-tight">Ativação de Nova Unidade</h2>
+            <p className="text-xs text-zinc-500">
+              Configure os parâmetros operacionais, credenciais do gestor e provisionamento de hardware.
             </p>
           </div>
 
           <form onSubmit={handleCreateGymSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Nome da Academia *</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Nome da Academia Cliente *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: BodyTech Moema"
                   value={newGymForm.name}
                   onChange={e => setNewGymForm({ ...newGymForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-4 py-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-300 mb-1">Slug URL (Identificador) *</label>
-                <input
-                  type="text"
-                  placeholder="Ex: bodytech-moema (opcional, gerado automático)"
-                  value={newGymForm.slug}
-                  onChange={e => setNewGymForm({ ...newGymForm, slug: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
-                />
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">Slug URL / Identificador *</label>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    placeholder="ex: bodytech-moema"
+                    value={newGymForm.slug}
+                    onChange={e => setNewGymForm({ ...newGymForm, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                    className="flex-1 px-4 py-3 bg-zinc-800/80 border border-zinc-700 rounded-l-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  />
+                  <div className="px-3 py-3 bg-zinc-900 border border-l-0 border-zinc-700 rounded-r-xl text-[10px] text-zinc-500 font-mono">.gymflow.app</div>
+                </div>
               </div>
             </div>
 
@@ -1051,66 +1110,88 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
 
       {/* ========================================================================= */}
       {/* TAB 4: CONFIGURAÇÃO DE PLANOS */}
+      {/* TAB 4: CONFIGURAÇÃO DE PLANOS */}
       {/* ========================================================================= */}
       {activeTab === 'plans' && (
-        <div className="space-y-6">
-          <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-2">
             <div>
-              <h3 className="text-sm font-bold text-white">Configuração Global de Planos SaaS</h3>
-              <p className="text-xs text-zinc-400">Edite os preços, descrições e recursos disponíveis para as academias em cada plano.</p>
+              <h2 className="text-xl font-bold text-white tracking-tight">Catálogo de Planos SaaS</h2>
+              <p className="text-xs text-zinc-500">Configure os níveis de serviço, precificação e limites operacionais para as unidades clientes.</p>
+            </div>
+            <div className="p-1 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-1">
+              <div className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">Modo Edição</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {(plans.length > 0 ? plans : Object.values(SAAS_PLANS)).map(plan => (
-              <div key={plan.id} className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-6 flex flex-col h-full hover:border-indigo-500/50 transition">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">{plan.badge}</span>
-                    <h4 className="text-xl font-bold text-white tracking-tight">{plan.name}</h4>
+              <div key={plan.id} className="group relative flex flex-col bg-zinc-900/50 rounded-3xl border border-zinc-800/80 hover:border-indigo-500/40 transition-all duration-300 overflow-hidden">
+                {/* Visual Header */}
+                <div className="h-24 bg-gradient-to-br from-indigo-600/20 via-transparent to-transparent opacity-50" />
+                
+                <div className="px-6 pb-8 -mt-12 flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-xl group-hover:border-indigo-500/50 transition-colors">
+                      <Layers className="w-6 h-6 text-indigo-400" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingPlan(plan)}
+                      className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                   </div>
+
+                  <div className="space-y-1 mb-6">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">{plan.badge}</span>
+                    <h3 className="text-2xl font-black text-white tracking-tighter">{plan.name}</h3>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-sm font-bold text-zinc-500">R$</span>
+                      <span className="text-4xl font-black text-white">{plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest">/ mês</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs leading-relaxed text-zinc-400 mb-8 flex-1 italic">
+                    "{plan.description}"
+                  </p>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                      <div className="h-px flex-1 bg-zinc-800" />
+                      Entregas
+                      <div className="h-px flex-1 bg-zinc-800" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {plan.features.slice(0, 4).map((feature, i) => (
+                        <div key={i} className="flex items-center gap-3 text-xs text-zinc-300">
+                          <div className="w-4 h-4 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                          </div>
+                          <span className="truncate">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-wider">Capacidade de Hardware</span>
+                      <span className="text-xs font-black text-amber-500">{plan.turnstilesLimit} Catracas</span>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => setEditingPlan(plan)}
-                    className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
+                    className="w-full py-4 rounded-2xl bg-zinc-950 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest transition-all duration-300 border border-zinc-800 hover:border-indigo-500 shadow-lg shadow-black/40 flex items-center justify-center gap-2"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Settings2 className="w-4 h-4" />
+                    Gerenciar Plano
                   </button>
                 </div>
-
-                <div className="mb-6">
-                  <div className="text-3xl font-black text-white">
-                    R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    <span className="text-sm text-zinc-500 font-normal">/mês</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-zinc-400 mb-6 flex-1">
-                  {plan.description}
-                </p>
-
-                <div className="space-y-2 mb-6">
-                  <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Recursos Inclusos</div>
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-zinc-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2 text-xs text-zinc-300 pt-1 border-t border-zinc-800 mt-2">
-                    <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Limite de {plan.turnstilesLimit} catracas</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setEditingPlan(plan)}
-                  className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-indigo-600 text-white text-xs font-bold transition flex items-center justify-center gap-2"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  Editar Definições
-                </button>
               </div>
             ))}
           </div>

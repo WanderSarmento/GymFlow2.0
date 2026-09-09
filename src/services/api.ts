@@ -307,8 +307,8 @@ export async function fetchGyms(): Promise<GymProfile[]> {
   try {
     const res = await fetch('/api/gyms');
     if (res.ok) {
-      const data = await parseJsonResponse<{ gyms: GymProfile[] }>(res, { gyms: INITIAL_GYMS });
-      if (data.gyms && data.gyms.length > 0) {
+      const data = await parseJsonResponse<{ gyms: GymProfile[] }>(res, { gyms: [] });
+      if (Array.isArray(data.gyms)) {
         return data.gyms;
       }
     }
@@ -320,13 +320,13 @@ export async function fetchGyms(): Promise<GymProfile[]> {
   if (supabase) {
     try {
       const { data, error } = await supabase.from('gyms').select('*').order('name');
-      if (data && data.length > 0 && !error) {
+      if (data && !error) {
         return data.map(mapSupabaseGymRow);
       }
     } catch {}
   }
 
-  return INITIAL_GYMS;
+  return [];
 }
 
 export async function registerGym(input: CreateGymInput): Promise<{ success: boolean; message: string; gym?: GymProfile; publicStudentUrl?: string; apiKey?: string; user?: AuthUser; token?: string }> {
@@ -522,6 +522,34 @@ export async function fetchOccupancy(gymIdOrSlug?: string): Promise<OccupancyDat
   } catch (err) {
     console.warn('Usando estado local para lotação:', err);
     const fallbackGym = INITIAL_GYMS[0];
+    if (!fallbackGym) {
+      return {
+        gymId: '',
+        gymName: 'Nenhuma Academia Cadastrada',
+        gymSlug: '',
+        themeColor: 'cyan',
+        logoEmoji: '⚡',
+        slogan: 'Cadastre sua primeira unidade no Painel Master',
+        city: 'Brasil',
+        neighborhood: '',
+        visualTheme: 'dark',
+        currentCount: 0,
+        maxCapacity: 80,
+        status: 'low',
+        percentage: 0,
+        turnstileLocked: false,
+        isOpen: false,
+        closingTimeToday: '00:00',
+        openingTimeToday: '00:00',
+        lastAccessTime: null,
+        lastAccessType: null,
+        esp32Connected: false,
+        esp32LastPing: null,
+        esp32DeviceName: 'ESP32_DEVICE',
+        esp32Ip: '192.168.1.100',
+        pendingRelayTrigger: null
+      };
+    }
     return {
       gymId: fallbackGym.id,
       gymName: fallbackGym.name,
@@ -781,7 +809,7 @@ export async function fetchSaaSGyms(): Promise<import('../types').GymSaaSAccount
   return getLocalFallbackSaaSGyms();
 }
 
-export async function createSaaSGym(input: import('../types').CreateSaaSGymInput): Promise<{ success: boolean; message: string; gym?: import('../types').GymSaaSAccount; apiKey?: string }> {
+export async function createSaaSGym(input: import('../types').CreateSaaSGymInput): Promise<{ success: boolean; message: string; gym?: import('../types').GymSaaSAccount; profile?: import('../types').GymProfile; apiKey?: string }> {
   try {
     const res = await fetch('/api/saas/gyms', {
       method: 'POST',

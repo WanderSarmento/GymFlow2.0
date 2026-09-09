@@ -223,6 +223,7 @@ export default function App() {
   const handleGymCreated = (newGym: GymProfile) => {
     setGyms(prev => [newGym, ...prev.filter(g => g.id !== newGym.id)]);
     setCurrentGym(newGym);
+    setActiveTab('reception');
     const url = new URL(window.location.href);
     url.searchParams.set('gym', newGym.slug);
     window.history.replaceState({}, '', url.toString());
@@ -258,6 +259,16 @@ export default function App() {
   const handleLogout = () => {
     clearAuthSession();
     setCurrentUser(null);
+    setActiveTab('student');
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('view');
+      url.searchParams.delete('admin');
+      url.searchParams.delete('saas');
+      url.hash = '';
+      const newPath = url.pathname.includes('/master') || url.pathname.includes('/saas') ? '/' : url.pathname;
+      window.history.replaceState({}, '', newPath + (url.search ? url.search : ''));
+    } catch {}
   };
 
   // Handlers for ESP32 Simulation
@@ -540,11 +551,39 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 4: SaaS Master SuperAdmin Dashboard */}
-        {activeTab === 'saas_admin' && (
+        {/* Empty state when logged in but no gym exists yet and viewing student, reception or esp32 */}
+        {currentUser && !currentGym && activeTab !== 'saas_admin' && (
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
+            <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl shadow-xl">
+              🏢
+            </div>
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-2xl font-bold text-white">Nenhuma academia cadastrada</h3>
+              <p className="text-zinc-400 text-sm">
+                Todos os dados de exemplo foram removidos. O Super Administrador pode cadastrar novas unidades e clientes diretamente pelo Painel Master SaaS.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              {currentUser?.role === 'superadmin' ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('saas_admin')}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  Ir para o Painel Master SaaS
+                </button>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: SaaS Master SuperAdmin Dashboard (Only when logged in as SuperAdmin or viewing saas_admin) */}
+        {currentUser && activeTab === 'saas_admin' && (
           <SaaSAdminDashboard
             currentUser={currentUser}
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            onLogout={handleLogout}
             onSelectGym={(gym) => {
               handleSelectGym(gym);
               setActiveTab('reception');
