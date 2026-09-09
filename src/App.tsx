@@ -607,6 +607,7 @@ export default function App() {
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
         onGymCreated={handleGymCreated}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* SaaS Modal 2: Share Gym Student Link & QR Code */}

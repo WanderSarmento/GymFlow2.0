@@ -29,7 +29,8 @@ import {
   Eye,
   Zap,
   Info,
-  LogOut
+  LogOut,
+  Settings2
 } from 'lucide-react';
 import {
   SaaSMetrics,
@@ -729,55 +730,102 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                     </div>
 
                     {/* Middle: Plan, Hardware & Billing Details */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-4 sm:gap-6 text-xs py-4 lg:py-0 border-y lg:border-y-0 lg:border-x border-zinc-800/60 lg:px-6 w-full lg:w-auto">
-                      <div className="space-y-0.5">
-                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Mensalidade</div>
-                        <div className="text-sm font-bold text-white flex items-baseline gap-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-row gap-3 sm:gap-6 text-xs py-3 lg:py-0 border-y lg:border-y-0 lg:border-x border-zinc-800 lg:px-6 w-full lg:w-auto bg-zinc-950/40 lg:bg-transparent rounded-xl lg:rounded-none p-3 lg:p-0">
+                      <div className="space-y-1">
+                        <div className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Mensalidade</div>
+                        <div className="text-sm sm:text-base font-bold text-white flex items-baseline gap-1">
                           R$ {gym.monthlyFee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          <span className="text-[10px] text-zinc-600 font-normal">/mês</span>
+                          <span className="text-[11px] text-zinc-400 font-normal">/mês</span>
                         </div>
                       </div>
 
-                      <div className="space-y-0.5">
-                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Vencimento</div>
-                        <div className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-indigo-500/70" />
-                          {gym.nextDueDate ? new Date(gym.nextDueDate).toLocaleDateString('pt-BR') : 'N/A'}
+                      <div className="space-y-1">
+                        <div className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Vencimento</div>
+                        <div className="text-xs sm:text-sm font-semibold text-zinc-200 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                          <span>{gym.nextDueDate ? new Date(gym.nextDueDate).toLocaleDateString('pt-BR') : 'N/A'}</span>
                         </div>
                       </div>
 
-                      <div className="space-y-0.5 col-span-2 sm:col-span-1">
-                        <div className="text-zinc-600 text-[10px] uppercase font-bold tracking-widest">Hardware</div>
-                        <div className="text-sm font-bold text-zinc-200 flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-cyan-500/70" />
-                          <span>{gym.turnstilesLimit || planInfo.turnstilesLimit} Catracas</span>
+                      <div className="space-y-1 col-span-2 sm:col-span-1">
+                        <div className="text-zinc-400 text-[10px] uppercase font-bold tracking-wider">Catracas / Portas</div>
+                        <div className="text-xs sm:text-sm font-semibold text-cyan-300 flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span>{gym.turnstilesLimit || planInfo.turnstilesLimit} Catraca(s)</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Right: Master Control Actions */}
-                    <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap lg:flex-nowrap justify-start lg:justify-end">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap lg:flex-nowrap items-center gap-2 w-full lg:w-auto pt-2 lg:pt-0">
                       
+                      {/* Enter Gym Dashboard */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/gyms/${gym.gymSlug}`);
+                            if (res.ok) {
+                              const data = await res.json();
+                              if (data.profile) {
+                                onSelectGym(data.profile);
+                                return;
+                              }
+                            }
+                          } catch (e) {
+                            // fallback
+                          }
+                          onSelectGym({
+                            id: gym.gymId,
+                            slug: gym.gymSlug,
+                            name: gym.gymName,
+                            slogan: 'Monitoramento de Lotação em Tempo Real',
+                            city: gym.city,
+                            neighborhood: 'Unidade Principal',
+                            address: '',
+                            contactPhone: gym.ownerPhone,
+                            maxCapacity: gym.maxCapacity || 100,
+                            currentCount: 0,
+                            turnstileLocked: false,
+                            isOpen: true,
+                            themeColor: 'cyan',
+                            logoEmoji: '⚡',
+                            apiKey: gym.apiKey,
+                            ownerName: gym.ownerName,
+                            ownerEmail: gym.ownerEmail,
+                            createdAt: gym.createdAt,
+                            operatingHours: {
+                              weekdays: { open: '06:00', close: '23:00', isOpen: true },
+                              saturday: { open: '07:00', close: '17:00', isOpen: true },
+                              sunday: { open: '08:00', close: '14:00', isOpen: true }
+                            }
+                          });
+                        }}
+                        className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xs shadow-md shadow-cyan-500/20 transition cursor-pointer min-h-[42px]"
+                        title="Acessar o painel desta academia agora"
+                      >
+                        <ExternalLink className="w-4 h-4 text-black" />
+                        <span>Acessar Painel</span>
+                      </button>
+
                       {/* View Invoices / Register Payment */}
                       <button
                         type="button"
                         onClick={() => setSelectedGymForInvoices(gym)}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-zinc-700 transition-all hover:scale-[1.02] active:scale-95"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition cursor-pointer min-h-[42px]"
                       >
                         <Receipt className="w-4 h-4 text-indigo-400" />
-                        <span className="lg:hidden xl:inline">Faturas ({gym.invoices?.length || 0})</span>
-                        <span className="hidden lg:inline xl:hidden">Financ.</span>
+                        <span>Faturas ({gym.invoices?.length || 0})</span>
                       </button>
 
                       {/* Upgrade / Change Plan */}
                       <button
                         type="button"
                         onClick={() => setSelectedGymForPlan(gym)}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold border border-zinc-700 transition-all hover:scale-[1.02] active:scale-95"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition cursor-pointer min-h-[42px]"
                       >
                         <Layers className="w-4 h-4 text-cyan-400" />
-                        <span className="lg:hidden xl:inline">Mudar Plano</span>
-                        <span className="hidden lg:inline xl:hidden">Plano</span>
+                        <span>Plano</span>
                       </button>
 
                       {/* Extend Trial */}
@@ -785,12 +833,11 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                         <button
                           type="button"
                           onClick={() => handleExtendTrial(gym.gymId, 15)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/20 transition-all hover:scale-[1.02] active:scale-95"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/25 transition cursor-pointer min-h-[42px]"
                           title="Adicionar +15 dias de teste grátis"
                         >
-                          <Sparkles className="w-4 h-4" />
-                          <span className="lg:hidden xl:inline">+15d Trial</span>
-                          <span className="hidden lg:inline xl:hidden">+15d</span>
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>+15d Trial</span>
                         </button>
                       )}
 
@@ -799,7 +846,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                         <button
                           type="button"
                           onClick={() => handleToggleBlock(gym, false)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-95"
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer min-h-[42px]"
                         >
                           <Unlock className="w-4 h-4" />
                           <span>Liberar</span>
@@ -811,12 +858,39 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                             setSelectedGymForBlock(gym);
                             setBlockReasonInput('Atraso no pagamento da mensalidade');
                           }}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 transition-all hover:scale-[1.02] active:scale-95"
+                          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold border border-rose-500/25 transition cursor-pointer min-h-[42px]"
                         >
-                          <Lock className="w-4 h-4" />
+                          <Lock className="w-4 h-4 text-rose-400" />
                           <span>Bloquear</span>
                         </button>
                       )}
+
+                      {/* Delete Gym Button */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (window.confirm(`Tem certeza que deseja excluir permanentemente a academia "${gym.gymName}"? Esta ação removerá a conta e todos os dados associados.`)) {
+                            setActionLoading(true);
+                            try {
+                              const res = await deleteSaaSGym(gym.gymId);
+                              if (res.success) {
+                                showNotification('success', `Academia ${gym.gymName} excluída com sucesso.`);
+                                await loadData(true);
+                              } else {
+                                showNotification('error', res.message || 'Erro ao excluir academia.');
+                              }
+                            } catch (e: any) {
+                              showNotification('error', e?.message || 'Erro ao excluir');
+                            } finally {
+                              setActionLoading(false);
+                            }
+                          }
+                        }}
+                        className="inline-flex items-center justify-center p-2.5 rounded-xl bg-zinc-800/80 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-300 border border-zinc-700/60 hover:border-rose-500/40 transition cursor-pointer min-h-[42px]"
+                        title="Excluir academia do SaaS"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
 
                     </div>
                   </div>

@@ -53,27 +53,27 @@ export function getAuthHeaders(): Record<string, string> {
 /**
  * Safely parses HTTP response as JSON.
  * Protects against non-OK HTML pages (e.g. 404, 502, "The page cannot be found")
- * or non-JSON payloads, preventing:
- * SyntaxError: Unexpected token 'T', "The page c"... is not valid JSON
+ * or non-JSON payloads, while preserving valid JSON error bodies (e.g. 400, 401).
  */
 async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
   try {
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      console.warn(`[GymFlow API] Requisição retornou HTTP ${res.status}:`, text.slice(0, 100));
-      return fallback;
-    }
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      const text = await res.text().catch(() => '');
-      console.warn('[GymFlow API] Resposta recebida não é JSON:', res.status, contentType, text.slice(0, 100));
-      return fallback;
+    if (contentType.includes('application/json')) {
+      const text = await res.text();
+      if (text && text.trim()) {
+        try {
+          return JSON.parse(text) as T;
+        } catch {
+          return fallback;
+        }
+      }
     }
-    const text = await res.text();
-    if (!text || !text.trim()) {
-      return fallback;
+    // For non-JSON responses (e.g. HTML error page or empty proxy responses)
+    if (!res.ok) {
+      const rawText = await res.text().catch(() => '');
+      console.warn(`[GymFlow API] Resposta não-JSON recebida (HTTP ${res.status}):`, rawText.slice(0, 100));
     }
-    return JSON.parse(text) as T;
+    return fallback;
   } catch (err) {
     console.warn('[GymFlow API] Erro ao decodificar JSON:', err);
     return fallback;
@@ -127,24 +127,26 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
       body: JSON.stringify(credentials)
     });
 
-    if (res.ok) {
-      const data = await parseJsonResponse<{ success: boolean; message: string; user?: AuthUser; token?: string }>(res, {
-        success: false,
-        message: 'Resposta inválida do servidor.'
-      });
-      if (data.success && data.user) {
-        saveAuthSession(data.user, data.token);
-        return data;
-      }
+    const data = await parseJsonResponse<{ success: boolean; message: string; user?: AuthUser; token?: string }>(res, {
+      success: false,
+      message: `Servidor da aplicação indisponível ou erro HTTP (${res.status}).`
+    });
+
+    if (res.ok && data.success && data.user) {
+      saveAuthSession(data.user, data.token);
+      return data;
     }
 
-    // If server returned 401 with specific message and not master admin
-    if (!res.ok && !isMasterAdminCreds) {
-      const data = await parseJsonResponse<{ success: boolean; message: string }>(res, {
-        success: false,
-        message: `Servidor da aplicação indisponível ou erro HTTP (${res.status}).`
-      });
-      return { success: false, message: data.message };
+    // If server returned non-OK (e.g. 401 or 400)
+    if (!res.ok) {
+      if (isMasterAdminCreds) {
+        // Continue to master fallback
+      } else {
+        const errorMsg = (data && data.message && !data.message.includes('Servidor da aplicação indisponível'))
+          ? data.message
+          : `Credenciais incorretas ou conta não encontrada (${res.status}).`;
+        return { success: false, message: errorMsg };
+      }
     }
   } catch (err: any) {
     console.warn('Falha na requisição ao backend de autenticação:', err);

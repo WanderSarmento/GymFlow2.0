@@ -14,16 +14,18 @@ import {
   Cpu, 
   Sun,
   Moon,
-  QrCode
+  QrCode,
+  Key
 } from 'lucide-react';
-import { CreateGymInput, GymProfile } from '../types';
+import { CreateGymInput, GymProfile, AuthUser } from '../types';
 import { THEME_COLOR_CONFIG } from '../data/gymData';
 import { registerGym } from '../services/api';
 
 interface GymRegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGymCreated: (gym: GymProfile) => void;
+  onGymCreated: (gym: GymProfile, user?: AuthUser) => void;
+  onLoginSuccess?: (user: AuthUser) => void;
 }
 
 const EMOJI_OPTIONS = ['⚡', '🔥', '💪', '🌿', '🏋️', '🥊', '🏆', '💎', '🚀', '⭐', '🎯', '✨'];
@@ -32,7 +34,8 @@ const THEME_OPTIONS = ['cyan', 'emerald', 'amber', 'violet', 'rose', 'blue'] as 
 export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
   isOpen,
   onClose,
-  onGymCreated
+  onGymCreated,
+  onLoginSuccess
 }) => {
   const [formData, setFormData] = useState<CreateGymInput>({
     name: '',
@@ -43,7 +46,8 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
     address: '',
     contactPhone: '',
     maxCapacity: 80,
-    initialCount: 15,
+    initialCount: 0,
+    ownerPassword: 'password123',
     themeColor: 'cyan',
     logoEmoji: '⚡',
     visualTheme: 'dark',
@@ -59,8 +63,10 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdGym, setCreatedGym] = useState<GymProfile | null>(null);
+  const [createdUser, setCreatedUser] = useState<AuthUser | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedPass, setCopiedPass] = useState(false);
 
   if (!isOpen) return null;
 
@@ -93,13 +99,26 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
       setError('Por favor informe um link/slug personalizado para os alunos.');
       return;
     }
+    if (!formData.ownerEmail.trim()) {
+      setError('Por favor informe o e-mail do gestor para acesso.');
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await registerGym(formData);
+      const res = await registerGym({
+        ...formData,
+        initialCount: 0 // Always guarantee 0 count (clean data) on new gym creation
+      });
       if (res.success && res.gym) {
         setCreatedGym(res.gym);
-        onGymCreated(res.gym);
+        if (res.user) {
+          setCreatedUser(res.user);
+          if (onLoginSuccess) {
+            onLoginSuccess(res.user);
+          }
+        }
+        onGymCreated(res.gym, res.user);
       } else {
         setError(res.message || 'Erro ao cadastrar academia.');
       }
@@ -381,10 +400,10 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
               </div>
 
               {/* Responsible Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    Nome do Responsável / Gestor
+                    Nome do Gestor
                   </label>
                   <input
                     id="gym-owner-name-input"
@@ -398,17 +417,35 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-                    E-mail do Gestor
+                    E-mail de Acesso
                   </label>
                   <input
                     id="gym-owner-email-input"
                     type="email"
-                    placeholder="gestao@suaacademia.com"
+                    placeholder="gestao@academia.com"
                     value={formData.ownerEmail}
                     onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-500 text-sm"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                    Senha de Acesso
+                  </label>
+                  <input
+                    id="gym-owner-password-input"
+                    type="text"
+                    placeholder="password123"
+                    value={formData.ownerPassword || ''}
+                    onChange={(e) => setFormData({ ...formData, ownerPassword: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-500 text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="text-[11px] text-zinc-400 bg-zinc-800/40 border border-zinc-700/60 rounded-xl px-3 py-2">
+                ℹ️ Esta senha e e-mail serão usados para acessar o painel de recepção e controle da academia.
               </div>
 
               {/* Live Link Preview */}
@@ -494,11 +531,41 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                     id="copy-api-key-btn"
                     type="button"
                     onClick={() => copyToClipboard(createdGym.apiKey, 'key')}
-                    className="px-3.5 py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
+                    className="px-3.5 py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
                   >
                     {copiedKey ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                     {copiedKey ? 'Copiada!' : 'Copiar'}
                   </button>
+                </div>
+              </div>
+
+              {/* Login Credentials Box */}
+              <div className="p-3 bg-zinc-900/90 border border-zinc-700/80 rounded-xl space-y-2">
+                <div className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-emerald-400" /> Suas Credenciais de Acesso ao Painel:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-zinc-800/80 p-2 rounded-lg border border-zinc-700/50">
+                    <span className="text-zinc-500 block text-[10px] uppercase">E-mail:</span>
+                    <span className="font-mono text-white font-medium break-all">{createdGym.ownerEmail}</span>
+                  </div>
+                  <div className="bg-zinc-800/80 p-2 rounded-lg border border-zinc-700/50 flex items-center justify-between">
+                    <div>
+                      <span className="text-zinc-500 block text-[10px] uppercase">Senha:</span>
+                      <span className="font-mono text-emerald-400 font-bold">{formData.ownerPassword || 'password123'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(formData.ownerPassword || 'password123');
+                        setCopiedPass(true);
+                        setTimeout(() => setCopiedPass(false), 2000);
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-white px-2 py-1 bg-zinc-700/50 rounded"
+                    >
+                      {copiedPass ? 'Copiada!' : 'Copiar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -509,11 +576,14 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                 id="open-gym-dashboard-btn"
                 type="button"
                 onClick={() => {
+                  if (createdGym) {
+                    onGymCreated(createdGym, createdUser || undefined);
+                  }
                   onClose();
                 }}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-cyan-500/20"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-cyan-500/20 cursor-pointer"
               >
-                Ir para o Painel da Academia <ArrowRight className="w-4 h-4" />
+                Acessar Painel da Academia Agora <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>

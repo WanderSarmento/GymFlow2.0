@@ -207,7 +207,7 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
         neighborhood: regNeighborhood.trim() || 'Unidade Principal',
         contactPhone: regPhone.trim(),
         maxCapacity: Number(regMaxCapacity) || 80,
-        initialCount: Math.min(10, Number(regMaxCapacity) || 80),
+        initialCount: 0,
         ownerName: regOwnerName.trim(),
         ownerEmail: regEmail.trim().toLowerCase(),
         ownerPassword: regPassword.trim(),
