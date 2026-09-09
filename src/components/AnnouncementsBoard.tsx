@@ -276,10 +276,10 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
             </div>
 
             {/* Modal Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto touch-scroll p-5 sm:p-8 py-5">
-              <form id="announcement-form" onSubmit={handleSubmit} className="space-y-5 text-xs">
+            <div className="flex-1 overflow-y-auto touch-scroll p-5 sm:p-8 py-5 custom-scrollbar">
+              <form id="announcement-form" onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="input-ann-title" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                  <label htmlFor="input-ann-title" className="block text-gray-400 font-bold uppercase tracking-wider mb-2 text-[10px] sm:text-[11px]">
                     Título do Comunicado *
                   </label>
                   <input
@@ -289,7 +289,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                     placeholder="Ex: Manutenção na Esteira 04 ou Horário de Feriado"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none transition-all"
+                    className="w-full min-h-[48px] rounded-2xl bg-gray-900 border border-gray-800 px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none transition-all"
                   />
                 </div>
 
@@ -379,12 +379,12 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
             </div>
 
             {/* Modal Footer - Fixed at bottom */}
-            <div className="border-t border-gray-800 p-5 sm:p-8 pt-4 bg-gray-950/80 backdrop-blur-md">
-              <div className="flex items-center justify-end gap-3">
+            <div className="border-t border-gray-800 p-5 sm:p-6 bg-zinc-950/95 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 sm:flex-none min-h-[48px] rounded-xl border border-gray-800 bg-gray-900 px-6 py-2.5 text-xs font-bold uppercase text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer active:scale-95 transition-all"
+                  className="w-full sm:w-auto min-h-[48px] rounded-2xl border border-gray-800 bg-gray-900 px-8 py-3 text-sm font-bold uppercase text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer active:scale-95 transition-all order-2 sm:order-1"
                 >
                   Cancelar
                 </button>
@@ -393,9 +393,9 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   type="submit"
                   form="announcement-form"
                   disabled={isSubmitting}
-                  className="flex-1 sm:flex-none min-h-[48px] rounded-xl bg-white hover:bg-gray-200 text-black px-8 py-2.5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-white/5 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full sm:w-auto min-h-[48px] rounded-2xl bg-white hover:bg-zinc-200 text-black px-10 py-3 text-sm font-black uppercase tracking-wider shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer order-1 sm:order-2"
                 >
-                  {isSubmitting ? 'Publicando...' : 'Publicar Agora'}
+                  {isSubmitting ? 'Publicando...' : 'Salvar Comunicado'}
                 </button>
               </div>
             </div>

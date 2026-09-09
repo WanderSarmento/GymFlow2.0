@@ -110,7 +110,9 @@ function saveGymsToFile() {
       currentCount: g.currentCount,
       maxCapacity: g.maxCapacity,
       turnstileLocked: g.turnstileLocked,
-      isOpen: g.isOpen
+      isOpen: g.isOpen,
+      announcements: g.announcements || [],
+      accessLogs: g.accessLogs || []
     }));
     const usersData = Array.from(usersStore.values());
     const saasData = Array.from(saasAccountsStore.values());
@@ -286,6 +288,24 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
         role: ownerUser.role,
         phone: ownerUser.phone
       }, { onConflict: 'email' });
+    }
+
+    // 4. Sync Announcements
+    if (gymState.announcements && gymState.announcements.length > 0) {
+      for (const ann of gymState.announcements) {
+        await supabase.from('announcements').upsert({
+          id: ann.id,
+          gym_id: gymId,
+          title: ann.title,
+          content: ann.content,
+          category: ann.category,
+          priority: ann.priority,
+          date: ann.date,
+          author: ann.author,
+          pinned: ann.pinned,
+          active: ann.active
+        }, { onConflict: 'id' });
+      }
     }
   } catch (err) {
     console.warn(`[GymFlow Supabase] Falha ao persistir estado da academia ${gymId}:`, err);
@@ -572,6 +592,31 @@ async function syncGymsFromSupabase() {
       });
     }
 
+    // 4. Sync Announcements
+    const { data: announcements, error: annError } = await supabase.from('announcements').select('*');
+    if (!annError && announcements) {
+      announcements.forEach((row: any) => {
+        const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
+        if (gymState) {
+          if (!gymState.announcements) gymState.announcements = [];
+          const exists = gymState.announcements.some(a => a.id === row.id);
+          if (!exists) {
+            gymState.announcements.push({
+              id: row.id,
+              title: row.title,
+              content: row.content,
+              category: row.category,
+              priority: row.priority,
+              date: row.date,
+              author: row.author,
+              pinned: Boolean(row.pinned),
+              active: Boolean(row.active)
+            });
+          }
+        }
+      });
+    }
+
     console.log(`[GymFlow Supabase] Sincronização concluída: ${gyms?.length || 0} academias.`);
   } catch (err) {
     console.warn('[GymFlow Supabase] Erro durante sincronização:', err);
@@ -753,13 +798,15 @@ app.use((req, res, next) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    console.log(`[Auth Login] Tentativa para: ${cleanEmail}`);
+    
     let user = usersStore.get(cleanEmail);
-
-    // If not found directly, check case-insensitively in usersStore
     if (!user) {
+      console.log(`[Auth Login] Usuário não encontrado pelo e-mail direto: ${cleanEmail}. Tentando busca manual...`);
       for (const [uEmail, u] of usersStore.entries()) {
         if (uEmail.toLowerCase() === cleanEmail) {
           user = u;
+          console.log(`[Auth Login] Encontrado via busca manual: ${uEmail}`);
           break;
         }
       }
@@ -811,6 +858,7 @@ app.use((req, res, next) => {
     }
 
     if (!user) {
+      console.log(`[Auth Login] Usuário NÃO encontrado após todas as tentativas. Store size: ${usersStore.size}`);
       res.status(401).json({
         success: false,
         message: 'Nenhuma conta encontrada com este e-mail. Verifique se o e-mail digitado corresponde à sua academia.'
@@ -1866,6 +1914,8 @@ app.use((req, res, next) => {
       gymState.announcements.push(newAnnouncement);
     }
 
+    saveGymsToFile();
+
     res.json({ success: true, announcement: newAnnouncement });
   });
 
@@ -1885,6 +1935,7 @@ app.use((req, res, next) => {
     }
 
     gymState.announcements = gymState.announcements.filter(a => a.id !== req.params.id);
+    saveGymsToFile();
     res.json({ success: true, message: 'Comunicado removido' });
   });
 
@@ -2447,6 +2498,9 @@ void sendHeartbeat() {
       createdAt: newProfile.createdAt
     };
     usersStore.set(newProfile.ownerEmail.toLowerCase(), ownerRecord);
+    
+    // Save state immediately
+    saveGymsToFile();
 
     const trialDueDate = new Date();
     trialDueDate.setDate(trialDueDate.getDate() + trialDays);

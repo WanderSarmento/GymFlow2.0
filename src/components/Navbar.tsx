@@ -19,7 +19,6 @@ interface NavbarProps {
   onOpenCustomizeModal: () => void;
   currentUser: AuthUser | null;
   onOpenLoginModal: () => void;
-  onOpenSupabaseModal: () => void;
   onLogout: () => void;
   isDirectStudentLink: boolean;
 }
@@ -38,7 +37,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCustomizeModal,
   currentUser,
   onOpenLoginModal,
-  onOpenSupabaseModal,
   onLogout,
   isDirectStudentLink
 }) => {

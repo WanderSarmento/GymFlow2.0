@@ -375,13 +375,7 @@ export default function App() {
             {occupancy.blockReason && <span className="ml-1 opacity-90 font-medium">Motivo: {occupancy.blockReason}</span>}
           </span>
           {currentUser?.role === 'superadmin' && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('saas_admin')}
-              className="ml-3 px-2 py-0.5 rounded bg-rose-800 hover:bg-rose-700 text-white font-bold text-[10px] border border-rose-400 transition"
-            >
-              Gerenciar no Painel Master
-            </button>
+            <span className="ml-2 text-[10px] opacity-70 italic">(Acesso SuperAdmin Detectado)</span>
           )}
         </div>
       )}
@@ -402,7 +396,6 @@ export default function App() {
           onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
           currentUser={currentUser}
           onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
           onLogout={handleLogout}
           isDirectStudentLink={isDirectStudentLink}
         />
@@ -553,43 +546,51 @@ export default function App() {
             />
 
             {/* Sub-Tabs: Mural vs Auditoria */}
-            <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
-              <button
-                onClick={() => setReceptionSubTab('announcements')}
-                className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  receptionSubTab === 'announcements'
-                    ? 'bg-zinc-100 text-black shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                Mural de Avisos
-              </button>
-              <button
-                onClick={() => setReceptionSubTab('audit')}
-                className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  receptionSubTab === 'audit'
-                    ? 'bg-zinc-100 text-black shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                Auditoria & Logs
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
+                <button
+                  onClick={() => setReceptionSubTab('announcements')}
+                  className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                    receptionSubTab === 'announcements'
+                      ? 'bg-zinc-100 text-black shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Mural de Avisos
+                </button>
+                <button
+                  onClick={() => setReceptionSubTab('audit')}
+                  className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                    receptionSubTab === 'audit'
+                      ? 'bg-zinc-100 text-black shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Auditoria & Logs
+                </button>
+              </div>
+              
+              <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest px-1">
+                {receptionSubTab === 'announcements' ? '📢 Gestão de Comunicados' : '📋 Registros de Telemetria'}
+              </div>
             </div>
 
-            {receptionSubTab === 'announcements' ? (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <AnnouncementsBoard
-                  announcements={announcements}
-                  onAddAnnouncement={handleAddAnnouncement}
-                  onDeleteAnnouncement={handleDeleteAnnouncement}
-                  isAdminMode={true}
-                />
-              </div>
-            ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <AccessAuditLogs accessLogs={accessLogs} />
-              </div>
-            )}
+            <div className="pt-2">
+              {receptionSubTab === 'announcements' ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <AnnouncementsBoard
+                    announcements={announcements}
+                    onAddAnnouncement={handleAddAnnouncement}
+                    onDeleteAnnouncement={handleDeleteAnnouncement}
+                    isAdminMode={true}
+                  />
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <AccessAuditLogs accessLogs={accessLogs} />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -623,20 +624,13 @@ export default function App() {
             <div className="space-y-2 max-w-md">
               <h3 className="text-2xl font-bold text-white">Nenhuma academia cadastrada</h3>
               <p className="text-zinc-400 text-sm">
-                Todos os dados de exemplo foram removidos. O Super Administrador pode cadastrar novas unidades e clientes diretamente pelo Painel Master SaaS.
+              Você ainda não possui unidades cadastradas. Se você é um administrador, acesse o painel de gerenciamento para cadastrar sua academia.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              {currentUser?.role === 'superadmin' ? (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('saas_admin')}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  <Shield className="w-4 h-4" />
-                  Ir para o Painel Master SaaS
-                </button>
-              ) : null}
+              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold opacity-50">
+                Aguardando Cadastro de Unidade
+              </span>
             </div>
           </div>
         )}
@@ -705,12 +699,6 @@ export default function App() {
         currentGym={currentGym || undefined}
         availableGyms={gyms}
         initialMode={loginModalMode}
-      />
-
-      {/* SaaS Modal 5: Supabase Connection & SQL Schema Export */}
-      <SupabaseIntegrationModal
-        isOpen={isSupabaseModalOpen}
-        onClose={() => setIsSupabaseModalOpen(false)}
       />
 
     </div>
