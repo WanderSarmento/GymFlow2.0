@@ -254,9 +254,10 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
       {/* Modal: Create Announcement */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3.5 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto touch-scroll rounded-3xl border border-gray-800 bg-gray-950 p-5 sm:p-8 shadow-2xl">
+          <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-5">
+            {/* Modal Header - Fixed at top */}
+            <div className="flex items-center justify-between border-b border-gray-800 p-5 sm:p-8 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
                   <Bell className="h-4 w-4" />
@@ -268,128 +269,136 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer"
+                className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
-                  Título do Comunicado *
-                </label>
-                <input
-                  id="input-ann-title"
-                  type="text"
-                  required
-                  placeholder="Ex: Manutenção na Esteira 04 ou Horário de Feriado"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Modal Body - Scrollable */}
+            <div className="flex-1 overflow-y-auto touch-scroll p-5 sm:p-8 py-5">
+              <form id="announcement-form" onSubmit={handleSubmit} className="space-y-5 text-xs">
                 <div>
-                  <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
-                    Categoria
-                  </label>
-                  <select
-                    id="select-ann-category"
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
-                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none"
-                  >
-                    <option value="manutencao">🔧 Manutenção</option>
-                    <option value="evento">🏆 Evento / Desafio</option>
-                    <option value="importante">⚠️ Importante</option>
-                    <option value="horario">⏰ Horário Especial</option>
-                    <option value="novidade">✨ Novidade</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
-                    Prioridade
-                  </label>
-                  <select
-                    id="select-ann-priority"
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
-                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none"
-                  >
-                    <option value="low">Baixa</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta</option>
-                    <option value="urgent">Urgente</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
-                  Mensagem Completa *
-                </label>
-                <textarea
-                  id="textarea-ann-content"
-                  required
-                  rows={4}
-                  placeholder="Escreva os detalhes, prazos, orientações aos alunos..."
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                <div>
-                  <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
-                    Autor / Setor
+                  <label htmlFor="input-ann-title" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                    Título do Comunicado *
                   </label>
                   <input
-                    id="input-ann-author"
+                    id="input-ann-title"
                     type="text"
-                    placeholder="Ex: Recepção Central"
-                    value={formAuthor}
-                    onChange={(e) => setFormAuthor(e.target.value)}
-                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none"
+                    required
+                    placeholder="Ex: Manutenção na Esteira 04 ou Horário de Feriado"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none transition-all"
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-2 sm:pt-4 min-h-[44px]">
-                  <input
-                    id="checkbox-ann-pinned"
-                    type="checkbox"
-                    checked={formPinned}
-                    onChange={(e) => setFormPinned(e.target.checked)}
-                    className="h-5 w-5 rounded border-gray-700 bg-gray-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer"
-                  />
-                  <label htmlFor="checkbox-ann-pinned" className="text-gray-300 font-bold text-xs cursor-pointer">
-                    Fixar no topo
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="select-ann-category" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                      Categoria
+                    </label>
+                    <select
+                      id="select-ann-category"
+                      value={formCategory}
+                      onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
+                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="manutencao">🔧 Manutenção</option>
+                      <option value="evento">🏆 Evento / Desafio</option>
+                      <option value="importante">⚠️ Importante</option>
+                      <option value="horario">⏰ Horário Especial</option>
+                      <option value="novidade">✨ Novidade</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="select-ann-priority" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                      Prioridade
+                    </label>
+                    <select
+                      id="select-ann-priority"
+                      value={formPriority}
+                      onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
+                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="low">Baixa</option>
+                      <option value="medium">Média</option>
+                      <option value="high">Alta</option>
+                      <option value="urgent">Urgente</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="textarea-ann-content" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                    Mensagem Completa *
                   </label>
+                  <textarea
+                    id="textarea-ann-content"
+                    required
+                    rows={4}
+                    placeholder="Escreva os detalhes, prazos, orientações aos alunos..."
+                    value={formContent}
+                    onChange={(e) => setFormContent(e.target.value)}
+                    className="w-full rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none resize-none transition-all"
+                  />
                 </div>
-              </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-gray-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                  <div>
+                    <label htmlFor="input-ann-author" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                      Autor / Setor
+                    </label>
+                    <input
+                      id="input-ann-author"
+                      type="text"
+                      placeholder="Ex: Recepção Central"
+                      value={formAuthor}
+                      onChange={(e) => setFormAuthor(e.target.value)}
+                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2 sm:pt-4 min-h-[44px]">
+                    <div className="relative flex items-center">
+                      <input
+                        id="checkbox-ann-pinned"
+                        type="checkbox"
+                        checked={formPinned}
+                        onChange={(e) => setFormPinned(e.target.checked)}
+                        className="h-6 w-6 rounded-lg border-gray-700 bg-gray-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer transition-all"
+                      />
+                    </div>
+                    <label htmlFor="checkbox-ann-pinned" className="text-gray-300 font-bold text-xs cursor-pointer select-none">
+                      Fixar este comunicado no topo
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer - Fixed at bottom */}
+            <div className="border-t border-gray-800 p-5 sm:p-8 pt-4 bg-gray-950/80 backdrop-blur-md">
+              <div className="flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="min-h-[44px] rounded-xl border border-gray-800 bg-gray-900 px-4 py-2.5 text-xs font-bold uppercase text-gray-400 hover:text-white cursor-pointer active:scale-95 transition-all"
+                  className="flex-1 sm:flex-none min-h-[48px] rounded-xl border border-gray-800 bg-gray-900 px-6 py-2.5 text-xs font-bold uppercase text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer active:scale-95 transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   id="btn-submit-announcement"
                   type="submit"
+                  form="announcement-form"
                   disabled={isSubmitting}
-                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 text-black px-5 py-2.5 text-xs font-bold uppercase tracking-wider shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="flex-1 sm:flex-none min-h-[48px] rounded-xl bg-white hover:bg-gray-200 text-black px-8 py-2.5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-white/5 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  {isSubmitting ? 'Publicando...' : 'Publicar Comunicado'}
+                  {isSubmitting ? 'Publicando...' : 'Publicar Agora'}
                 </button>
               </div>
-            </form>
-
+            </div>
           </div>
         </div>
       )}

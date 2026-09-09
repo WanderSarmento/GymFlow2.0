@@ -140,22 +140,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Hardware
             </button>
-            <button
-              id="tab-saas-admin-view"
-              type="button"
-              onClick={() => setActiveTab('saas_admin')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'saas_admin'
-                  ? 'bg-amber-400 text-black shadow-md font-black'
-                  : isSuperAdmin
-                    ? 'text-amber-300 hover:text-amber-200 bg-amber-950/40 border border-amber-500/30'
-                    : 'text-zinc-400 hover:text-amber-300 hover:bg-zinc-900/80'
-              }`}
-              title="Painel de Administração Geral do SaaS (SuperAdmin)"
-            >
-              <span className="text-[11px]">👑</span>
-              <span>Master</span>
-            </button>
           </nav>
         )}
 
@@ -220,19 +204,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </div>
                     </div>
 
-                    {isSuperAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          setActiveTab('saas_admin');
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-indigo-300 hover:text-white hover:bg-indigo-950/60 transition-colors text-left font-bold cursor-pointer"
-                      >
-                        <ShieldAlert className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Painel Master SaaS</span>
-                      </button>
-                    )}
 
                     <button
                       type="button"
@@ -246,17 +217,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <span>Personalizar Academia</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onOpenSupabaseModal();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors text-left cursor-pointer"
-                    >
-                      <Database className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Conectar Supabase / SQL</span>
-                    </button>
 
                     <div className="my-1 border-t border-zinc-800/80" />
 
