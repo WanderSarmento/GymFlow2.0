@@ -66,6 +66,7 @@ export default function App() {
   const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
+  const [receptionSubTab, setReceptionSubTab] = useState<'announcements' | 'audit'>('announcements');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDirectStudentLink, setIsDirectStudentLink] = useState(false);
 
@@ -517,16 +518,44 @@ export default function App() {
               onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
             />
 
-            {/* Announcements manager */}
-            <AnnouncementsBoard
-              announcements={announcements}
-              onAddAnnouncement={handleAddAnnouncement}
-              onDeleteAnnouncement={handleDeleteAnnouncement}
-              isAdminMode={true}
-            />
+            {/* Sub-Tabs: Mural vs Auditoria */}
+            <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
+              <button
+                onClick={() => setReceptionSubTab('announcements')}
+                className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  receptionSubTab === 'announcements'
+                    ? 'bg-zinc-100 text-black shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                Mural de Avisos
+              </button>
+              <button
+                onClick={() => setReceptionSubTab('audit')}
+                className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  receptionSubTab === 'audit'
+                    ? 'bg-zinc-100 text-black shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                Auditoria & Logs
+              </button>
+            </div>
 
-            {/* Auditoria e Telemetria: Registro de Acessos em Tempo Real no final da página */}
-            <AccessAuditLogs accessLogs={accessLogs} />
+            {receptionSubTab === 'announcements' ? (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <AnnouncementsBoard
+                  announcements={announcements}
+                  onAddAnnouncement={handleAddAnnouncement}
+                  onDeleteAnnouncement={handleDeleteAnnouncement}
+                  isAdminMode={true}
+                />
+              </div>
+            ) : (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <AccessAuditLogs accessLogs={accessLogs} />
+              </div>
+            )}
           </div>
         )}
 
