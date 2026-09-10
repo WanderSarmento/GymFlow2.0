@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-10T16:06:07.622Z",
+  "updatedAt": "2026-09-10T17:26:40.481Z",
   "gyms": [
     {
       "profile": {
@@ -385,6 +385,75 @@
           "status": "success"
         }
       ]
+    },
+    {
+      "profile": {
+        "id": "gym-academia-wander-mtvsuh5a",
+        "slug": "academia-wander",
+        "name": "Academia do Wander",
+        "slogan": "Monitoramento de Lotação em Tempo Real",
+        "city": "Belo Horizonte - MG",
+        "neighborhood": "Savassi",
+        "address": "Rua Wander, 123",
+        "contactPhone": "(31) 98888-7777",
+        "maxCapacity": 100,
+        "currentCount": 0,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "emerald",
+        "logoEmoji": "⚡",
+        "apiKey": "GF_KEY_ACADEMIA_WANDER_WDIAB6",
+        "ownerName": "Wander",
+        "ownerEmail": "wander.sarmentosantos@gmail.com",
+        "createdAt": "2026-09-10T17:26:40.462Z",
+        "operatingHours": {
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 0,
+      "maxCapacity": 100,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "ann-gym-academia-wander-mtvsuh5a-welcome",
+          "gymId": "gym-academia-wander-mtvsuh5a",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Academia do Wander!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Wander",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-academia-wander-mtvsuh5a-init",
+          "gymId": "gym-academia-wander-mtvsuh5a",
+          "timestamp": "2026-09-10T17:26:40.462Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Academia Academia do Wander cadastrada com sucesso no GymFlow SaaS!",
+          "countAfter": 0,
+          "status": "success"
+        }
+      ]
     }
   ],
   "users": [
@@ -523,6 +592,18 @@
       "gymSlug": "iron-gym-moema",
       "gymName": "Iron Gym Moema",
       "createdAt": "2026-09-10T16:05:29.159269+00:00"
+    },
+    {
+      "id": "user-academia-wander-owner",
+      "email": "wander.sarmentosantos@gmail.com",
+      "password": "password123",
+      "name": "Wander",
+      "role": "owner",
+      "gymId": "gym-academia-wander-mtvsuh5a",
+      "gymSlug": "academia-wander",
+      "gymName": "Academia do Wander",
+      "phone": "(31) 98888-7777",
+      "createdAt": "2026-09-10T17:26:40.462Z"
     }
   ],
   "saasAccounts": [
@@ -659,6 +740,40 @@
           "id": "inv-gym-academia-teste-perm-mtvpylff-mtvpylfy",
           "gymId": "gym-academia-teste-perm-mtvpylff",
           "gymName": "Academia Teste Permanente",
+          "amount": 149,
+          "dueDate": "2026-09-25",
+          "status": "pending",
+          "referenceMonth": "09/2026",
+          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
+        }
+      ]
+    },
+    {
+      "gymId": "gym-academia-wander-mtvsuh5a",
+      "gymSlug": "academia-wander",
+      "gymName": "Academia do Wander",
+      "ownerName": "Wander",
+      "ownerEmail": "wander.sarmentosantos@gmail.com",
+      "ownerPhone": "(31) 98888-7777",
+      "city": "Belo Horizonte - MG",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 2,
+      "maxCapacity": 100,
+      "lastPaymentDate": null,
+      "nextDueDate": "2026-09-25",
+      "trialEndsAt": "2026-09-25",
+      "createdAt": "2026-09-10T17:26:40.462Z",
+      "apiKey": "GF_KEY_ACADEMIA_WANDER_WDIAB6",
+      "invoices": [
+        {
+          "id": "inv-gym-academia-wander-mtvsuh5a-mtvsuh5t",
+          "gymId": "gym-academia-wander-mtvsuh5a",
+          "gymName": "Academia do Wander",
           "amount": 149,
           "dueDate": "2026-09-25",
           "status": "pending",

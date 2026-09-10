@@ -956,7 +956,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   // ==========================================
 
   // Login for Gym Owners & Staff
-  app.post('/api/auth/login', (req: Request, res: Response) => {
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
     const { email, password, gymSlug } = req.body;
 
     if (!email || !password) {
@@ -979,7 +979,56 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       }
     }
 
-    // If not found directly, check if email/slug matches any registered gym in store
+    // If not found in memory, try searching Supabase directly as a last resort
+    if (!user) {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        console.log(`[Auth Login] Usuário não em memória. Buscando no Supabase para: ${cleanEmail}`);
+        try {
+          // 1. Search in gym_users table
+          const { data: dbUser } = await supabase.from('gym_users').select('*').ilike('email', cleanEmail).maybeSingle();
+          if (dbUser) {
+            const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === dbUser.gym_id);
+            user = {
+              id: dbUser.id,
+              email: dbUser.email,
+              password: dbUser.password || 'password123',
+              name: dbUser.full_name,
+              role: dbUser.role as any,
+              gymId: dbUser.gym_id,
+              gymSlug: gymState?.profile.slug || 'academia-externa',
+              gymName: gymState?.profile.name || 'Academia',
+              createdAt: dbUser.created_at
+            };
+            usersStore.set(cleanEmail, user);
+            console.log(`[Auth Login] Usuário recuperado do Supabase (gym_users): ${cleanEmail}`);
+          } else {
+            // 2. Search in gyms table as owner
+            const { data: dbGym } = await supabase.from('gyms').select('*').ilike('owner_email', cleanEmail).maybeSingle();
+            if (dbGym) {
+              user = {
+                id: `user-${dbGym.slug}-owner`,
+                email: dbGym.owner_email || cleanEmail,
+                password: 'password123',
+                name: dbGym.owner_name || 'Gestor da Academia',
+                role: 'owner',
+                gymId: dbGym.id,
+                gymSlug: dbGym.slug,
+                gymName: dbGym.name,
+                phone: dbGym.contact_phone,
+                createdAt: dbGym.created_at
+              };
+              usersStore.set(cleanEmail, user);
+              console.log(`[Auth Login] Usuário recuperado do Supabase (gyms.owner): ${cleanEmail}`);
+            }
+          }
+        } catch (dbErr) {
+          console.warn('[Auth Login] Erro na busca direta no Supabase:', dbErr);
+        }
+      }
+    }
+
+    // If still not found, check if email matches any registered gym in local store
     if (!user) {
       for (const gymState of gymsStore.values()) {
         const pEmail = (gymState.profile.ownerEmail || '').toLowerCase().trim();
@@ -1406,7 +1455,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       logoEmoji: body.logoEmoji || '⚡',
       apiKey,
       ownerName: body.ownerName?.trim() || 'Gestor Responsável',
-      ownerEmail: body.ownerEmail?.trim() || 'contato@academia.com',
+      ownerEmail: (body.ownerEmail?.trim() || 'contato@academia.com').toLowerCase(),
       createdAt: new Date().toISOString(),
       operatingHours: defaultHours
     };
