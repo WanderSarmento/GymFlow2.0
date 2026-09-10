@@ -117,25 +117,24 @@ export default function App() {
         const hash = window.location.hash.toLowerCase();
 
         // Check if accessing SuperAdmin/SaaS Master via pathname, query, or hash
+        // Be more precise to avoid accidental triggers
         const isSuperAdminRoute =
           viewParam === 'saas' ||
           viewParam === 'admin' ||
           viewParam === 'superadmin' ||
           viewParam === 'master' ||
           pathname === '/admin' ||
-          pathname.startsWith('/admin/') ||
+          pathname === '/admin/' ||
           pathname === '/superadmin' ||
-          pathname.startsWith('/superadmin/') ||
-          pathname === '/super-admin' ||
-          pathname.startsWith('/super-admin/') ||
+          pathname === '/superadmin/' ||
           pathname === '/saas' ||
-          pathname.startsWith('/saas/') ||
+          pathname === '/saas/' ||
           pathname === '/master' ||
-          pathname.startsWith('/master/') ||
-          hash.includes('admin') ||
-          hash.includes('superadmin') ||
-          hash.includes('saas') ||
-          hash.includes('master');
+          pathname === '/master/' ||
+          hash === '#admin' ||
+          hash === '#superadmin' ||
+          hash === '#saas' ||
+          hash === '#master';
 
         if (isSuperAdminRoute) {
           setActiveTab('saas_admin');
@@ -280,12 +279,15 @@ export default function App() {
   const handleLogout = () => {
     clearAuthSession();
     setCurrentUser(null);
-    setActiveTab('student');
+    // After logout, reset to 'reception' tab which will show the Welcome/Login Portal if no user
+    setActiveTab('reception');
+    setIsDirectStudentLink(false);
     try {
       const url = new URL(window.location.href);
       url.searchParams.delete('view');
       url.searchParams.delete('admin');
       url.searchParams.delete('saas');
+      url.searchParams.delete('gym');
       url.hash = '';
       const newPath = url.pathname.includes('/master') || url.pathname.includes('/saas') ? '/' : url.pathname;
       window.history.replaceState({}, '', newPath + (url.search ? url.search : ''));
