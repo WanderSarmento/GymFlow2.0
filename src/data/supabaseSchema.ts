@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.gym_users (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     gym_id TEXT NOT NULL REFERENCES public.gyms(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
+    password TEXT,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'reception' CHECK (role IN ('superadmin', 'owner', 'manager', 'reception', 'staff', 'trainer')),
     phone TEXT,

@@ -320,6 +320,7 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
           await supabase.from('gym_users').update({
             gym_id: gymState.profile.id,
             full_name: ownerUser.name,
+            password: ownerUser.password, // Persist password
             role: ownerUser.role,
             phone: ownerUser.phone
           }).eq('id', existingUser.id);
@@ -327,6 +328,7 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
           await supabase.from('gym_users').insert({
             gym_id: gymState.profile.id,
             email: ownerUser.email,
+            password: ownerUser.password, // Persist password
             full_name: ownerUser.name,
             role: ownerUser.role,
             phone: ownerUser.phone
@@ -764,8 +766,13 @@ let isSyncing = false;
 export async function ensureStoresSynced(force = false) {
   const now = Date.now();
   if (isSyncing) return;
-  // If never synced or empty stores, or older than 20 seconds
-  if (force || lastSyncTimestamp === 0 || gymsStore.size === 0 || saasAccountsStore.size === 0 || (now - lastSyncTimestamp > 20000)) {
+  
+  // In serverless, we must sync at least once per instance to get the latest data from Supabase
+  // since the local memory is just the INITIAL_GYMS placeholder at start.
+  const needsInitialSync = isServerless && lastSyncTimestamp === 0;
+  
+  // If never synced or empty stores, or older than 20 seconds, or first serverless run
+  if (force || needsInitialSync || lastSyncTimestamp === 0 || gymsStore.size <= 2 || (now - lastSyncTimestamp > 20000)) {
     isSyncing = true;
     try {
       await syncGymsFromSupabase();
@@ -965,30 +972,51 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    console.log(`[Auth Login] Tentativa para: ${cleanEmail}`);
+    console.log(`[Auth Login] Tentativa para: ${cleanEmail} (isServerless: ${isServerless})`);
     
     let user = usersStore.get(cleanEmail);
     if (!user) {
-      console.log(`[Auth Login] Usuário não encontrado pelo e-mail direto: ${cleanEmail}. Tentando busca manual...`);
+      console.log(`[Auth Login] Usuário não em memória local. Store size: ${usersStore.size}. Buscando manuais...`);
       for (const [uEmail, u] of usersStore.entries()) {
         if (uEmail.toLowerCase() === cleanEmail) {
           user = u;
-          console.log(`[Auth Login] Encontrado via busca manual: ${uEmail}`);
           break;
         }
       }
     }
 
-    // If not found in memory, try searching Supabase directly as a last resort
+    // If not found in memory, try searching Supabase directly
     if (!user) {
       const supabase = getSupabaseAdmin();
-      if (supabase) {
-        console.log(`[Auth Login] Usuário não em memória. Buscando no Supabase para: ${cleanEmail}`);
+      if (!supabase) {
+        console.warn(`[Auth Login] Supabase Admin não configurado ou ENV ausente (SUPABASE_URL/KEY)`);
+      } else {
+        console.log(`[Auth Login] Buscando no Supabase para: ${cleanEmail}`);
         try {
           // 1. Search in gym_users table
-          const { data: dbUser } = await supabase.from('gym_users').select('*').ilike('email', cleanEmail).maybeSingle();
+          const { data: dbUser, error: userErr } = await supabase.from('gym_users').select('*').ilike('email', cleanEmail).maybeSingle();
+          if (userErr) console.warn(`[Auth Login] Erro na busca em gym_users:`, userErr);
+          
           if (dbUser) {
+            console.log(`[Auth Login] Usuário encontrado no Supabase (gym_users): ${dbUser.id}`);
+            let gymSlug = 'academia-externa';
+            let gymName = 'Academia';
+            
             const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === dbUser.gym_id);
+            if (gymState) {
+              gymSlug = gymState.profile.slug;
+              gymName = gymState.profile.name;
+            } else {
+              // If not in memory, fetch gym profile from Supabase
+              const { data: dbGym, error: gymErr } = await supabase.from('gyms').select('slug, name').eq('id', dbUser.gym_id).maybeSingle();
+              if (dbGym) {
+                gymSlug = dbGym.slug;
+                gymName = dbGym.name;
+              } else if (gymErr) {
+                console.warn(`[Auth Login] Erro ao buscar academia do usuário:`, gymErr);
+              }
+            }
+
             user = {
               id: dbUser.id,
               email: dbUser.email,
@@ -996,16 +1024,19 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
               name: dbUser.full_name,
               role: dbUser.role as any,
               gymId: dbUser.gym_id,
-              gymSlug: gymState?.profile.slug || 'academia-externa',
-              gymName: gymState?.profile.name || 'Academia',
+              gymSlug: gymSlug,
+              gymName: gymName,
               createdAt: dbUser.created_at
             };
             usersStore.set(cleanEmail, user);
-            console.log(`[Auth Login] Usuário recuperado do Supabase (gym_users): ${cleanEmail}`);
           } else {
             // 2. Search in gyms table as owner
-            const { data: dbGym } = await supabase.from('gyms').select('*').ilike('owner_email', cleanEmail).maybeSingle();
+            console.log(`[Auth Login] Buscando como dono na tabela gyms: ${cleanEmail}`);
+            const { data: dbGym, error: ownerErr } = await supabase.from('gyms').select('*').ilike('owner_email', cleanEmail).maybeSingle();
+            if (ownerErr) console.warn(`[Auth Login] Erro na busca em gyms (owner):`, ownerErr);
+            
             if (dbGym) {
+              console.log(`[Auth Login] Dono de academia encontrado no Supabase: ${dbGym.name}`);
               user = {
                 id: `user-${dbGym.slug}-owner`,
                 email: dbGym.owner_email || cleanEmail,
@@ -1019,7 +1050,6 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
                 createdAt: dbGym.created_at
               };
               usersStore.set(cleanEmail, user);
-              console.log(`[Auth Login] Usuário recuperado do Supabase (gyms.owner): ${cleanEmail}`);
             }
           }
         } catch (dbErr) {
