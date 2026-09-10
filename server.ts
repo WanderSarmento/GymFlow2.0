@@ -632,9 +632,27 @@ async function syncGymsFromSupabase() {
     // 2. Sync SaaS Accounts
     const { data: saasAccounts, error: saasError } = await supabase.from('saas_accounts').select('*');
     if (!saasError && saasAccounts) {
+      // Also fetch invoices to populate the full account objects
+      const { data: allInvoices, error: invError } = await supabase.from('saas_invoices').select('*');
+      
       saasAccounts.forEach((row: any) => {
+        // Encontrar o slug da academia pelo ID
         const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
         
+        // Find invoices for this gym
+        const gymInvoices = (allInvoices || [])
+          .filter((inv: any) => inv.gym_id === row.gym_id)
+          .map((inv: any) => ({
+            id: inv.id,
+            gymId: inv.gym_id,
+            referenceMonth: inv.reference_month,
+            amount: Number(inv.amount),
+            dueDate: inv.due_date,
+            status: inv.status,
+            paidDate: inv.paid_at,
+            notes: inv.notes
+          }));
+
         saasAccountsStore.set(row.gym_id, {
           gymId: row.gym_id,
           gymSlug: gymState?.profile.slug || row.gym_id,
@@ -652,7 +670,7 @@ async function syncGymsFromSupabase() {
           nextDueDate: row.next_billing_date || new Date(Date.now() + 30 * 86400000).toISOString(),
           createdAt: row.created_at || new Date().toISOString(),
           apiKey: gymState?.profile.apiKey || row.api_key || '',
-          invoices: []
+          invoices: gymInvoices
         });
       });
     }
@@ -753,6 +771,15 @@ async function syncGymsFromSupabase() {
 
     // Save synced state to storage path so it persists on subsequent cold starts
     saveGymsToFile();
+
+    // Ensure Master Admin always exists in memory even if not in Supabase
+    if (!usersStore.has('admin@gymflow.com')) {
+      usersStore.set('admin@gymflow.com', masterAdminRecord);
+    } else {
+      // Force superadmin role for this email if it was loaded with a different role
+      const admin = usersStore.get('admin@gymflow.com');
+      if (admin) admin.role = 'superadmin';
+    }
 
     console.log(`[GymFlow Supabase] Sincronização concluída: ${gyms?.length || 0} academias no DB, total em memória: ${gymsStore.size}, contas SaaS: ${saasAccountsStore.size}`);
   } catch (err) {

@@ -532,8 +532,19 @@ async function syncGymsFromSupabase() {
     }
     const { data: saasAccounts, error: saasError } = await supabase.from("saas_accounts").select("*");
     if (!saasError && saasAccounts) {
+      const { data: allInvoices, error: invError } = await supabase.from("saas_invoices").select("*");
       saasAccounts.forEach((row) => {
         const gymState = Array.from(gymsStore.values()).find((g) => g.profile.id === row.gym_id);
+        const gymInvoices = (allInvoices || []).filter((inv) => inv.gym_id === row.gym_id).map((inv) => ({
+          id: inv.id,
+          gymId: inv.gym_id,
+          referenceMonth: inv.reference_month,
+          amount: Number(inv.amount),
+          dueDate: inv.due_date,
+          status: inv.status,
+          paidDate: inv.paid_at,
+          notes: inv.notes
+        }));
         saasAccountsStore.set(row.gym_id, {
           gymId: row.gym_id,
           gymSlug: gymState?.profile.slug || row.gym_id,
@@ -551,7 +562,7 @@ async function syncGymsFromSupabase() {
           nextDueDate: row.next_billing_date || new Date(Date.now() + 30 * 864e5).toISOString(),
           createdAt: row.created_at || (/* @__PURE__ */ new Date()).toISOString(),
           apiKey: gymState?.profile.apiKey || row.api_key || "",
-          invoices: []
+          invoices: gymInvoices
         });
       });
     }
@@ -640,6 +651,12 @@ async function syncGymsFromSupabase() {
       }
     }
     saveGymsToFile();
+    if (!usersStore.has("admin@gymflow.com")) {
+      usersStore.set("admin@gymflow.com", masterAdminRecord);
+    } else {
+      const admin = usersStore.get("admin@gymflow.com");
+      if (admin) admin.role = "superadmin";
+    }
     console.log(`[GymFlow Supabase] Sincroniza\xE7\xE3o conclu\xEDda: ${gyms?.length || 0} academias no DB, total em mem\xF3ria: ${gymsStore.size}, contas SaaS: ${saasAccountsStore.size}`);
   } catch (err) {
     console.warn("[GymFlow Supabase] Erro durante sincroniza\xE7\xE3o:", err);
