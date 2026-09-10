@@ -207,6 +207,32 @@ function loadGymsFromFile() {
   return false;
 }
 
+// Clean and normalize Supabase project URL (strips /rest/v1, /auth/v1, trailing slashes, etc.)
+function cleanSupabaseUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  let url = rawUrl.trim();
+
+  const dashboardMatch = url.match(/supabase\.com\/dashboard\/project\/([a-zA-Z0-9_-]+)/i);
+  if (dashboardMatch && dashboardMatch[1]) {
+    return `https://${dashboardMatch[1]}.supabase.co`;
+  }
+
+  if (/^[a-z0-9]{20}$/i.test(url)) {
+    return `https://${url}.supabase.co`;
+  }
+
+  url = url
+    .replace(/\/rest\/v1(\/.*)?$/i, '')
+    .replace(/\/auth\/v1(\/.*)?$/i, '')
+    .replace(/\/+$/, '');
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+
+  return url;
+}
+
 // In-memory config for Supabase (allows dynamic configuration from UI)
 let dynamicSupabaseConfig = {
   url: '',
@@ -215,8 +241,9 @@ let dynamicSupabaseConfig = {
 
 // Supabase Admin Client for Backend Persistence (Bypasses RLS if service_role is used)
 const getSupabaseAdmin = () => {
-  const url = (dynamicSupabaseConfig.url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const rawUrl = (dynamicSupabaseConfig.url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
   const key = (dynamicSupabaseConfig.key || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+  const url = cleanSupabaseUrl(rawUrl);
   
   if (!url || !key) return null;
   
@@ -242,7 +269,7 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
 
   try {
     // 1. Update Gym Profile & Count
-    await supabase.from('gyms').upsert({
+    const { error: gymErr } = await supabase.from('gyms').upsert({
       id: gymState.profile.id,
       slug: gymState.profile.slug,
       name: gymState.profile.name,
@@ -264,9 +291,13 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
       updated_at: new Date().toISOString()
     });
 
+    if (gymErr) {
+      console.warn(`[GymFlow Supabase] Erro ao salvar academia ${gymId}:`, gymErr);
+    }
+
     // 2. Persist Access Log if provided
-    if (logEntry) {
-      await supabase.from('access_logs').insert({
+    if (logEntry && logEntry.type && logEntry.description) {
+      const { error: logErr } = await supabase.from('access_logs').insert({
         gym_id: gymState.profile.id,
         type: logEntry.type,
         source: logEntry.source || 'api_sync',
@@ -274,37 +305,85 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
         count_after: gymState.currentCount,
         status: logEntry.status || 'success'
       });
+      if (logErr) {
+        console.warn(`[GymFlow Supabase] Erro ao salvar access log para ${gymId}:`, logErr);
+      }
     }
 
     // 3. Persist Owner User if it's a new gym
     const ownerEmail = gymState.profile.ownerEmail.toLowerCase();
     const ownerUser = usersStore.get(ownerEmail);
     if (ownerUser) {
-      await supabase.from('gym_users').upsert({
-        id: ownerUser.id.startsWith('user-') ? undefined : ownerUser.id, // Only use UUID if it looks like one
-        gym_id: gymState.profile.id,
-        email: ownerUser.email,
-        full_name: ownerUser.name,
-        role: ownerUser.role,
-        phone: ownerUser.phone
-      }, { onConflict: 'email' });
+      try {
+        const { data: existingUser } = await supabase.from('gym_users').select('id').eq('email', ownerUser.email).maybeSingle();
+        if (existingUser?.id) {
+          await supabase.from('gym_users').update({
+            gym_id: gymState.profile.id,
+            full_name: ownerUser.name,
+            role: ownerUser.role,
+            phone: ownerUser.phone
+          }).eq('id', existingUser.id);
+        } else {
+          await supabase.from('gym_users').insert({
+            gym_id: gymState.profile.id,
+            email: ownerUser.email,
+            full_name: ownerUser.name,
+            role: ownerUser.role,
+            phone: ownerUser.phone
+          });
+        }
+      } catch (userPersistErr) {
+        console.warn(`[GymFlow Supabase] Aviso ao persistir usuário ${ownerEmail}:`, userPersistErr);
+      }
     }
 
     // 4. Sync Announcements
     if (gymState.announcements && gymState.announcements.length > 0) {
+      const isUuid = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
       for (const ann of gymState.announcements) {
-        await supabase.from('announcements').upsert({
-          id: ann.id,
-          gym_id: gymId,
-          title: ann.title,
-          content: ann.content,
-          category: ann.category,
-          priority: ann.priority,
-          date: ann.date,
-          author: ann.author,
-          pinned: ann.pinned,
-          active: ann.active
-        }, { onConflict: 'id' });
+        try {
+          if (isUuid(ann.id)) {
+            await supabase.from('announcements').upsert({
+              id: ann.id,
+              gym_id: gymId,
+              title: ann.title,
+              content: ann.content,
+              category: ann.category,
+              priority: ann.priority,
+              date: ann.date,
+              author: ann.author,
+              pinned: ann.pinned,
+              active: ann.active
+            });
+          } else {
+            const { data: existingAnn } = await supabase.from('announcements').select('id').eq('gym_id', gymId).eq('title', ann.title).maybeSingle();
+            if (existingAnn?.id) {
+              await supabase.from('announcements').update({
+                content: ann.content,
+                category: ann.category,
+                priority: ann.priority,
+                date: ann.date,
+                author: ann.author,
+                pinned: ann.pinned,
+                active: ann.active
+              }).eq('id', existingAnn.id);
+            } else {
+              await supabase.from('announcements').insert({
+                gym_id: gymId,
+                title: ann.title,
+                content: ann.content,
+                category: ann.category,
+                priority: ann.priority,
+                date: ann.date,
+                author: ann.author,
+                pinned: ann.pinned,
+                active: ann.active
+              });
+            }
+          }
+        } catch (annErr) {
+          console.warn(`[GymFlow Supabase] Aviso ao salvar anúncio:`, annErr);
+        }
       }
     }
   } catch (err) {
@@ -321,7 +400,7 @@ async function persistSaaSAccountToSupabase(gymId: string, invoice?: SaaSInvoice
 
   try {
     // 1. Upsert SaaS Account
-    await supabase.from('saas_accounts').upsert({
+    const { error: saasErr } = await supabase.from('saas_accounts').upsert({
       gym_id: account.gymId,
       plan_tier: account.plan,
       monthly_price: account.monthlyFee,
@@ -330,10 +409,13 @@ async function persistSaaSAccountToSupabase(gymId: string, invoice?: SaaSInvoice
       trial_ends_at: account.trialEndsAt,
       updated_at: new Date().toISOString()
     });
+    if (saasErr) {
+      console.warn(`[GymFlow Supabase] Erro ao salvar conta SaaS ${gymId}:`, saasErr);
+    }
 
     // 2. Insert Invoice if provided
     if (invoice) {
-      await supabase.from('saas_invoices').upsert({
+      const { error: invErr } = await supabase.from('saas_invoices').upsert({
         id: invoice.id,
         gym_id: invoice.gymId,
         reference_month: invoice.referenceMonth,
@@ -342,6 +424,9 @@ async function persistSaaSAccountToSupabase(gymId: string, invoice?: SaaSInvoice
         status: invoice.status,
         paid_at: invoice.paidDate
       });
+      if (invErr) {
+        console.warn(`[GymFlow Supabase] Erro ao salvar fatura para ${gymId}:`, invErr);
+      }
     }
   } catch (err) {
     console.warn(`[GymFlow Supabase] Falha ao persistir conta SaaS ${gymId}:`, err);
@@ -645,6 +730,25 @@ async function syncGymsFromSupabase() {
       }
     }
 
+    // 6. Guarantee any local gym that exists in memory/file but is missing in Supabase gets uploaded!
+    if (gyms) {
+      for (const gymState of gymsStore.values()) {
+        const inSupabase = gyms.some((g: any) => g.id === gymState.profile.id || g.slug === gymState.profile.slug);
+        if (!inSupabase) {
+          console.log(`[GymFlow Supabase] Sincronizando academia local pendente '${gymState.profile.name}' para o Supabase...`);
+          try {
+            await persistGymStateToSupabase(gymState.profile.id);
+            const saasAccount = saasAccountsStore.get(gymState.profile.id);
+            if (saasAccount) {
+              await persistSaaSAccountToSupabase(gymState.profile.id);
+            }
+          } catch (uploadErr) {
+            console.warn(`[GymFlow Supabase] Falha ao enviar academia pendente ${gymState.profile.name}:`, uploadErr);
+          }
+        }
+      }
+    }
+
     // Save synced state to storage path so it persists on subsequent cold starts
     saveGymsToFile();
 
@@ -809,7 +913,7 @@ app.use((req, res, next) => {
 // Store hydration middleware for serverless & cold starts
 app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (gymsStore.size === 0 || saasAccountsStore.size === 0 || isServerless) {
+    if (lastSyncTimestamp === 0 || gymsStore.size === 0 || saasAccountsStore.size === 0 || isServerless) {
       await ensureStoresSynced();
     }
   } catch (err) {
@@ -1117,9 +1221,9 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
 
   // Check Supabase Backend Status & Credentials readiness
   app.get('/api/supabase/status', (req: Request, res: Response) => {
-    const rawUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseUrl = rawUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
-    const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+    const rawUrl = dynamicSupabaseConfig.url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+    const supabaseUrl = cleanSupabaseUrl(rawUrl);
+    const supabaseAnonKey = (dynamicSupabaseConfig.key || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
     const hasServiceKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     const isConfigured = Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl.includes('supabase.co'));
@@ -1143,8 +1247,9 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
     
-    dynamicSupabaseConfig = { url, key };
-    console.log('[GymFlow Supabase] Configuração atualizada via API:', url);
+    const cleanUrl = cleanSupabaseUrl(url);
+    dynamicSupabaseConfig = { url: cleanUrl, key: (key || '').trim() };
+    console.log('[GymFlow Supabase] Configuração atualizada via API:', cleanUrl);
     
     // Trigger sync in background
     syncGymsFromSupabase().catch(err => {
@@ -1166,7 +1271,8 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     try {
-      const supabase = createClient(url, key, {
+      const cleanUrl = cleanSupabaseUrl(url);
+      const supabase = createClient(cleanUrl, key.trim(), {
         auth: { persistSession: false }
       });
       
@@ -1248,7 +1354,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   });
 
   // 2. Register a new Gym (SaaS Signup)
-  app.post('/api/gyms/register', (req: Request, res: Response) => {
+  app.post('/api/gyms/register', async (req: Request, res: Response) => {
     const body: CreateGymInput = req.body;
 
     if (!body.name || !body.slug) {
@@ -1431,8 +1537,10 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
 
     // Persist registered gym, owner user, and SaaS account to storage and Supabase
     saveGymsToFile();
-    persistGymStateToSupabase(gymId, newGymState.accessLogs[0]);
-    persistSaaSAccountToSupabase(gymId, initialInvoice);
+    await Promise.allSettled([
+      persistGymStateToSupabase(gymId, newGymState.accessLogs[0]),
+      persistSaaSAccountToSupabase(gymId, initialInvoice)
+    ]);
 
     res.status(201).json({
       success: true,
@@ -1511,7 +1619,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   });
 
   // 4. Update Gym Settings / Customization
-  app.post('/api/gyms/:gymIdOrSlug/settings', (req: Request, res: Response) => {
+  app.post('/api/gyms/:gymIdOrSlug/settings', async (req: Request, res: Response) => {
     const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
     if (!gymState) {
       res.status(404).json({ success: false, message: 'Academia não encontrada.' });
@@ -1562,13 +1670,9 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       gymState.profile.isOpen = isOpen;
     }
 
-    // Persist to Supabase if configured - Don't await to not block the response
-    persistGymStateToSupabase(gymState.profile.id).catch(err => {
-      console.warn('[GymFlow Supabase] Falha silenciosa na persistência:', err);
-    });
-    
-    // Save to local file as backup
+    // Save to local file and persist to Supabase
     saveGymsToFile();
+    await persistGymStateToSupabase(gymState.profile.id);
 
     console.log(`[GymFlow API] Configurações de ${gymState.profile.name} salvas com sucesso.`);
 
@@ -2437,7 +2541,7 @@ void sendHeartbeat() {
   });
 
   // 3. Register new gym directly from SaaS Master Admin
-  app.post('/api/saas/gyms', (req: Request, res: Response) => {
+  app.post('/api/saas/gyms', async (req: Request, res: Response) => {
     const user = getAuthUserFromRequest(req);
     if (!user || user.role !== 'superadmin') {
       res.status(403).json({ success: false, message: 'Acesso restrito ao Administrador Geral do SaaS.' });
@@ -2612,8 +2716,10 @@ void sendHeartbeat() {
 
     // Persist everything to file and Supabase
     saveGymsToFile();
-    persistGymStateToSupabase(gymId, newGymState.accessLogs[0]);
-    persistSaaSAccountToSupabase(gymId, initialInvoice);
+    await Promise.allSettled([
+      persistGymStateToSupabase(gymId, newGymState.accessLogs[0]),
+      persistSaaSAccountToSupabase(gymId, initialInvoice)
+    ]);
 
     res.status(201).json({
       success: true,
@@ -2653,11 +2759,14 @@ void sendHeartbeat() {
     if (nextDueDate) account.nextDueDate = nextDueDate;
     if (typeof turnstilesLimit === 'number') account.turnstilesLimit = turnstilesLimit;
 
+    saveGymsToFile();
+    persistSaaSAccountToSupabase(req.params.gymId).catch(console.warn);
+
     res.json({ success: true, message: 'Assinatura atualizada com sucesso!', account });
   });
 
   // 5. Block / Unblock gym access immediately
-  app.post('/api/saas/gyms/:gymId/block', (req: Request, res: Response) => {
+  app.post('/api/saas/gyms/:gymId/block', async (req: Request, res: Response) => {
     const user = getAuthUserFromRequest(req);
     if (!user || user.role !== 'superadmin') {
       res.status(403).json({ success: false, message: 'Acesso restrito ao Administrador Geral do SaaS.' });
@@ -2696,7 +2805,11 @@ void sendHeartbeat() {
         countAfter: gymState.currentCount,
         status: isBlocking ? 'blocked' : 'success'
       });
+      persistGymStateToSupabase(gymState.profile.id, gymState.accessLogs[0]).catch(console.warn);
     }
+
+    saveGymsToFile();
+    persistSaaSAccountToSupabase(account.gymId).catch(console.warn);
 
     res.json({
       success: true,

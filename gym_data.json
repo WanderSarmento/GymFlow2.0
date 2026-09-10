@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-10T01:53:50.004Z",
+  "updatedAt": "2026-09-10T16:06:07.622Z",
   "gyms": [
     {
       "profile": {
@@ -48,6 +48,17 @@
         {
           "id": "ann-gym-test-gym-1-mtuv91g2-welcome",
           "gymId": "gym-test-gym-1-mtuv91g2",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Test Gym!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Gestor Responsável",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "6084d113-1b78-4ed2-9050-9e3002a822f6",
           "title": "Bem-vindos ao Monitor em Tempo Real da Test Gym!",
           "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
           "category": "novidade",
@@ -125,6 +136,17 @@
           "author": "Carlos Silva",
           "pinned": true,
           "active": true
+        },
+        {
+          "id": "9c418fda-4b43-4cee-aa36-e6f72fe8b93b",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Iron Gym Moema!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Carlos Silva",
+          "pinned": true,
+          "active": true
         }
       ],
       "accessLogs": [
@@ -136,6 +158,230 @@
           "source": "reception_manual",
           "description": "Academia Iron Gym Moema cadastrada com sucesso no GymFlow SaaS!",
           "countAfter": 0,
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "profile": {
+        "id": "gym-fitflow-moema",
+        "slug": "fitflow-moema",
+        "name": "FitFlow Club Moema",
+        "slogan": "Sua academia inteligente de alta performance",
+        "city": "São Paulo - SP",
+        "neighborhood": "Moema Nobre",
+        "address": "Av. Ibirapuera, 2450",
+        "contactPhone": "(11) 98765-4321",
+        "maxCapacity": 85,
+        "currentCount": 38,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "cyan",
+        "visualTheme": "dark",
+        "logoEmoji": "⚡",
+        "apiKey": "GF_KEY_A0C0501F16BC4E31",
+        "ownerName": "Carlos Henrique Gestor",
+        "ownerEmail": "carlos@fitflow.com.br",
+        "createdAt": "2026-08-29T14:47:46.393418+00:00",
+        "operatingHours": {
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 38,
+      "maxCapacity": 85,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "e08fb9ef-0942-4de2-b11e-d19c5b1661be",
+          "title": "Manutenção Preventiva das Catracas e Rede",
+          "content": "No próximo domingo às 05h realizaremos a atualização do firmware das catracas inteligentes ESP32.",
+          "category": "manutencao",
+          "priority": "high",
+          "date": "28/08/2026",
+          "author": "Coordenação Técnica",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "83d8cd89-4ba8-4ed0-903f-8af183514a02",
+          "title": "Novo App de Lotação GymFlow no Ar!",
+          "content": "Alunos agora podem acompanhar o fluxo de treino em tempo real direto pelo smartphone.",
+          "category": "novidade",
+          "priority": "medium",
+          "date": "28/08/2026",
+          "author": "Recepção",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-fitflow-moema-1",
+          "gymId": "gym-fitflow-moema",
+          "timestamp": "2026-09-10T16:02:26.287Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (FitFlow Club Moema)",
+          "countAfter": 38,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-fitflow-moema-2",
+          "gymId": "gym-fitflow-moema",
+          "timestamp": "2026-09-10T15:57:26.287Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 37,
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "profile": {
+        "id": "gym-iron-muscle-ct",
+        "slug": "iron-muscle-ct",
+        "name": "Iron Muscle CT",
+        "slogan": "Centro de Treinamento Especializado em Hipertrofia & Força",
+        "city": "Curitiba - PR",
+        "neighborhood": "Batel",
+        "address": "Rua das Palmeiras, 780",
+        "contactPhone": "(41) 99123-4567",
+        "maxCapacity": 60,
+        "currentCount": 47,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "amber",
+        "visualTheme": "dark",
+        "logoEmoji": "🔥",
+        "apiKey": "GF_KEY_854CCCE653EF42AF",
+        "ownerName": "Renato Iron Treinador",
+        "ownerEmail": "renato@ironmuscle.com.br",
+        "createdAt": "2026-08-29T14:47:46.393418+00:00",
+        "operatingHours": {
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 47,
+      "maxCapacity": 60,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [],
+      "accessLogs": [
+        {
+          "id": "log-gym-iron-muscle-ct-1",
+          "gymId": "gym-iron-muscle-ct",
+          "timestamp": "2026-09-10T16:02:26.287Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (Iron Muscle CT)",
+          "countAfter": 47,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-iron-muscle-ct-2",
+          "gymId": "gym-iron-muscle-ct",
+          "timestamp": "2026-09-10T15:57:26.287Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 46,
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "profile": {
+        "id": "gym-powerfit-barra",
+        "slug": "powerfit-barra",
+        "name": "PowerFit 24h Barra",
+        "slogan": "Treino sem limites a qualquer hora do dia ou da noite",
+        "city": "Rio de Janeiro - RJ",
+        "neighborhood": "Barra da Tijuca",
+        "address": "Av. das Américas, 4200",
+        "contactPhone": "(21) 98456-7890",
+        "maxCapacity": 120,
+        "currentCount": 24,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "emerald",
+        "visualTheme": "dark",
+        "logoEmoji": "💎",
+        "apiKey": "GF_KEY_1C9624AB94E4443D",
+        "ownerName": "Juliana Lima",
+        "ownerEmail": "juliana@powerfit24h.com",
+        "createdAt": "2026-08-29T14:47:46.393418+00:00",
+        "operatingHours": {
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 24,
+      "maxCapacity": 120,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [],
+      "accessLogs": [
+        {
+          "id": "log-gym-powerfit-barra-1",
+          "gymId": "gym-powerfit-barra",
+          "timestamp": "2026-09-10T16:02:26.287Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (PowerFit 24h Barra)",
+          "countAfter": 24,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-powerfit-barra-2",
+          "gymId": "gym-powerfit-barra",
+          "timestamp": "2026-09-10T15:57:26.287Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 23,
           "status": "success"
         }
       ]
@@ -155,7 +401,7 @@
       "createdAt": "2026-01-01T00:00:00.000Z"
     },
     {
-      "id": "user-test-gym-1-owner",
+      "id": "6ec3f3a1-3b5a-4587-9613-54b59a060cbc",
       "email": "test@gym.com",
       "password": "password123",
       "name": "Gestor Responsável",
@@ -163,11 +409,10 @@
       "gymId": "gym-test-gym-1-mtuv91g2",
       "gymSlug": "test-gym-1",
       "gymName": "Test Gym",
-      "phone": "",
-      "createdAt": "2026-09-10T01:46:13.010Z"
+      "createdAt": "2026-09-10T16:05:27.894889+00:00"
     },
     {
-      "id": "user-iron-gym-moema-owner",
+      "id": "63553083-19e6-47cf-80af-8a9454a8aa9b",
       "email": "carlos@irongym.com",
       "password": "password123",
       "name": "Carlos Silva",
@@ -175,8 +420,109 @@
       "gymId": "gym-iron-gym-moema-mtuviu2b",
       "gymSlug": "iron-gym-moema",
       "gymName": "Iron Gym Moema",
-      "phone": "",
-      "createdAt": "2026-09-10T01:53:50.003Z"
+      "createdAt": "2026-09-10T16:05:29.58812+00:00"
+    },
+    {
+      "id": "0a3386eb-a0f3-4b69-9a5c-fdcd361d5036",
+      "email": "carlos@fitflow.com.br",
+      "password": "password123",
+      "name": "Carlos Henrique Gestor",
+      "role": "owner",
+      "gymId": "gym-fitflow-moema",
+      "gymSlug": "fitflow-moema",
+      "gymName": "FitFlow Club Moema",
+      "createdAt": "2026-09-10T16:00:36.177067+00:00"
+    },
+    {
+      "id": "user-rec-fitflow-moema",
+      "email": "recepcao@fitflow-moema.com",
+      "password": "password123",
+      "name": "Recepção - FitFlow Club Moema",
+      "role": "reception",
+      "gymId": "gym-fitflow-moema",
+      "gymSlug": "fitflow-moema",
+      "gymName": "FitFlow Club Moema",
+      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+    },
+    {
+      "id": "user-iron-muscle-ct-2",
+      "email": "renato@ironmuscle.com.br",
+      "password": "password123",
+      "name": "Renato Iron Treinador",
+      "role": "owner",
+      "gymId": "gym-iron-muscle-ct",
+      "gymSlug": "iron-muscle-ct",
+      "gymName": "Iron Muscle CT",
+      "phone": "(41) 99123-4567",
+      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+    },
+    {
+      "id": "user-rec-iron-muscle-ct",
+      "email": "recepcao@iron-muscle-ct.com",
+      "password": "password123",
+      "name": "Recepção - Iron Muscle CT",
+      "role": "reception",
+      "gymId": "gym-iron-muscle-ct",
+      "gymSlug": "iron-muscle-ct",
+      "gymName": "Iron Muscle CT",
+      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+    },
+    {
+      "id": "user-powerfit-barra-3",
+      "email": "juliana@powerfit24h.com",
+      "password": "password123",
+      "name": "Juliana Lima",
+      "role": "owner",
+      "gymId": "gym-powerfit-barra",
+      "gymSlug": "powerfit-barra",
+      "gymName": "PowerFit 24h Barra",
+      "phone": "(21) 98456-7890",
+      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+    },
+    {
+      "id": "user-rec-powerfit-barra",
+      "email": "recepcao@powerfit-barra.com",
+      "password": "password123",
+      "name": "Recepção - PowerFit 24h Barra",
+      "role": "reception",
+      "gymId": "gym-powerfit-barra",
+      "gymSlug": "powerfit-barra",
+      "gymName": "PowerFit 24h Barra",
+      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+    },
+    {
+      "id": "user-academia-teste-perm-owner",
+      "email": "batel@academia.com",
+      "password": "password123",
+      "name": "Carlos Batel",
+      "role": "owner",
+      "gymId": "gym-academia-teste-perm-mtvpylff",
+      "gymSlug": "academia-teste-perm",
+      "gymName": "Academia Teste Permanente",
+      "phone": "(41) 99999-8888",
+      "createdAt": "2026-09-10T16:05:53.787Z"
+    },
+    {
+      "id": "user-rec-test-gym-1",
+      "email": "recepcao@test-gym-1.com",
+      "password": "password123",
+      "name": "Recepção - Test Gym",
+      "role": "reception",
+      "gymId": "gym-test-gym-1-mtuv91g2",
+      "gymSlug": "test-gym-1",
+      "gymName": "Test Gym",
+      "createdAt": "2026-09-10T16:05:27.446904+00:00"
+    },
+    {
+      "id": "user-rec-iron-gym-moema",
+      "email": "recepcao@iron-gym-moema.com",
+      "password": "password123",
+      "name": "Recepção - Iron Gym Moema",
+      "role": "reception",
+      "gymId": "gym-iron-gym-moema-mtuviu2b",
+      "gymSlug": "iron-gym-moema",
+      "gymName": "Iron Gym Moema",
+      "createdAt": "2026-09-10T16:05:29.159269+00:00"
     }
   ],
   "saasAccounts": [
@@ -186,33 +532,18 @@
       "gymName": "Test Gym",
       "ownerName": "Gestor Responsável",
       "ownerEmail": "test@gym.com",
-      "ownerPhone": "",
       "city": "Brasil",
       "plan": "starter",
-      "planName": "Plano Starter",
+      "planName": "STARTER",
       "monthlyFee": 149,
       "status": "trial",
       "isSystemBlocked": false,
-      "blockedAt": null,
       "turnstilesLimit": 2,
       "maxCapacity": 100,
-      "lastPaymentDate": null,
       "nextDueDate": "2026-09-25",
-      "trialEndsAt": "2026-09-25",
-      "createdAt": "2026-09-10T01:46:13.010Z",
+      "createdAt": "2026-09-10T16:05:28.934687+00:00",
       "apiKey": "GF_KEY_TEST_GYM_1_FNGVKY",
-      "invoices": [
-        {
-          "id": "inv-gym-test-gym-1-mtuv91g2-mtuv91gm",
-          "gymId": "gym-test-gym-1-mtuv91g2",
-          "gymName": "Test Gym",
-          "amount": 149,
-          "dueDate": "2026-09-25",
-          "status": "pending",
-          "referenceMonth": "09/2026",
-          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
-        }
-      ]
+      "invoices": []
     },
     {
       "gymId": "gym-iron-gym-moema-mtuviu2b",
@@ -220,8 +551,96 @@
       "gymName": "Iron Gym Moema",
       "ownerName": "Carlos Silva",
       "ownerEmail": "carlos@irongym.com",
-      "ownerPhone": "",
       "city": "São Paulo - SP",
+      "plan": "starter",
+      "planName": "STARTER",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 120,
+      "nextDueDate": "2026-09-25",
+      "createdAt": "2026-09-10T16:05:30.227787+00:00",
+      "apiKey": "GF_KEY_IRON_GYM_MOEMA_2V4FJI",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-fitflow-moema",
+      "gymSlug": "fitflow-moema",
+      "gymName": "FitFlow Club Moema",
+      "ownerName": "Carlos Henrique Gestor",
+      "ownerEmail": "carlos@fitflow.com.br",
+      "ownerPhone": "(11) 98765-4321",
+      "city": "São Paulo - SP",
+      "plan": "pro",
+      "planName": "Plano Pro Performance",
+      "monthlyFee": 299,
+      "status": "active",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 6,
+      "maxCapacity": 85,
+      "lastPaymentDate": "2026-08-15",
+      "nextDueDate": "2026-09-15",
+      "trialEndsAt": null,
+      "createdAt": "2026-08-29T14:47:46.393418+00:00",
+      "apiKey": "GF_KEY_A0C0501F16BC4E31",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-iron-muscle-ct",
+      "gymSlug": "iron-muscle-ct",
+      "gymName": "Iron Muscle CT",
+      "ownerName": "Renato Iron Treinador",
+      "ownerEmail": "renato@ironmuscle.com.br",
+      "ownerPhone": "(41) 99123-4567",
+      "city": "Curitiba - PR",
+      "plan": "enterprise",
+      "planName": "Plano Enterprise",
+      "monthlyFee": 599,
+      "status": "active",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 20,
+      "maxCapacity": 60,
+      "lastPaymentDate": "2026-08-15",
+      "nextDueDate": "2026-09-15",
+      "trialEndsAt": null,
+      "createdAt": "2026-08-29T14:47:46.393418+00:00",
+      "apiKey": "GF_KEY_854CCCE653EF42AF",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-powerfit-barra",
+      "gymSlug": "powerfit-barra",
+      "gymName": "PowerFit 24h Barra",
+      "ownerName": "Juliana Lima",
+      "ownerEmail": "juliana@powerfit24h.com",
+      "ownerPhone": "(21) 98456-7890",
+      "city": "Rio de Janeiro - RJ",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "active",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 2,
+      "maxCapacity": 120,
+      "lastPaymentDate": "2026-08-15",
+      "nextDueDate": "2026-09-15",
+      "trialEndsAt": null,
+      "createdAt": "2026-08-29T14:47:46.393418+00:00",
+      "apiKey": "GF_KEY_1C9624AB94E4443D",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-academia-teste-perm-mtvpylff",
+      "gymSlug": "academia-teste-perm",
+      "gymName": "Academia Teste Permanente",
+      "ownerName": "Carlos Batel",
+      "ownerEmail": "batel@academia.com",
+      "ownerPhone": "(41) 99999-8888",
+      "city": "Curitiba - PR",
       "plan": "starter",
       "planName": "Plano Starter",
       "monthlyFee": 149,
@@ -229,17 +648,17 @@
       "isSystemBlocked": false,
       "blockedAt": null,
       "turnstilesLimit": 2,
-      "maxCapacity": 120,
+      "maxCapacity": 150,
       "lastPaymentDate": null,
       "nextDueDate": "2026-09-25",
       "trialEndsAt": "2026-09-25",
-      "createdAt": "2026-09-10T01:53:50.003Z",
-      "apiKey": "GF_KEY_IRON_GYM_MOEMA_2V4FJI",
+      "createdAt": "2026-09-10T16:05:53.787Z",
+      "apiKey": "GF_KEY_ACADEMIA_TESTE_PERM_NY8GYC",
       "invoices": [
         {
-          "id": "inv-gym-iron-gym-moema-mtuviu2b-mtuviu2c",
-          "gymId": "gym-iron-gym-moema-mtuviu2b",
-          "gymName": "Iron Gym Moema",
+          "id": "inv-gym-academia-teste-perm-mtvpylff-mtvpylfy",
+          "gymId": "gym-academia-teste-perm-mtvpylff",
+          "gymName": "Academia Teste Permanente",
           "amount": 149,
           "dueDate": "2026-09-25",
           "status": "pending",
