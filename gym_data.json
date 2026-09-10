@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-10T17:26:40.481Z",
+  "updatedAt": "2026-09-10T18:59:41.140Z",
   "gyms": [
     {
       "profile": {
@@ -440,6 +440,17 @@
           "author": "Wander",
           "pinned": true,
           "active": true
+        },
+        {
+          "id": "13937a7f-65e1-4cc1-b53c-81bc59c8f956",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Academia do Wander!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Wander",
+          "pinned": true,
+          "active": true
         }
       ],
       "accessLogs": [
@@ -450,6 +461,75 @@
           "type": "manual_adjust",
           "source": "reception_manual",
           "description": "Academia Academia do Wander cadastrada com sucesso no GymFlow SaaS!",
+          "countAfter": 0,
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "profile": {
+        "id": "gym-gymflow-prime-mtvw637l",
+        "slug": "gymflow-prime",
+        "name": "GymFlow Prime Exemplo",
+        "slogan": "Monitoramento de Lotação em Tempo Real",
+        "city": "São Paulo - SP",
+        "neighborhood": "Jardins",
+        "address": "Alameda Santos, 1200",
+        "contactPhone": "(11) 98888-0000",
+        "maxCapacity": 150,
+        "currentCount": 0,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "cyan",
+        "logoEmoji": "⚡",
+        "apiKey": "GF_KEY_GYMFLOW_PRIME_OUC7SJ",
+        "ownerName": "Wander Santos",
+        "ownerEmail": "wander.sarmentosantos@gmail.com",
+        "createdAt": "2026-09-10T18:59:41.121Z",
+        "operatingHours": {
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 0,
+      "maxCapacity": 150,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "ann-gym-gymflow-prime-mtvw637l-welcome",
+          "gymId": "gym-gymflow-prime-mtvw637l",
+          "title": "Bem-vindos ao Monitor em Tempo Real da GymFlow Prime Exemplo!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Wander Santos",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-gymflow-prime-mtvw637l-init",
+          "gymId": "gym-gymflow-prime-mtvw637l",
+          "timestamp": "2026-09-10T18:59:41.121Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Academia GymFlow Prime Exemplo cadastrada com sucesso no GymFlow SaaS!",
           "countAfter": 0,
           "status": "success"
         }
@@ -594,16 +674,27 @@
       "createdAt": "2026-09-10T16:05:29.159269+00:00"
     },
     {
-      "id": "user-academia-wander-owner",
+      "id": "user-gymflow-prime-owner",
       "email": "wander.sarmentosantos@gmail.com",
       "password": "password123",
-      "name": "Wander",
+      "name": "Wander Santos",
       "role": "owner",
+      "gymId": "gym-gymflow-prime-mtvw637l",
+      "gymSlug": "gymflow-prime",
+      "gymName": "GymFlow Prime Exemplo",
+      "phone": "(11) 98888-0000",
+      "createdAt": "2026-09-10T18:59:41.121Z"
+    },
+    {
+      "id": "user-rec-academia-wander",
+      "email": "recepcao@academia-wander.com",
+      "password": "password123",
+      "name": "Recepção - Academia do Wander",
+      "role": "reception",
       "gymId": "gym-academia-wander-mtvsuh5a",
       "gymSlug": "academia-wander",
       "gymName": "Academia do Wander",
-      "phone": "(31) 98888-7777",
-      "createdAt": "2026-09-10T17:26:40.462Z"
+      "createdAt": "2026-09-10T17:26:41.014451+00:00"
     }
   ],
   "saasAccounts": [
@@ -754,8 +845,27 @@
       "gymName": "Academia do Wander",
       "ownerName": "Wander",
       "ownerEmail": "wander.sarmentosantos@gmail.com",
-      "ownerPhone": "(31) 98888-7777",
       "city": "Belo Horizonte - MG",
+      "plan": "starter",
+      "planName": "STARTER",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 100,
+      "nextDueDate": "2026-09-25",
+      "createdAt": "2026-09-10T17:26:43.65366+00:00",
+      "apiKey": "GF_KEY_ACADEMIA_WANDER_WDIAB6",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-gymflow-prime-mtvw637l",
+      "gymSlug": "gymflow-prime",
+      "gymName": "GymFlow Prime Exemplo",
+      "ownerName": "Wander Santos",
+      "ownerEmail": "wander.sarmentosantos@gmail.com",
+      "ownerPhone": "(11) 98888-0000",
+      "city": "São Paulo - SP",
       "plan": "starter",
       "planName": "Plano Starter",
       "monthlyFee": 149,
@@ -763,17 +873,17 @@
       "isSystemBlocked": false,
       "blockedAt": null,
       "turnstilesLimit": 2,
-      "maxCapacity": 100,
+      "maxCapacity": 150,
       "lastPaymentDate": null,
       "nextDueDate": "2026-09-25",
       "trialEndsAt": "2026-09-25",
-      "createdAt": "2026-09-10T17:26:40.462Z",
-      "apiKey": "GF_KEY_ACADEMIA_WANDER_WDIAB6",
+      "createdAt": "2026-09-10T18:59:41.121Z",
+      "apiKey": "GF_KEY_GYMFLOW_PRIME_OUC7SJ",
       "invoices": [
         {
-          "id": "inv-gym-academia-wander-mtvsuh5a-mtvsuh5t",
-          "gymId": "gym-academia-wander-mtvsuh5a",
-          "gymName": "Academia do Wander",
+          "id": "inv-gym-gymflow-prime-mtvw637l-mtvw6384",
+          "gymId": "gym-gymflow-prime-mtvw637l",
+          "gymName": "GymFlow Prime Exemplo",
           "amount": 149,
           "dueDate": "2026-09-25",
           "status": "pending",
