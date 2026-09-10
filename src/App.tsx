@@ -68,6 +68,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
   const [receptionSubTab, setReceptionSubTab] = useState<'announcements' | 'audit'>('announcements');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDirectStudentLink, setIsDirectStudentLink] = useState(false);
 
   // Modals state
@@ -166,7 +167,7 @@ export default function App() {
         setCurrentGym(null);
       }
     }
-    initGyms();
+    initGyms().finally(() => setIsInitialLoading(false));
   }, []);
 
   // 2. Load gym data whenever currentGym changes or polled
@@ -418,10 +419,21 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={`mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8 ${isDirectStudentLink || activeTab === 'student' ? 'pt-12' : ''}`}>
+      <main className={`mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8 ${(isDirectStudentLink || activeTab === 'student') && !isInitialLoading ? 'pt-12' : ''}`}>
         
+        {/* Initial Loading Screen */}
+        {isInitialLoading && (
+          <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-4 animate-in fade-in duration-500">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl border-4 border-zinc-800 border-t-cyan-400 animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center text-xs">⚡</div>
+            </div>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] animate-pulse text-center">Sincronizando GymFlow...</p>
+          </div>
+        )}
+
         {/* Unified Login Portal (Only shown if not logged in and not looking at a specific gym via URL/student mode) */}
-        {!currentUser && !isDirectStudentLink && activeTab !== 'student' && activeTab !== 'saas_admin' && (
+        {!isInitialLoading && !currentUser && !isDirectStudentLink && activeTab !== 'student' && activeTab !== 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-4">
               <div className="mx-auto w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center text-3xl font-black mb-6 shadow-2xl">
@@ -514,7 +526,7 @@ export default function App() {
         )}
 
         {/* Empty state for students when gym is not found via direct link */}
-        {!currentUser && isDirectStudentLink && !currentGym && (
+        {!isInitialLoading && !currentUser && isDirectStudentLink && !currentGym && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
             <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl shadow-xl">
               🔍
@@ -632,7 +644,7 @@ export default function App() {
         )}
 
         {/* Empty state when logged in but no gym exists yet and viewing student, reception or esp32 */}
-        {currentUser && !currentGym && activeTab !== 'saas_admin' && (
+        {!isInitialLoading && currentUser && !currentGym && activeTab !== 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
             <div className="w-16 h-16 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-3xl shadow-xl">
               🏢
@@ -655,7 +667,7 @@ export default function App() {
         )}
 
         {/* Gate state when viewing saas_admin without being logged in */}
-        {!currentUser && activeTab === 'saas_admin' && (
+        {!isInitialLoading && !currentUser && activeTab === 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
             <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/10">
               ⚡
