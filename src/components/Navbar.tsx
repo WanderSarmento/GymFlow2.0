@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold tracking-tight text-white leading-none">
-                GYM<span className="text-zinc-500">FLOW</span>
+                GYM<span className="text-cyan-400">LIVRE</span>
               </h1>
               <p className="text-[10px] text-zinc-500 font-bold tracking-[0.2em] uppercase mt-1">
                 SaaS Platform

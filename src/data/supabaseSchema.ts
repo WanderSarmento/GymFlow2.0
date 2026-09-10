@@ -1,5 +1,5 @@
 export const SUPABASE_SQL_SCHEMA = `-- =========================================================================
--- GymFlow SaaS - Schema SQL Atualizado para Supabase (PostgreSQL)
+-- GymLivre SaaS - Schema SQL Atualizado para Supabase (PostgreSQL)
 -- Versão 2.0: Multi-Tenancy, Master SaaS Admin, Faturas e Bloqueio Remoto
 -- =========================================================================
 

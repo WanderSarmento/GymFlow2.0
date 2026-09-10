@@ -1,7 +1,7 @@
 import app from './server.ts';
 
 /**
- * Vercel Serverless Function entry point for GymFlow SaaS API.
+ * Vercel Serverless Function entry point for GymLivre SaaS API.
  * Wraps Express in a lifecycle-safe Promise to guarantee Lambda remains active
  * until the HTTP response stream is completely flushed.
  */

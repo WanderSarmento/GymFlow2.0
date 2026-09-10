@@ -77,7 +77,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
       category: formCategory,
       priority: formPriority,
       pinned: formPinned,
-      author: formAuthor.trim() || 'Equipe GymFlow'
+      author: formAuthor.trim() || 'Equipe GymLivre'
     });
 
     setIsSubmitting(false);
@@ -243,7 +243,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                 {/* Footer / Author */}
                 <div className="mt-3.5 flex items-center justify-between text-[11px] text-gray-500 border-t border-gray-800/80 pt-2.5">
                   <span>Publicado por: <strong className="text-gray-300 font-semibold">{item.author}</strong></span>
-                  <span className="text-gray-500 font-mono">GymFlow System</span>
+                  <span className="text-gray-500 font-mono">GymLivre System</span>
                 </div>
               </article>
             );

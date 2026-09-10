@@ -116,7 +116,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
         return { success: true, message: `Bem-vindo(a) via Supabase, ${authUser.name}!`, user: authUser, token: data.session?.access_token };
       }
     } catch (err) {
-      console.warn('Tentando autenticação via servidor GymFlow...', err);
+      console.warn('Tentando autenticação via servidor GymLivre...', err);
     }
   }
 
@@ -161,7 +161,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
       role: 'superadmin',
       gymId: 'saas-root',
       gymSlug: 'master-saas',
-      gymName: 'GymFlow SaaS Master Hub',
+      gymName: 'GymLivre SaaS Master Hub',
       phone: '(11) 99999-0000',
       token: `GF_AUTH_user-master-superadmin-1_${Date.now().toString(36)}`,
       createdAt: '2026-01-01T00:00:00.000Z'

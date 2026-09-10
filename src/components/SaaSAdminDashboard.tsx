@@ -337,7 +337,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               Painel do Administrador Geral SaaS
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <span>Gestão Central GymFlow SaaS</span>
+              <span>Gestão Central GymLivre SaaS</span>
               <span className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono border border-zinc-700">
                 MASTER SUPERADMIN
               </span>
@@ -507,7 +507,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               {metrics?.totalStudentsOnline || 0}
             </div>
             <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1">
-              Alunos atravessando catracas GymFlow agora
+              Alunos atravessando catracas GymLivre agora
             </div>
           </div>
         </div>

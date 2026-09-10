@@ -201,7 +201,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
               </div>
               <div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 mb-1">
-                  <Sparkles className="w-3 h-3" /> SaaS GymFlow Multi-Tenancy
+                  <Sparkles className="w-3 h-3" /> SaaS GymLivre Multi-Tenancy
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   Cadastre sua Academia
@@ -407,7 +407,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                     </div>
                     <div className="text-left">
                       <div className="text-xs font-bold">Modo Dark</div>
-                      <div className="text-[10px] opacity-60">Padrão do GymFlow</div>
+                      <div className="text-[10px] opacity-60">Padrão do GymLivre</div>
                     </div>
                   </button>
 
@@ -528,7 +528,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
               Academia Cadastrada com Sucesso!
             </h2>
             <p className="text-sm text-zinc-400 max-w-md mx-auto mb-6">
-              A unidade <strong className="text-white">{createdGym.name}</strong> já está ativa no GymFlow SaaS com monitoramento de catraca em tempo real.
+              A unidade <strong className="text-white">{createdGym.name}</strong> já está ativa no GymLivre SaaS com monitoramento de catraca em tempo real.
             </p>
 
             {/* Link Box */}

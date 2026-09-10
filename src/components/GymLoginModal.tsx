@@ -356,7 +356,7 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-black tracking-widest text-cyan-400 uppercase">
-                  GymFlow SaaS
+                  GymLivre SaaS
                 </span>
                 <span className="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
                 <span className="text-[10px] font-bold text-zinc-400">

@@ -386,7 +386,7 @@ export const ESP32HardwarePanel: React.FC<ESP32HardwarePanelProps> = ({
 
           <div>
             <label className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[10px]">
-              URL Base do Servidor GymFlow:
+              URL Base do Servidor GymLivre:
             </label>
             <input
               type="text"

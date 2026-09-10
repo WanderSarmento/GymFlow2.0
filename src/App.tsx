@@ -369,7 +369,7 @@ export default function App() {
   return (
     <div 
       data-theme={visualTheme}
-      className={`min-h-screen selection:bg-indigo-500/30 font-['Outfit'] transition-colors duration-500 ${
+      className={`min-h-screen flex flex-col selection:bg-indigo-500/30 font-['Outfit'] transition-colors duration-500 ${
         visualTheme === 'light' 
           ? 'bg-white text-zinc-900' 
           : 'bg-[#0C0C0D] text-white'
@@ -427,7 +427,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={`mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8 ${(isDirectStudentLink || activeTab === 'student') && !isInitialLoading ? 'pt-12' : ''}`}>
+      <main className={`flex-1 mx-auto max-w-7xl w-full px-6 py-8 pb-32 sm:pb-8 ${(isDirectStudentLink || activeTab === 'student') && !isInitialLoading ? 'pt-12' : ''}`}>
         
         {/* Initial Loading Screen */}
         {isInitialLoading && (
@@ -436,7 +436,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl border-4 border-zinc-800 border-t-cyan-400 animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center text-xs">⚡</div>
             </div>
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] animate-pulse text-center">Sincronizando GymFlow...</p>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] animate-pulse text-center">Sincronizando GymLivre...</p>
           </div>
         )}
 
@@ -448,7 +448,7 @@ export default function App() {
                 ⚡
               </div>
               <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
-                Bem-vindo ao GymFlow
+                Bem-vindo ao GymLivre
               </h2>
               <p className="text-zinc-500 text-sm sm:text-lg max-w-md mx-auto font-medium">
                 Sua plataforma central de gestão e monitoramento de lotação para academias.
@@ -683,7 +683,7 @@ export default function App() {
             <div className="space-y-2 max-w-md">
               <h3 className="text-2xl font-bold text-white font-['Outfit']">Painel SaaS Master</h3>
               <p className="text-zinc-400 text-sm">
-                Área restrita ao Administrador Geral do GymFlow. Conecte-se para gerenciar todas as academias cadastradas, assinaturas e faturamento.
+                Área restrita ao Administrador Geral do GymLivre. Conecte-se para gerenciar todas as academias cadastradas, assinaturas e faturamento.
               </p>
             </div>
             <button
@@ -712,6 +712,23 @@ export default function App() {
         )}
 
       </main>
+
+      {/* Footer Oficial GymLivre com créditos de desenvolvimento */}
+      <footer className="w-full border-t border-zinc-800/80 bg-[#0A0A0B]/90 backdrop-blur-md py-6 px-6 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-white tracking-wider text-sm flex items-center gap-1">
+              GYM<span className="text-cyan-400">LIVRE</span>
+            </span>
+            <span className="text-zinc-700 hidden sm:inline">•</span>
+            <span className="text-zinc-400 text-[11px]">Sistema de Gestão de Lotação & Controle de Catracas</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-zinc-400 text-xs">
+            <span>Software desenvolvido por</span>
+            <span className="font-semibold text-zinc-100 hover:text-cyan-400 transition-colors">Wander Sarmento</span>
+          </div>
+        </div>
+      </footer>
 
       {/* Mobile Fixed Bottom Navigation Bar (Hidden on Desktop & Hidden for Students) */}
       {currentUser && !isDirectStudentLink && activeTab !== 'student' && (
