@@ -1076,20 +1076,78 @@ app.get("/api/auth/me", (req, res) => {
     }
   });
 });
-app.get("/api/supabase/status", (req, res) => {
+app.get("/api/supabase/status", async (req, res) => {
   const rawUrl = dynamicSupabaseConfig.url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
   const supabaseUrl = cleanSupabaseUrl(rawUrl);
   const supabaseAnonKey = (dynamicSupabaseConfig.key || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "").trim();
   const hasServiceKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = getSupabaseAdmin();
+  let gymTableStatus = "unknown";
+  let userTableStatus = "unknown";
+  let hasPasswordColumn = false;
+  let errorDetails = null;
+  if (supabase) {
+    try {
+      const { error: gErr } = await supabase.from("gyms").select("id").limit(1);
+      gymTableStatus = gErr ? `error: ${gErr.message}` : "ok";
+      const { data: uData, error: uErr } = await supabase.from("gym_users").select("*").limit(1);
+      userTableStatus = uErr ? `error: ${uErr.message}` : "ok";
+      if (uData && uData.length > 0) {
+        hasPasswordColumn = "password" in uData[0];
+      } else if (!uErr) {
+        hasPasswordColumn = true;
+      }
+      if (uErr && uErr.message.includes("password")) {
+        hasPasswordColumn = false;
+      }
+    } catch (err) {
+      errorDetails = err.message;
+    }
+  }
   const isConfigured = Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl.includes("supabase.co"));
   res.json({
     isConfigured,
     url: supabaseUrl ? supabaseUrl.replace(/:[^@]+@/, ":***@") : null,
     hasAnonKey: Boolean(supabaseAnonKey),
     hasServiceKey,
+    gymTableStatus,
+    userTableStatus,
+    hasPasswordColumn,
+    isServerless,
+    stores: {
+      gyms: gymsStore.size,
+      users: usersStore.size
+    },
+    errorDetails,
     status: isConfigured ? "connected" : "not_configured",
-    message: isConfigured ? "Vari\xE1veis de ambiente do Supabase detectadas no servidor." : "Supabase ainda n\xE3o configurado no .env. Use o assistente na interface para conectar ou ver o SQL de migra\xE7\xE3o."
+    message: isConfigured ? "Vari\xE1veis de ambiente do Supabase detectadas no servidor." : "Supabase ainda n\xE3o configurado no .env ou Vercel. Certifique-se de configurar SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY."
   });
+});
+app.get("/api/diag/auth-check", async (req, res) => {
+  const { email } = req.query;
+  if (!email || typeof email !== "string") {
+    return res.status(400).json({ error: "Informe o e-mail via ?email=..." });
+  }
+  const cleanEmail = email.trim().toLowerCase();
+  const supabase = getSupabaseAdmin();
+  const results = {
+    email: cleanEmail,
+    inMemory: usersStore.has(cleanEmail),
+    supabase: null
+  };
+  if (supabase) {
+    try {
+      const { data: uData, error: uErr } = await supabase.from("gym_users").select("*").ilike("email", cleanEmail).maybeSingle();
+      const { data: gData, error: gErr } = await supabase.from("gyms").select("*").ilike("owner_email", cleanEmail).maybeSingle();
+      results.supabase = {
+        gym_users: { found: !!uData, error: uErr?.message },
+        gyms_owner: { found: !!gData, error: gErr?.message }
+      };
+    } catch (err) {
+      results.supabaseError = err.message;
+    }
+  }
+  res.json(results);
 });
 app.post("/api/supabase/config", (req, res) => {
   const { url, key } = req.body;
