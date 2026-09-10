@@ -260,6 +260,14 @@ export default function App() {
 
   // Auth Handlers
   const handleLoginSuccess = (user: AuthUser) => {
+    console.log('[GymFlow Auth] Login Success! User Object:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      gymId: user.gymId,
+      gymSlug: user.gymSlug,
+      gymName: user.gymName
+    });
     setCurrentUser(user);
     
     // Auto-direct based on role

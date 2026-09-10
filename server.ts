@@ -788,11 +788,15 @@ async function syncGymsFromSupabase() {
 }
 
 let lastSyncTimestamp = 0;
-let isSyncing = false;
+let syncPromise: Promise<void> | null = null;
 
 export async function ensureStoresSynced(force = false) {
+  if (syncPromise) {
+    console.log('[GymFlow Sync] Já existe uma sincronização em curso, aguardando...');
+    return syncPromise;
+  }
+
   const now = Date.now();
-  if (isSyncing) return;
   
   // In serverless, we must sync at least once per instance to get the latest data from Supabase
   // since the local memory is just the INITIAL_GYMS placeholder at start.
@@ -800,14 +804,20 @@ export async function ensureStoresSynced(force = false) {
   
   // If never synced or empty stores, or older than 20 seconds, or first serverless run
   if (force || needsInitialSync || lastSyncTimestamp === 0 || gymsStore.size <= 2 || (now - lastSyncTimestamp > 20000)) {
-    isSyncing = true;
+    syncPromise = (async () => {
+      try {
+        console.log('[GymFlow Sync] Iniciando sincronização das stores...');
+        await syncGymsFromSupabase();
+        lastSyncTimestamp = Date.now();
+      } catch (e) {
+        console.warn('[GymFlow Sync] Erro ao sincronizar stores:', e);
+      }
+    })();
+
     try {
-      await syncGymsFromSupabase();
-      lastSyncTimestamp = Date.now();
-    } catch (e) {
-      console.warn('[GymFlow Sync] Error syncing stores:', e);
+      await syncPromise;
     } finally {
-      isSyncing = false;
+      syncPromise = null;
     }
   }
 }
@@ -1131,24 +1141,29 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     if (!user) {
-      console.log(`[Auth Login] Usuário NÃO encontrado após todas as tentativas. Store size: ${usersStore.size}`);
+      console.log(`[Auth Login] Usuário NÃO encontrado após todas as tentativas. Store size: ${usersStore.size}. Email: ${cleanEmail}`);
       res.status(401).json({
         success: false,
+        type: 'user_not_found',
         message: 'Nenhuma conta encontrada com este e-mail. Verifique se o e-mail digitado corresponde à sua academia.'
       });
       return;
     }
 
     // Validate password (matches user password or universal recovery passwords)
-    const typedPassword = password.trim();
-    const isValid = user.password === typedPassword ||
+    const typedPassword = (password || '').toString().trim();
+    const storedPassword = (user.password || '').toString().trim();
+    
+    const isValid = storedPassword === typedPassword ||
                     typedPassword === 'password123' ||
                     typedPassword === 'admin123' ||
                     typedPassword === '123456';
 
     if (!isValid) {
+      console.log(`[Auth Login] Senha inválida para ${cleanEmail}. Password digitado: ${typedPassword.replace(/./g, '*')}`);
       res.status(401).json({
         success: false,
+        type: 'invalid_password',
         message: 'Senha incorreta. Se você acabou de cadastrar a academia, utilize sua senha cadastrada ou "password123".'
       });
       return;
@@ -1380,6 +1395,28 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       message: isConfigured
         ? "Variáveis de ambiente do Supabase detectadas no servidor."
         : "Supabase ainda não configurado no .env ou Vercel. Certifique-se de configurar SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY."
+    });
+  });
+
+  app.get('/api/diag/stores', (req: Request, res: Response) => {
+    const user = getAuthUserFromRequest(req);
+    // Restricted to superadmin for security
+    if (!user || user.role !== 'superadmin') {
+      res.status(403).json({ success: false, message: 'Acesso restrito ao Admin.' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      stores: {
+        gyms: gymsStore.size,
+        saasAccounts: saasAccountsStore.size,
+        users: usersStore.size,
+        activeTokens: activeTokensStore.size
+      },
+      isServerless,
+      lastSync: new Date(lastSyncTimestamp).toISOString()
     });
   });
 

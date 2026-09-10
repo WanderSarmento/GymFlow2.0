@@ -663,20 +663,28 @@ async function syncGymsFromSupabase() {
   }
 }
 var lastSyncTimestamp = 0;
-var isSyncing = false;
+var syncPromise = null;
 async function ensureStoresSynced(force = false) {
+  if (syncPromise) {
+    console.log("[GymFlow Sync] J\xE1 existe uma sincroniza\xE7\xE3o em curso, aguardando...");
+    return syncPromise;
+  }
   const now = Date.now();
-  if (isSyncing) return;
   const needsInitialSync = isServerless && lastSyncTimestamp === 0;
   if (force || needsInitialSync || lastSyncTimestamp === 0 || gymsStore.size <= 2 || now - lastSyncTimestamp > 2e4) {
-    isSyncing = true;
+    syncPromise = (async () => {
+      try {
+        console.log("[GymFlow Sync] Iniciando sincroniza\xE7\xE3o das stores...");
+        await syncGymsFromSupabase();
+        lastSyncTimestamp = Date.now();
+      } catch (e) {
+        console.warn("[GymFlow Sync] Erro ao sincronizar stores:", e);
+      }
+    })();
     try {
-      await syncGymsFromSupabase();
-      lastSyncTimestamp = Date.now();
-    } catch (e) {
-      console.warn("[GymFlow Sync] Error syncing stores:", e);
+      await syncPromise;
     } finally {
-      isSyncing = false;
+      syncPromise = null;
     }
   }
 }
@@ -936,18 +944,22 @@ app.post("/api/auth/login", async (req, res) => {
     saveGymsToFile();
   }
   if (!user) {
-    console.log(`[Auth Login] Usu\xE1rio N\xC3O encontrado ap\xF3s todas as tentativas. Store size: ${usersStore.size}`);
+    console.log(`[Auth Login] Usu\xE1rio N\xC3O encontrado ap\xF3s todas as tentativas. Store size: ${usersStore.size}. Email: ${cleanEmail}`);
     res.status(401).json({
       success: false,
+      type: "user_not_found",
       message: "Nenhuma conta encontrada com este e-mail. Verifique se o e-mail digitado corresponde \xE0 sua academia."
     });
     return;
   }
-  const typedPassword = password.trim();
-  const isValid = user.password === typedPassword || typedPassword === "password123" || typedPassword === "admin123" || typedPassword === "123456";
+  const typedPassword = (password || "").toString().trim();
+  const storedPassword = (user.password || "").toString().trim();
+  const isValid = storedPassword === typedPassword || typedPassword === "password123" || typedPassword === "admin123" || typedPassword === "123456";
   if (!isValid) {
+    console.log(`[Auth Login] Senha inv\xE1lida para ${cleanEmail}. Password digitado: ${typedPassword.replace(/./g, "*")}`);
     res.status(401).json({
       success: false,
+      type: "invalid_password",
       message: 'Senha incorreta. Se voc\xEA acabou de cadastrar a academia, utilize sua senha cadastrada ou "password123".'
     });
     return;
@@ -1138,6 +1150,25 @@ app.get("/api/supabase/status", async (req, res) => {
     errorDetails,
     status: isConfigured ? "connected" : "not_configured",
     message: isConfigured ? "Vari\xE1veis de ambiente do Supabase detectadas no servidor." : "Supabase ainda n\xE3o configurado no .env ou Vercel. Certifique-se de configurar SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY."
+  });
+});
+app.get("/api/diag/stores", (req, res) => {
+  const user = getAuthUserFromRequest(req);
+  if (!user || user.role !== "superadmin") {
+    res.status(403).json({ success: false, message: "Acesso restrito ao Admin." });
+    return;
+  }
+  res.json({
+    success: true,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    stores: {
+      gyms: gymsStore.size,
+      saasAccounts: saasAccountsStore.size,
+      users: usersStore.size,
+      activeTokens: activeTokensStore.size
+    },
+    isServerless,
+    lastSync: new Date(lastSyncTimestamp).toISOString()
   });
 });
 app.get("/api/diag/auth-check", async (req, res) => {
