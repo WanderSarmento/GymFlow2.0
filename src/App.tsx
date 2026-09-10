@@ -216,13 +216,27 @@ export default function App() {
     return () => clearInterval(interval);
   }, [currentGym?.slug, loadGymData]);
 
+  // Safe URL Param Update Helper (prevents iframe SecurityError / DOMException crashes)
+  const safeUpdateUrlParam = (param: string, value: string | null) => {
+    try {
+      if (typeof window !== 'undefined' && window.location) {
+        const url = new URL(window.location.href);
+        if (value === null) {
+          url.searchParams.delete(param);
+        } else {
+          url.searchParams.set(param, value);
+        }
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch (e) {
+      console.debug('[GymFlow] URL update gracefully bypassed in sandbox:', e);
+    }
+  };
+
   // Switch active gym
   const handleSelectGym = (gym: GymProfile) => {
     setCurrentGym(gym);
-    // Update URL param without full reload
-    const url = new URL(window.location.href);
-    url.searchParams.set('gym', gym.slug);
-    window.history.replaceState({}, '', url.toString());
+    safeUpdateUrlParam('gym', gym.slug);
     loadGymData(gym.slug, false);
   };
 
@@ -230,10 +244,10 @@ export default function App() {
   const handleGymCreated = (newGym: GymProfile) => {
     setGyms(prev => [newGym, ...prev.filter(g => g.id !== newGym.id)]);
     setCurrentGym(newGym);
-    setActiveTab('reception');
-    const url = new URL(window.location.href);
-    url.searchParams.set('gym', newGym.slug);
-    window.history.replaceState({}, '', url.toString());
+    if (currentUser?.role !== 'superadmin') {
+      setActiveTab('reception');
+    }
+    safeUpdateUrlParam('gym', newGym.slug);
     loadGymData(newGym.slug, false);
   };
 
@@ -404,8 +418,8 @@ export default function App() {
       {/* Main Content Area */}
       <main className={`mx-auto max-w-7xl px-6 py-8 pb-32 sm:pb-8 ${isDirectStudentLink || activeTab === 'student' ? 'pt-12' : ''}`}>
         
-        {/* Unified Login Portal (Only shown if not logged in and not looking at a specific gym via URL) */}
-        {!currentUser && !isDirectStudentLink && (
+        {/* Unified Login Portal (Only shown if not logged in and not looking at a specific gym via URL/student mode) */}
+        {!currentUser && !isDirectStudentLink && activeTab !== 'student' && activeTab !== 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="space-y-4">
               <div className="mx-auto w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center text-3xl font-black mb-6 shadow-2xl">
@@ -437,14 +451,14 @@ export default function App() {
                 Entrar no Painel
               </button>
 
-              <div className="flex items-center gap-4 py-2">
+              <div className="flex items-center gap-4 py-1">
                 <div className="h-px flex-1 bg-zinc-800" />
                 <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">OU</span>
                 <div className="h-px flex-1 bg-zinc-800" />
               </div>
 
               <div className="text-center">
-                <p className="text-xs text-zinc-500 mb-3">Esqueceu sua senha de acesso?</p>
+                <p className="text-xs text-zinc-500 mb-2">Esqueceu sua senha de acesso?</p>
                 <button
                   type="button"
                   id="portal-forgot-password-btn"
@@ -462,7 +476,7 @@ export default function App() {
         )}
 
         {/* Tab 1: Student View (Alunos) - Purely Informational */}
-        {currentGym && activeTab === 'student' && (
+        {currentGym && (activeTab === 'student' || isDirectStudentLink) && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col items-center text-center space-y-2 mb-4">
               <div className="text-4xl mb-2 relative">
@@ -525,8 +539,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 2: Reception View (Controle Manual de Catracas & Gestão da Unidade) */}
-        {currentGym && activeTab === 'reception' && (
+        {/* Tab 2: Reception View (Controle Manual de Catracas & Gestão da Unidade - Restrita a Usuários Autenticados) */}
+        {currentUser && currentGym && activeTab === 'reception' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Live Occupancy Status Card with quick sim */}
@@ -594,8 +608,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 3: ESP32 Hardware Panel & Firmware Generator */}
-        {currentGym && activeTab === 'esp32' && (
+        {/* Tab 3: ESP32 Hardware Panel & Firmware Generator (Restrita a Usuários Autenticados) */}
+        {currentUser && currentGym && activeTab === 'esp32' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
             {/* Live Occupancy Status Card */}
@@ -628,10 +642,37 @@ export default function App() {
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold opacity-50">
-                Aguardando Cadastro de Unidade
-              </span>
+              <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+              >
+                Cadastrar Nova Academia
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* Gate state when viewing saas_admin without being logged in */}
+        {!currentUser && activeTab === 'saas_admin' && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
+            <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/10">
+              ⚡
+            </div>
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-2xl font-bold text-white font-['Outfit']">Painel SaaS Master</h3>
+              <p className="text-zinc-400 text-sm">
+                Área restrita ao Administrador Geral do GymFlow. Conecte-se para gerenciar todas as academias cadastradas, assinaturas e faturamento.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setLoginModalMode('login');
+                setIsLoginModalOpen(true);
+              }}
+              className="px-6 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+            >
+              Entrar como Administrador Geral
+            </button>
           </div>
         )}
 

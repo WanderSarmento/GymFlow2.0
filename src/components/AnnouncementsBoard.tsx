@@ -18,15 +18,15 @@ import { Announcement, AnnouncementCategory, AnnouncementPriority } from '../typ
 
 interface AnnouncementsBoardProps {
   announcements: Announcement[];
-  onAddAnnouncement: (announcement: Partial<Announcement>) => Promise<boolean>;
-  onDeleteAnnouncement: (id: string) => Promise<boolean>;
+  onAddAnnouncement?: (announcement: Partial<Announcement>) => Promise<boolean>;
+  onDeleteAnnouncement?: (id: string) => Promise<boolean>;
   isAdminMode?: boolean;
 }
 
 export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   announcements,
-  onAddAnnouncement,
-  onDeleteAnnouncement,
+  onAddAnnouncement = async () => false,
+  onDeleteAnnouncement = async () => false,
   isAdminMode = false
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');

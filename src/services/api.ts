@@ -343,7 +343,10 @@ export async function registerGym(input: CreateGymInput): Promise<{ success: boo
       message: 'Não foi possível registrar a academia. Resposta inválida do servidor.'
     });
     if (data.success && data.user) {
-      saveAuthSession(data.user, data.token);
+      const currentStored = getStoredAuthUser();
+      if (!currentStored || currentStored.role !== 'superadmin') {
+        saveAuthSession(data.user, data.token);
+      }
     }
     return data;
   } catch (err) {
@@ -803,7 +806,9 @@ export async function fetchSaaSGyms(): Promise<import('../types').GymSaaSAccount
     });
     if (res.ok) {
       const data = await parseJsonResponse<{ gyms: import('../types').GymSaaSAccount[] }>(res, { gyms: [] });
-      if (data.gyms && data.gyms.length > 0) return data.gyms;
+      if (data && Array.isArray(data.gyms)) {
+        return data.gyms;
+      }
     }
   } catch (err) {
     console.warn('Backend de academias SaaS indisponível, usando fallback local:', err);

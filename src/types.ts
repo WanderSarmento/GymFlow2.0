@@ -59,6 +59,8 @@ export interface OccupancyData {
   slogan?: string;
   city?: string;
   neighborhood?: string;
+  isSystemBlocked?: boolean;
+  blockReason?: string;
 }
 
 export interface AccessLog {
@@ -145,6 +147,7 @@ export interface CreateGymInput {
   ownerEmail: string;
   ownerPassword?: string;
   themeColor: GymThemeColor;
+  visualTheme?: 'dark' | 'light';
   logoEmoji: string;
   operatingHours?: GymOperatingHours;
 }

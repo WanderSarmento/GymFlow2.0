@@ -257,8 +257,8 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
     setActionLoading(true);
     try {
       const res = await createSaaSGym(newGymForm);
-      if (res.success && res.profile) {
-        showNotification('success', res.message);
+      if (res.success) {
+        showNotification('success', res.message || 'Academia cadastrada com sucesso!');
         setNewGymForm({
           name: '',
           slug: '',
@@ -278,11 +278,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
           trialDays: 15
         });
         
-        // Redirect to the newly created gym's reception
-        onSelectGym(res.profile);
-      } else if (res.success) {
-        // Fallback if profile is missing
-        showNotification('success', res.message);
+        // Keep Master Admin in the gyms tab and reload list immediately
         setActiveTab('gyms');
         await loadData(true);
       } else {

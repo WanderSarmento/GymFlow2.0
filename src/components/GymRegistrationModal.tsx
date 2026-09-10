@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { CreateGymInput, GymProfile, AuthUser } from '../types';
 import { THEME_COLOR_CONFIG } from '../data/gymData';
-import { registerGym } from '../services/api';
+import { registerGym, getStoredAuthUser } from '../services/api';
 
 interface GymRegistrationModalProps {
   isOpen: boolean;
@@ -112,35 +112,69 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
       });
       if (res.success && res.gym) {
         setCreatedGym(res.gym);
+        const storedUser = getStoredAuthUser();
+        const isSuperAdmin = storedUser?.role === 'superadmin';
+
         if (res.user) {
           setCreatedUser(res.user);
-          if (onLoginSuccess) {
+          // Only auto-switch login if the active session is not SuperAdmin
+          if (!isSuperAdmin && onLoginSuccess) {
             onLoginSuccess(res.user);
           }
         }
-        onGymCreated(res.gym, res.user);
       } else {
         setError(res.message || 'Erro ao cadastrar academia.');
       }
     } catch (err: any) {
+      console.error('[GymRegistrationModal] Cadastro failed:', err);
       setError('Erro de conexão ao cadastrar academia.');
     } finally {
       setLoading(false);
     }
   };
 
-  const publicUrl = createdGym 
-    ? `${window.location.origin}${window.location.pathname}?gym=${createdGym.slug}&view=student`
-    : `${window.location.origin}${window.location.pathname}?gym=${formData.slug || 'sua-academia'}&view=student`;
+  const getPublicUrl = () => {
+    try {
+      const slug = createdGym?.slug || formData.slug || 'sua-academia';
+      if (typeof window !== 'undefined' && window.location) {
+        const origin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '';
+        const pathname = window.location.pathname || '';
+        return `${origin}${pathname}?gym=${slug}&view=student`;
+      }
+      return `?gym=${slug}&view=student`;
+    } catch {
+      return `?gym=${createdGym?.slug || 'academia'}&view=student`;
+    }
+  };
 
-  const copyToClipboard = (text: string, type: 'link' | 'key') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'link') {
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    } else {
-      setCopiedKey(true);
-      setTimeout(() => setCopiedKey(false), 2000);
+  const publicUrl = getPublicUrl();
+
+  const copyToClipboard = async (text: string, type: 'link' | 'key' | 'pass') => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      if (type === 'link') {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      } else if (type === 'key') {
+        setCopiedKey(true);
+        setTimeout(() => setCopiedKey(false), 2000);
+      } else {
+        setCopiedPass(true);
+        setTimeout(() => setCopiedPass(false), 2000);
+      }
+    } catch (err) {
+      console.warn('Clipboard write fallback error:', err);
     }
   };
 
@@ -556,11 +590,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(formData.ownerPassword || 'password123');
-                        setCopiedPass(true);
-                        setTimeout(() => setCopiedPass(false), 2000);
-                      }}
+                      onClick={() => copyToClipboard(formData.ownerPassword || 'password123', 'pass')}
                       className="text-[10px] text-zinc-400 hover:text-white px-2 py-1 bg-zinc-700/50 rounded"
                     >
                       {copiedPass ? 'Copiada!' : 'Copiar'}

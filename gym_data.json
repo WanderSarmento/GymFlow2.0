@@ -1,0 +1,252 @@
+{
+  "version": 2,
+  "updatedAt": "2026-09-10T01:53:50.004Z",
+  "gyms": [
+    {
+      "profile": {
+        "id": "gym-test-gym-1-mtuv91g2",
+        "slug": "test-gym-1",
+        "name": "Test Gym",
+        "slogan": "Monitoramento de Lotação em Tempo Real",
+        "city": "Brasil",
+        "neighborhood": "Unidade Principal",
+        "address": "",
+        "contactPhone": "",
+        "maxCapacity": 100,
+        "currentCount": 0,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "cyan",
+        "logoEmoji": "⚡",
+        "apiKey": "GF_KEY_TEST_GYM_1_FNGVKY",
+        "ownerName": "Gestor Responsável",
+        "ownerEmail": "test@gym.com",
+        "createdAt": "2026-09-10T01:46:13.010Z",
+        "operatingHours": {
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 0,
+      "maxCapacity": 100,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "ann-gym-test-gym-1-mtuv91g2-welcome",
+          "gymId": "gym-test-gym-1-mtuv91g2",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Test Gym!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Gestor Responsável",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-test-gym-1-mtuv91g2-init",
+          "gymId": "gym-test-gym-1-mtuv91g2",
+          "timestamp": "2026-09-10T01:46:13.010Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Academia Test Gym cadastrada com sucesso no GymFlow SaaS!",
+          "countAfter": 0,
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "profile": {
+        "id": "gym-iron-gym-moema-mtuviu2b",
+        "slug": "iron-gym-moema",
+        "name": "Iron Gym Moema",
+        "slogan": "Monitoramento de Lotação em Tempo Real",
+        "city": "São Paulo - SP",
+        "neighborhood": "Unidade Principal",
+        "address": "",
+        "contactPhone": "",
+        "maxCapacity": 120,
+        "currentCount": 0,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "cyan",
+        "logoEmoji": "⚡",
+        "apiKey": "GF_KEY_IRON_GYM_MOEMA_2V4FJI",
+        "ownerName": "Carlos Silva",
+        "ownerEmail": "carlos@irongym.com",
+        "createdAt": "2026-09-10T01:53:50.003Z",
+        "operatingHours": {
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 0,
+      "maxCapacity": 120,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "ann-gym-iron-gym-moema-mtuviu2b-welcome",
+          "gymId": "gym-iron-gym-moema-mtuviu2b",
+          "title": "Bem-vindos ao Monitor em Tempo Real da Iron Gym Moema!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Carlos Silva",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-iron-gym-moema-mtuviu2b-init",
+          "gymId": "gym-iron-gym-moema-mtuviu2b",
+          "timestamp": "2026-09-10T01:53:50.003Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Academia Iron Gym Moema cadastrada com sucesso no GymFlow SaaS!",
+          "countAfter": 0,
+          "status": "success"
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "user-master-superadmin-1",
+      "email": "admin@gymflow.com",
+      "password": "admin123",
+      "name": "Administrador Geral SaaS",
+      "role": "superadmin",
+      "gymId": "saas-root",
+      "gymSlug": "master-saas",
+      "gymName": "GymFlow SaaS Master Hub",
+      "phone": "(11) 99999-0000",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-test-gym-1-owner",
+      "email": "test@gym.com",
+      "password": "password123",
+      "name": "Gestor Responsável",
+      "role": "owner",
+      "gymId": "gym-test-gym-1-mtuv91g2",
+      "gymSlug": "test-gym-1",
+      "gymName": "Test Gym",
+      "phone": "",
+      "createdAt": "2026-09-10T01:46:13.010Z"
+    },
+    {
+      "id": "user-iron-gym-moema-owner",
+      "email": "carlos@irongym.com",
+      "password": "password123",
+      "name": "Carlos Silva",
+      "role": "owner",
+      "gymId": "gym-iron-gym-moema-mtuviu2b",
+      "gymSlug": "iron-gym-moema",
+      "gymName": "Iron Gym Moema",
+      "phone": "",
+      "createdAt": "2026-09-10T01:53:50.003Z"
+    }
+  ],
+  "saasAccounts": [
+    {
+      "gymId": "gym-test-gym-1-mtuv91g2",
+      "gymSlug": "test-gym-1",
+      "gymName": "Test Gym",
+      "ownerName": "Gestor Responsável",
+      "ownerEmail": "test@gym.com",
+      "ownerPhone": "",
+      "city": "Brasil",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 2,
+      "maxCapacity": 100,
+      "lastPaymentDate": null,
+      "nextDueDate": "2026-09-25",
+      "trialEndsAt": "2026-09-25",
+      "createdAt": "2026-09-10T01:46:13.010Z",
+      "apiKey": "GF_KEY_TEST_GYM_1_FNGVKY",
+      "invoices": [
+        {
+          "id": "inv-gym-test-gym-1-mtuv91g2-mtuv91gm",
+          "gymId": "gym-test-gym-1-mtuv91g2",
+          "gymName": "Test Gym",
+          "amount": 149,
+          "dueDate": "2026-09-25",
+          "status": "pending",
+          "referenceMonth": "09/2026",
+          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
+        }
+      ]
+    },
+    {
+      "gymId": "gym-iron-gym-moema-mtuviu2b",
+      "gymSlug": "iron-gym-moema",
+      "gymName": "Iron Gym Moema",
+      "ownerName": "Carlos Silva",
+      "ownerEmail": "carlos@irongym.com",
+      "ownerPhone": "",
+      "city": "São Paulo - SP",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "blockedAt": null,
+      "turnstilesLimit": 2,
+      "maxCapacity": 120,
+      "lastPaymentDate": null,
+      "nextDueDate": "2026-09-25",
+      "trialEndsAt": "2026-09-25",
+      "createdAt": "2026-09-10T01:53:50.003Z",
+      "apiKey": "GF_KEY_IRON_GYM_MOEMA_2V4FJI",
+      "invoices": [
+        {
+          "id": "inv-gym-iron-gym-moema-mtuviu2b-mtuviu2c",
+          "gymId": "gym-iron-gym-moema-mtuviu2b",
+          "gymName": "Iron Gym Moema",
+          "amount": 149,
+          "dueDate": "2026-09-25",
+          "status": "pending",
+          "referenceMonth": "09/2026",
+          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
+        }
+      ]
+    }
+  ]
+}

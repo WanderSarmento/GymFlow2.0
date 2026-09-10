@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
@@ -618,9 +618,59 @@ async function syncGymsFromSupabase() {
       });
     }
 
-    console.log(`[GymFlow Supabase] Sincronização concluída: ${gyms?.length || 0} academias.`);
+    // 5. Guarantee EVERY gym in gymsStore has an entry in saasAccountsStore!
+    for (const gymState of gymsStore.values()) {
+      if (!saasAccountsStore.has(gymState.profile.id)) {
+        const planConfig = saasPlansStore.get('starter') || SAAS_PLANS.starter;
+        saasAccountsStore.set(gymState.profile.id, {
+          gymId: gymState.profile.id,
+          gymSlug: gymState.profile.slug,
+          gymName: gymState.profile.name,
+          ownerName: gymState.profile.ownerName || 'Gestor Responsável',
+          ownerEmail: gymState.profile.ownerEmail || 'gestao@academia.com',
+          ownerPhone: gymState.profile.contactPhone || '',
+          city: gymState.profile.city || 'São Paulo - SP',
+          plan: 'starter',
+          planName: planConfig.name,
+          monthlyFee: planConfig.price,
+          status: 'active',
+          isSystemBlocked: false,
+          turnstilesLimit: planConfig.turnstilesLimit,
+          maxCapacity: gymState.maxCapacity,
+          nextDueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+          createdAt: gymState.profile.createdAt || new Date().toISOString(),
+          apiKey: gymState.profile.apiKey,
+          invoices: []
+        });
+      }
+    }
+
+    // Save synced state to storage path so it persists on subsequent cold starts
+    saveGymsToFile();
+
+    console.log(`[GymFlow Supabase] Sincronização concluída: ${gyms?.length || 0} academias no DB, total em memória: ${gymsStore.size}, contas SaaS: ${saasAccountsStore.size}`);
   } catch (err) {
     console.warn('[GymFlow Supabase] Erro durante sincronização:', err);
+  }
+}
+
+let lastSyncTimestamp = 0;
+let isSyncing = false;
+
+export async function ensureStoresSynced(force = false) {
+  const now = Date.now();
+  if (isSyncing) return;
+  // If never synced or empty stores, or older than 20 seconds
+  if (force || lastSyncTimestamp === 0 || gymsStore.size === 0 || saasAccountsStore.size === 0 || (now - lastSyncTimestamp > 20000)) {
+    isSyncing = true;
+    try {
+      await syncGymsFromSupabase();
+      lastSyncTimestamp = Date.now();
+    } catch (e) {
+      console.warn('[GymFlow Sync] Error syncing stores:', e);
+    } finally {
+      isSyncing = false;
+    }
   }
 }
 
@@ -752,6 +802,18 @@ app.use((req, res, next) => {
     ) {
       req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
     }
+  }
+  next();
+});
+
+// Store hydration middleware for serverless & cold starts
+app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (gymsStore.size === 0 || saasAccountsStore.size === 0 || isServerless) {
+      await ensureStoresSynced();
+    }
+  } catch (err) {
+    console.warn('[GymFlow Middleware] Store hydration warning:', err);
   }
   next();
 });
@@ -1367,8 +1429,10 @@ app.use((req, res, next) => {
       createdAt: newProfile.createdAt
     };
 
-    // Persist registered gym and owner user to storage
+    // Persist registered gym, owner user, and SaaS account to storage and Supabase
     saveGymsToFile();
+    persistGymStateToSupabase(gymId, newGymState.accessLogs[0]);
+    persistSaaSAccountToSupabase(gymId, initialInvoice);
 
     res.status(201).json({
       success: true,
@@ -2773,6 +2837,13 @@ void sendHeartbeat() {
 
     saasAccountsStore.delete(req.params.gymId);
     gymsStore.delete(req.params.gymId);
+    saveGymsToFile();
+
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      Promise.resolve(supabase.from('gyms').delete().eq('id', req.params.gymId)).catch(console.warn);
+      Promise.resolve(supabase.from('saas_accounts').delete().eq('gym_id', req.params.gymId)).catch(console.warn);
+    }
 
     res.json({ success: true, message: 'Academia removida permanentemente do SaaS.' });
   });
