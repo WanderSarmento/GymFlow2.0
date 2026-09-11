@@ -15,6 +15,7 @@ import { GymCustomizerModal } from './components/GymCustomizerModal';
 import { GymLoginModal } from './components/GymLoginModal';
 import { SupabaseIntegrationModal } from './components/SupabaseIntegrationModal';
 import { SaaSAdminDashboard } from './components/SaaSAdminDashboard';
+import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { isSupabaseConfigured } from './lib/supabase';
 import {
   fetchGyms,
@@ -78,6 +79,7 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'register' | 'forgot_request'>('login');
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
   const [isSupabaseActive, setIsSupabaseActive] = useState(() => isSupabaseConfigured());
   const [supabaseStatus, setSupabaseStatus] = useState<'connected' | 'error' | 'not_configured'>('not_configured');
 
@@ -298,8 +300,13 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    setIsLogoutConfirmationOpen(true);
+  };
+
+  const performLogout = () => {
     clearAuthSession();
     setCurrentUser(null);
+    setIsLogoutConfirmationOpen(false);
     // After logout, reset to 'reception' tab which will show the Welcome/Login Portal if no user
     setActiveTab('reception');
     setIsDirectStudentLink(false);
@@ -741,6 +748,13 @@ export default function App() {
           occupancy={occupancy}
         />
       )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmationModal
+        isOpen={isLogoutConfirmationOpen}
+        onClose={() => setIsLogoutConfirmationOpen(false)}
+        onConfirm={performLogout}
+      />
 
       {/* SaaS Modal 1: Register New Gym */}
       <GymRegistrationModal
