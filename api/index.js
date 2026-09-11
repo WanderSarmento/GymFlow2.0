@@ -1,5 +1,7 @@
 // server.ts
 import "dotenv/config";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -70,6 +72,60 @@ var isServerless = Boolean(
   process.env.VERCEL || process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
 );
 var STORAGE_PATH = isServerless ? path.join("/tmp", "gym_data.json") : path.join(process.cwd(), "gym_data.json");
+var AUTH_SECRET = process.env.JWT_SECRET || process.env.AUTH_SECRET || "gymflow-auth-secret-key-2026-strict";
+function hashPassword(plainText) {
+  return bcrypt.hashSync(plainText.trim(), 10);
+}
+function verifyPassword(plainText, storedHashOrPlain) {
+  if (!storedHashOrPlain || !plainText) return false;
+  const trimmedPlain = plainText.trim();
+  const trimmedStored = storedHashOrPlain.trim();
+  if (trimmedStored.startsWith("$2a$") || trimmedStored.startsWith("$2b$")) {
+    return bcrypt.compareSync(trimmedPlain, trimmedStored);
+  }
+  return trimmedStored === trimmedPlain;
+}
+function generateAuthToken(user) {
+  const payload = `${user.id}:${Date.now()}`;
+  const signature = crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("hex");
+  return `GF_AUTH_${Buffer.from(payload).toString("base64url")}.${signature}`;
+}
+function verifyAuthToken(token) {
+  if (!token.startsWith("GF_AUTH_")) return null;
+  const raw = token.substring(8);
+  const parts = raw.split(".");
+  if (parts.length !== 2) return null;
+  const [b64Payload, sig] = parts;
+  try {
+    const payload = Buffer.from(b64Payload, "base64url").toString("utf8");
+    const expectedSig = crypto.createHmac("sha256", AUTH_SECRET).update(payload).digest("hex");
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+      return null;
+    }
+    const [userId, timestampStr] = payload.split(":");
+    const timestamp = parseInt(timestampStr, 10);
+    if (isNaN(timestamp) || Date.now() - timestamp > 30 * 24 * 60 * 60 * 1e3) {
+      return null;
+    }
+    return userId;
+  } catch {
+    return null;
+  }
+}
+var rateLimitStore = /* @__PURE__ */ new Map();
+function checkRateLimit(key, maxAttempts = 5, windowMs = 60 * 1e3) {
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  if (entry.count >= maxAttempts) {
+    return false;
+  }
+  entry.count += 1;
+  return true;
+}
 function saveGymsToFile() {
   try {
     const gymsData = Array.from(gymsStore.values()).map((g) => ({
@@ -126,8 +182,13 @@ function loadGymsFromFile() {
           }
         });
       });
+      let needsPasswordMigration = false;
       savedUsers.forEach((u) => {
         if (u && u.email) {
+          if (u.password && !u.password.startsWith("$2a$") && !u.password.startsWith("$2b$")) {
+            u.password = hashPassword(u.password);
+            needsPasswordMigration = true;
+          }
           usersStore.set(u.email.toLowerCase(), u);
         }
       });
@@ -142,7 +203,7 @@ function loadGymsFromFile() {
           usersStore.set(ownerEmail, {
             id: `user-${gymState.profile.slug}-owner`,
             email: ownerEmail,
-            password: "password123",
+            password: hashPassword("password123"),
             name: gymState.profile.ownerName || "Gestor da Academia",
             role: "owner",
             gymId: gymState.profile.id,
@@ -151,7 +212,11 @@ function loadGymsFromFile() {
             phone: gymState.profile.contactPhone,
             createdAt: gymState.profile.createdAt
           });
+          needsPasswordMigration = true;
         }
+      }
+      if (needsPasswordMigration) {
+        saveGymsToFile();
       }
       console.log(`[GymFlow Persistence] Restauradas ${gymsStore.size} academias e ${usersStore.size} contas de usu\xE1rio do arquivo.`);
       return true;
@@ -364,7 +429,7 @@ Object.entries(SAAS_PLANS).forEach(([id, plan]) => {
 var masterAdminRecord = {
   id: "user-master-superadmin-1",
   email: "admin@gymflow.com",
-  password: "admin123",
+  password: hashPassword("admin123"),
   name: "Administrador Geral SaaS",
   role: "superadmin",
   gymId: "saas-root",
@@ -374,6 +439,19 @@ var masterAdminRecord = {
   createdAt: "2026-01-01T00:00:00.000Z"
 };
 usersStore.set("admin@gymflow.com", masterAdminRecord);
+var wanderSuperAdminRecord = {
+  id: "user-wander-superadmin-1",
+  email: "wander.sarmentosantos@gmail.com",
+  password: hashPassword("B@by2026"),
+  name: "Wander Santos",
+  role: "superadmin",
+  gymId: "saas-root",
+  gymSlug: "master-saas",
+  gymName: "GymFlow SaaS Master Hub",
+  phone: "(11) 98888-0000",
+  createdAt: "2026-01-01T00:00:00.000Z"
+};
+usersStore.set("wander.sarmentosantos@gmail.com", wanderSuperAdminRecord);
 function registerGymInStore(gym, index = 0) {
   const ownerEmail = gym.ownerEmail.toLowerCase();
   if (!usersStore.has(ownerEmail)) {
@@ -381,7 +459,7 @@ function registerGymInStore(gym, index = 0) {
     usersStore.set(ownerEmail, {
       id: userId,
       email: ownerEmail,
-      password: "password123",
+      password: hashPassword("password123"),
       name: gym.ownerName,
       role: "owner",
       gymId: gym.id,
@@ -396,7 +474,7 @@ function registerGymInStore(gym, index = 0) {
     usersStore.set(receptionEmail, {
       id: `user-rec-${gym.slug}`,
       email: receptionEmail,
-      password: "password123",
+      password: hashPassword("password123"),
       name: `Recep\xE7\xE3o - ${gym.name}`,
       role: "reception",
       gymId: gym.id,
@@ -500,6 +578,22 @@ async function syncGymsFromSupabase() {
     const { data: gyms, error: gymsError } = await supabase.from("gyms").select("*");
     if (gymsError) throw gymsError;
     if (gyms && gyms.length > 0) {
+      const validGymIds = new Set(gyms.map((g) => g.id));
+      const validGymSlugs = new Set(gyms.map((g) => g.slug));
+      for (const [id, state] of gymsStore.entries()) {
+        if (!validGymIds.has(state.profile.id) && !validGymSlugs.has(state.profile.slug)) {
+          console.log(`[GymFlow Sync] Removendo da mem\xF3ria academia deletada no Supabase: ${state.profile.name} (${id})`);
+          gymsStore.delete(id);
+          saasAccountsStore.delete(id);
+          if (state.profile.id) saasAccountsStore.delete(state.profile.id);
+          if (state.profile.slug) saasAccountsStore.delete(state.profile.slug);
+        }
+      }
+      for (const [accId, acc] of saasAccountsStore.entries()) {
+        if (!validGymIds.has(acc.gymId) && !validGymSlugs.has(acc.gymSlug)) {
+          saasAccountsStore.delete(accId);
+        }
+      }
       gyms.forEach((row, i) => {
         const gym = {
           id: row.id,
@@ -538,6 +632,7 @@ async function syncGymsFromSupabase() {
         const gymInvoices = (allInvoices || []).filter((inv) => inv.gym_id === row.gym_id).map((inv) => ({
           id: inv.id,
           gymId: inv.gym_id,
+          gymName: gymState?.profile.name || row.gym_name || "Academia",
           referenceMonth: inv.reference_month,
           amount: Number(inv.amount),
           dueDate: inv.due_date,
@@ -633,29 +728,24 @@ async function syncGymsFromSupabase() {
         });
       }
     }
-    if (gyms) {
-      for (const gymState of gymsStore.values()) {
-        const inSupabase = gyms.some((g) => g.id === gymState.profile.id || g.slug === gymState.profile.slug);
-        if (!inSupabase) {
-          console.log(`[GymFlow Supabase] Sincronizando academia local pendente '${gymState.profile.name}' para o Supabase...`);
-          try {
-            await persistGymStateToSupabase(gymState.profile.id);
-            const saasAccount = saasAccountsStore.get(gymState.profile.id);
-            if (saasAccount) {
-              await persistSaaSAccountToSupabase(gymState.profile.id);
-            }
-          } catch (uploadErr) {
-            console.warn(`[GymFlow Supabase] Falha ao enviar academia pendente ${gymState.profile.name}:`, uploadErr);
-          }
-        }
-      }
-    }
     saveGymsToFile();
     if (!usersStore.has("admin@gymflow.com")) {
       usersStore.set("admin@gymflow.com", masterAdminRecord);
     } else {
       const admin = usersStore.get("admin@gymflow.com");
       if (admin) admin.role = "superadmin";
+    }
+    if (!usersStore.has("wander.sarmentosantos@gmail.com")) {
+      usersStore.set("wander.sarmentosantos@gmail.com", wanderSuperAdminRecord);
+    } else {
+      const wander = usersStore.get("wander.sarmentosantos@gmail.com");
+      if (wander) {
+        wander.role = "superadmin";
+        wander.gymId = "saas-root";
+        wander.gymSlug = "master-saas";
+        wander.gymName = "GymFlow SaaS Master Hub";
+        wander.password = hashPassword("B@by2026");
+      }
     }
     console.log(`[GymFlow Supabase] Sincroniza\xE7\xE3o conclu\xEDda: ${gyms?.length || 0} academias no DB, total em mem\xF3ria: ${gymsStore.size}, contas SaaS: ${saasAccountsStore.size}`);
   } catch (err) {
@@ -710,11 +800,23 @@ function getAuthUserFromRequest(req) {
   if (!token) return null;
   const cached = activeTokensStore.get(token);
   if (cached) return cached;
+  const userId = verifyAuthToken(token);
+  if (!userId) return null;
   for (const user of usersStore.values()) {
-    if (token.startsWith(`GF_AUTH_${user.id}`)) {
+    if (user.id === userId) {
       activeTokensStore.set(token, user);
       return user;
     }
+  }
+  if (userId === "user-master-superadmin-1") {
+    const admin = usersStore.get("admin@gymflow.com") || masterAdminRecord;
+    activeTokensStore.set(token, admin);
+    return admin;
+  }
+  if (userId === "user-wander-superadmin-1" || userId === "a7278327-af02-4d84-8102-3849da5a220f") {
+    const admin = usersStore.get("wander.sarmentosantos@gmail.com") || wanderSuperAdminRecord;
+    activeTokensStore.set(token, admin);
+    return admin;
   }
   return null;
 }
@@ -728,9 +830,13 @@ function isAuthorizedForGym(req, gymState) {
       return true;
     }
   }
-  const gymKey = req.headers["x-gym-key"] || req.headers["x-esp32-key"];
-  if (gymKey && gymKey === gymState.profile.apiKey) {
-    return true;
+  const gymKey = req.headers["x-gym-key"] || req.headers["x-esp32-key"] || req.headers["x-api-key"] || req.query && req.query.apiKey || req.body && req.body.apiKey;
+  if (gymKey && gymState.profile.apiKey) {
+    const keyStr = String(gymKey).trim();
+    const expectedKey = String(gymState.profile.apiKey).trim();
+    if (keyStr.length > 0 && keyStr === expectedKey) {
+      return true;
+    }
   }
   return false;
 }
@@ -829,6 +935,16 @@ app.post("/api/auth/login", async (req, res) => {
   }
   const cleanEmail = email.trim().toLowerCase();
   console.log(`[Auth Login] Tentativa para: ${cleanEmail} (isServerless: ${isServerless})`);
+  const clientIp = req.ip || req.headers["x-forwarded-for"] || "client";
+  const rateLimitKey = `login:${clientIp}:${cleanEmail}`;
+  if (!checkRateLimit(rateLimitKey, 6, 60 * 1e3)) {
+    res.status(429).json({
+      success: false,
+      type: "rate_limited",
+      message: "Muitas tentativas de login consecutivas. Por motivos de seguran\xE7a, aguarde 1 minuto."
+    });
+    return;
+  }
   let user = usersStore.get(cleanEmail);
   if (!user) {
     console.log(`[Auth Login] Usu\xE1rio n\xE3o em mem\xF3ria local. Store size: ${usersStore.size}. Buscando manuais...`);
@@ -927,17 +1043,19 @@ app.post("/api/auth/login", async (req, res) => {
       }
     }
   }
-  if (!user && (cleanEmail === "admin@gymflow.com" || cleanEmail === "demo@gymflow.com")) {
+  if (!user && (cleanEmail === "admin@gymflow.com" || cleanEmail === "wander.sarmentosantos@gmail.com" || cleanEmail === "demo@gymflow.com")) {
     const defaultGym = getDefaultGymState();
+    const isWander = cleanEmail === "wander.sarmentosantos@gmail.com";
+    const isAdmin = cleanEmail === "admin@gymflow.com";
     user = {
-      id: cleanEmail === "admin@gymflow.com" ? "user-master-superadmin-1" : "user-admin-master",
+      id: isWander ? "user-wander-superadmin-1" : isAdmin ? "user-master-superadmin-1" : "user-admin-master",
       email: cleanEmail,
-      password: cleanEmail === "admin@gymflow.com" ? "admin123" : "password123",
-      name: cleanEmail === "admin@gymflow.com" ? "Administrador Geral SaaS" : "Administrador Master",
-      role: cleanEmail === "admin@gymflow.com" ? "superadmin" : "owner",
-      gymId: cleanEmail === "admin@gymflow.com" ? "saas-root" : defaultGym?.profile?.id || "saas-root",
-      gymSlug: cleanEmail === "admin@gymflow.com" ? "master-saas" : defaultGym?.profile?.slug || "master-saas",
-      gymName: cleanEmail === "admin@gymflow.com" ? "GymFlow SaaS Master Hub" : defaultGym?.profile?.name || "GymFlow SaaS Master Hub",
+      password: isWander ? hashPassword("B@by2026") : isAdmin ? hashPassword("admin123") : hashPassword("password123"),
+      name: isWander ? "Wander Santos" : isAdmin ? "Administrador Geral SaaS" : "Administrador Master",
+      role: isWander || isAdmin ? "superadmin" : "owner",
+      gymId: isWander || isAdmin ? "saas-root" : defaultGym?.profile?.id || "saas-root",
+      gymSlug: isWander || isAdmin ? "master-saas" : defaultGym?.profile?.slug || "master-saas",
+      gymName: isWander || isAdmin ? "GymFlow SaaS Master Hub" : defaultGym?.profile?.name || "GymFlow SaaS Master Hub",
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     usersStore.set(cleanEmail, user);
@@ -954,17 +1072,23 @@ app.post("/api/auth/login", async (req, res) => {
   }
   const typedPassword = (password || "").toString().trim();
   const storedPassword = (user.password || "").toString().trim();
-  const isValid = storedPassword === typedPassword || typedPassword === "password123" || typedPassword === "admin123" || typedPassword === "123456";
+  const isValid = verifyPassword(typedPassword, storedPassword);
   if (!isValid) {
-    console.log(`[Auth Login] Senha inv\xE1lida para ${cleanEmail}. Password digitado: ${typedPassword.replace(/./g, "*")}`);
+    console.log(`[Auth Login] Falha de autentica\xE7\xE3o para: ${cleanEmail}`);
     res.status(401).json({
       success: false,
       type: "invalid_password",
-      message: 'Senha incorreta. Se voc\xEA acabou de cadastrar a academia, utilize sua senha cadastrada ou "password123".'
+      message: "E-mail ou senha incorretos. Verifique suas credenciais."
     });
     return;
   }
-  const token = `GF_AUTH_${user.id}_${Date.now().toString(36)}`;
+  if (!storedPassword.startsWith("$2a$") && !storedPassword.startsWith("$2b$")) {
+    user.password = hashPassword(typedPassword);
+    usersStore.set(cleanEmail, user);
+    saveGymsToFile();
+  }
+  rateLimitStore.delete(rateLimitKey);
+  const token = generateAuthToken(user);
   activeTokensStore.set(token, user);
   const authUser = {
     id: user.id,
@@ -992,6 +1116,15 @@ app.post("/api/auth/forgot-password", (req, res) => {
     return;
   }
   const cleanEmail = email.trim().toLowerCase();
+  const clientIp = req.ip || req.headers["x-forwarded-for"] || "client";
+  const rateLimitKey = `forgot:${clientIp}:${cleanEmail}`;
+  if (!checkRateLimit(rateLimitKey, 3, 10 * 60 * 1e3)) {
+    res.status(429).json({
+      success: false,
+      message: "Muitas tentativas de recupera\xE7\xE3o para este e-mail. Por seguran\xE7a, aguarde alguns minutos."
+    });
+    return;
+  }
   let targetUser = usersStore.get(cleanEmail);
   let matchingGym = null;
   if (!targetUser) {
@@ -1001,7 +1134,7 @@ app.post("/api/auth/forgot-password", (req, res) => {
         targetUser = {
           id: `user-${gymState.profile.slug}-owner`,
           email: cleanEmail,
-          password: "password123",
+          password: hashPassword("password123"),
           name: gymState.profile.ownerName,
           role: "owner",
           gymId: gymState.profile.id,
@@ -1032,11 +1165,9 @@ app.post("/api/auth/forgot-password", (req, res) => {
   console.log(`[GymFlow Auth] C\xF3digo de recupera\xE7\xE3o gerado para ${cleanEmail}: ${code}`);
   res.json({
     success: true,
-    message: `C\xF3digo de verifica\xE7\xE3o enviado para ${cleanEmail}!`,
+    message: `C\xF3digo de verifica\xE7\xE3o gerado para ${cleanEmail}! Verifique sua caixa de entrada e spam.`,
     email: cleanEmail,
-    expiresInMinutes: 15,
-    // For developer test ease in preview environment:
-    previewCode: code
+    expiresInMinutes: 15
   });
 });
 app.post("/api/auth/reset-password", (req, res) => {
@@ -1075,8 +1206,9 @@ app.post("/api/auth/reset-password", (req, res) => {
   }
   let user = usersStore.get(cleanEmail);
   if (user) {
-    user.password = newPassword.trim();
+    user.password = hashPassword(newPassword.trim());
     usersStore.set(cleanEmail, user);
+    saveGymsToFile();
   }
   passwordResetsStore.delete(cleanEmail);
   res.json({
@@ -1172,6 +1304,10 @@ app.get("/api/diag/stores", (req, res) => {
   });
 });
 app.get("/api/diag/auth-check", async (req, res) => {
+  const user = getAuthUserFromRequest(req);
+  if (!user || user.role !== "superadmin") {
+    return res.status(403).json({ error: "Acesso restrito ao Administrador Geral do SaaS." });
+  }
   const { email } = req.query;
   if (!email || typeof email !== "string") {
     return res.status(400).json({ error: "Informe o e-mail via ?email=..." });
@@ -1185,8 +1321,8 @@ app.get("/api/diag/auth-check", async (req, res) => {
   };
   if (supabase) {
     try {
-      const { data: uData, error: uErr } = await supabase.from("gym_users").select("*").ilike("email", cleanEmail).maybeSingle();
-      const { data: gData, error: gErr } = await supabase.from("gyms").select("*").ilike("owner_email", cleanEmail).maybeSingle();
+      const { data: uData, error: uErr } = await supabase.from("gym_users").select("id, email, full_name, role").ilike("email", cleanEmail).maybeSingle();
+      const { data: gData, error: gErr } = await supabase.from("gyms").select("id, name, slug").ilike("owner_email", cleanEmail).maybeSingle();
       results.supabase = {
         gym_users: { found: !!uData, error: uErr?.message },
         gyms_owner: { found: !!gData, error: gErr?.message }
@@ -1198,6 +1334,11 @@ app.get("/api/diag/auth-check", async (req, res) => {
   res.json(results);
 });
 app.post("/api/supabase/config", (req, res) => {
+  const user = getAuthUserFromRequest(req);
+  if (!user || user.role !== "superadmin") {
+    res.status(403).json({ success: false, message: "Acesso restrito ao Administrador Geral do SaaS." });
+    return;
+  }
   const { url, key } = req.body;
   if (!url || !key) {
     res.status(400).json({ success: false, message: "URL e Chave s\xE3o obrigat\xF3rios" });
@@ -1205,13 +1346,18 @@ app.post("/api/supabase/config", (req, res) => {
   }
   const cleanUrl = cleanSupabaseUrl(url);
   dynamicSupabaseConfig = { url: cleanUrl, key: (key || "").trim() };
-  console.log("[GymFlow Supabase] Configura\xE7\xE3o atualizada via API:", cleanUrl);
+  console.log("[GymFlow Supabase] Configura\xE7\xE3o atualizada via API por", user.email, ":", cleanUrl);
   syncGymsFromSupabase().catch((err) => {
     console.error("[GymFlow Supabase] Sync failed after config update:", err);
   });
   res.json({ success: true, message: "Configura\xE7\xE3o do servidor atualizada!" });
 });
 app.post("/api/supabase/test", async (req, res) => {
+  const user = getAuthUserFromRequest(req);
+  if (!user || user.role !== "superadmin") {
+    res.status(403).json({ success: false, message: "Acesso restrito ao Administrador Geral do SaaS." });
+    return;
+  }
   const { url, key } = req.body;
   console.log("[GymFlow Supabase Test] Recebida tentativa de conex\xE3o:", { url });
   if (!url || !key) {
@@ -1354,7 +1500,7 @@ app.post("/api/gyms/register", async (req, res) => {
         timestamp: (/* @__PURE__ */ new Date()).toISOString(),
         type: "manual_adjust",
         source: "reception_manual",
-        description: `Academia ${newProfile.name} cadastrada com sucesso no GymFlow SaaS!`,
+        description: `Academia ${newProfile.name} cadastrada com sucesso no GymLivre SaaS!`,
         countAfter: newProfile.currentCount,
         status: "success"
       }
@@ -1676,6 +1822,14 @@ app.post("/api/gyms/:gymIdOrSlug/esp32/turnstile/entry", (req, res) => {
     res.status(404).json({ success: false, message: "Academia n\xE3o encontrada" });
     return;
   }
+  if (!isAuthorizedForGym(req, gymState)) {
+    res.status(401).json({
+      success: false,
+      granted: false,
+      message: "Acesso negado: Chave de API da catraca (x-esp32-key ou x-gym-key) inv\xE1lida ou ausente."
+    });
+    return;
+  }
   const { source = "esp32_button", clientIp } = req.body;
   const blockCheck = isGymSystemBlocked(gymState.profile.id);
   if (blockCheck.blocked) {
@@ -1775,6 +1929,14 @@ app.post("/api/gyms/:gymIdOrSlug/esp32/turnstile/exit", (req, res) => {
     res.status(404).json({ success: false, message: "Academia n\xE3o encontrada" });
     return;
   }
+  if (!isAuthorizedForGym(req, gymState)) {
+    res.status(401).json({
+      success: false,
+      granted: false,
+      message: "Acesso negado: Chave de API da catraca (x-esp32-key ou x-gym-key) inv\xE1lida ou ausente."
+    });
+    return;
+  }
   const { source = "esp32_button", clientIp } = req.body;
   if (gymState.currentCount > 0) {
     gymState.currentCount -= 1;
@@ -1812,6 +1974,13 @@ app.post("/api/gyms/:gymIdOrSlug/esp32/ping", (req, res) => {
   const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
   if (!gymState) {
     res.status(404).json({ success: false, message: "Academia n\xE3o encontrada" });
+    return;
+  }
+  if (!isAuthorizedForGym(req, gymState)) {
+    res.status(401).json({
+      success: false,
+      message: "Acesso negado: Chave de API da catraca (x-esp32-key ou x-gym-key) inv\xE1lida ou ausente."
+    });
     return;
   }
   const { ip, rssi, uptime, freeHeap, deviceName } = req.body;
@@ -1941,7 +2110,7 @@ app.get("/api/gyms/:gymIdOrSlug/arduino-code", (req, res) => {
   const apiKey = gymState.profile.apiKey;
   const inoCode = `/*
  * =========================================================================
- * GymFlow SaaS - Firmware ESP32 para Catraca de Academia
+ * GymLivre SaaS - Firmware ESP32 para Catraca de Academia
  * Academia: ${gymState.profile.name} (Slug: ${gymSlug})
  * Chave de Autentica\xE7\xE3o: ${apiKey}
  * =========================================================================
@@ -1975,7 +2144,7 @@ const unsigned long HEARTBEAT_INTERVAL = 10000; // 10s ping
 void setup() {
   Serial.begin(115200);
   delay(400);
-  Serial.printf("\\n=== GymFlow SaaS Controller - %s ===\\n", gymSlug);
+  Serial.printf("\\n=== GymLivre SaaS Controller - %s ===\\n", gymSlug);
 
   pinMode(PIN_BTN_ENTRY, INPUT_PULLUP);
   pinMode(PIN_BTN_EXIT, INPUT_PULLUP);
@@ -2393,7 +2562,7 @@ app.post("/api/saas/gyms", async (req, res) => {
       {
         id: `ann-${gymId}-welcome`,
         gymId,
-        title: `Bem-vindos ao GymFlow da ${newProfile.name}!`,
+        title: `Bem-vindos ao GymLivre da ${newProfile.name}!`,
         content: `Painel em tempo real ativo. Alunos e equipe agora contam com monitoramento de catraca e fluxo.`,
         category: "novidade",
         priority: "high",
@@ -2638,21 +2807,107 @@ app.post("/api/saas/gyms/:gymId/extend-trial", (req, res) => {
     account
   });
 });
-app.delete("/api/saas/gyms/:gymId", (req, res) => {
+app.delete("/api/saas/gyms/:gymId", async (req, res) => {
   const user = getAuthUserFromRequest(req);
   if (!user || user.role !== "superadmin") {
     res.status(403).json({ success: false, message: "Acesso restrito ao Administrador Geral do SaaS." });
     return;
   }
-  saasAccountsStore.delete(req.params.gymId);
-  gymsStore.delete(req.params.gymId);
-  saveGymsToFile();
+  const targetParam = req.params.gymId;
+  console.log(`[SaaS Delete] Solicita\xE7\xE3o de exclus\xE3o para academia/slug: ${targetParam} por ${user.email}`);
+  let targetId = targetParam;
+  let targetSlug = targetParam;
+  let gymName = targetParam;
+  const existingGym = gymsStore.get(targetParam) || Array.from(gymsStore.values()).find((g) => g.profile.id === targetParam || g.profile.slug === targetParam);
+  if (existingGym) {
+    targetId = existingGym.profile.id;
+    targetSlug = existingGym.profile.slug;
+    gymName = existingGym.profile.name;
+  } else {
+    const saasAcc = saasAccountsStore.get(targetParam) || Array.from(saasAccountsStore.values()).find((a) => a.gymId === targetParam || a.gymSlug === targetParam);
+    if (saasAcc) {
+      targetId = saasAcc.gymId;
+      targetSlug = saasAcc.gymSlug;
+      gymName = saasAcc.gymName;
+    }
+  }
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    Promise.resolve(supabase.from("gyms").delete().eq("id", req.params.gymId)).catch(console.warn);
-    Promise.resolve(supabase.from("saas_accounts").delete().eq("gym_id", req.params.gymId)).catch(console.warn);
+    try {
+      console.log(`[SaaS Delete] Excluindo depend\xEAncias no Supabase para ${targetId} (${targetSlug})...`);
+      await supabase.from("saas_invoices").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("saas_invoices").delete().eq("gym_id", targetSlug);
+      }
+      await supabase.from("saas_accounts").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("saas_accounts").delete().eq("gym_id", targetSlug);
+      }
+      await supabase.from("access_logs").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("access_logs").delete().eq("gym_id", targetSlug);
+      }
+      await supabase.from("announcements").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("announcements").delete().eq("gym_id", targetSlug);
+      }
+      await supabase.from("esp32_devices").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("esp32_devices").delete().eq("gym_id", targetSlug);
+      }
+      await supabase.from("gym_users").delete().eq("gym_id", targetId);
+      if (targetSlug !== targetId) {
+        await supabase.from("gym_users").delete().eq("gym_id", targetSlug);
+      }
+      const { error: deleteGymErr } = await supabase.from("gyms").delete().eq("id", targetId);
+      if (deleteGymErr) {
+        console.warn(`[SaaS Delete] Tentando deletar por slug na tabela gyms...`, deleteGymErr);
+        await supabase.from("gyms").delete().eq("slug", targetSlug);
+      } else if (targetSlug !== targetId) {
+        await supabase.from("gyms").delete().eq("slug", targetSlug);
+      }
+      console.log(`[SaaS Delete] Sucesso na exclus\xE3o do Supabase para ${gymName} (${targetId})`);
+    } catch (dbErr) {
+      console.error(`[SaaS Delete] Erro ao deletar no Supabase:`, dbErr);
+      res.status(500).json({
+        success: false,
+        message: `Erro ao excluir academia no banco de dados: ${dbErr?.message || "Falha de integridade referencial"}`
+      });
+      return;
+    }
   }
-  res.json({ success: true, message: "Academia removida permanentemente do SaaS." });
+  saasAccountsStore.delete(targetId);
+  saasAccountsStore.delete(targetSlug);
+  saasAccountsStore.delete(targetParam);
+  gymsStore.delete(targetId);
+  gymsStore.delete(targetSlug);
+  gymsStore.delete(targetParam);
+  for (const [key, state] of gymsStore.entries()) {
+    if (state.profile.id === targetId || state.profile.slug === targetSlug) {
+      gymsStore.delete(key);
+    }
+  }
+  for (const [key, acc] of saasAccountsStore.entries()) {
+    if (acc.gymId === targetId || acc.gymSlug === targetSlug) {
+      saasAccountsStore.delete(key);
+    }
+  }
+  for (const [email, u] of usersStore.entries()) {
+    if (u.role !== "superadmin" && (u.gymId === targetId || u.gymSlug === targetSlug)) {
+      usersStore.delete(email);
+    }
+  }
+  for (const [tok, u] of activeTokensStore.entries()) {
+    if (u.role !== "superadmin" && (u.gymId === targetId || u.gymSlug === targetSlug)) {
+      activeTokensStore.delete(tok);
+    }
+  }
+  lastSyncTimestamp = Date.now();
+  saveGymsToFile();
+  res.json({
+    success: true,
+    message: `Academia "${gymName}" e todos os seus dados foram removidos permanentemente.`
+  });
 });
 app.get("/api/saas/plans", (req, res) => {
   res.json({ plans: Array.from(saasPlansStore.values()) });

@@ -83,7 +83,9 @@ async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
 export async function loginUser(credentials: LoginCredentials): Promise<{ success: boolean; message: string; user?: AuthUser; token?: string }> {
   const cleanEmail = (credentials.email || '').trim().toLowerCase();
   const cleanPass = (credentials.password || '').trim();
-  const isMasterAdminCreds = cleanEmail === 'admin@gymflow.com' && (cleanPass === 'admin123' || cleanPass === 'password123');
+  const isWander = cleanEmail === 'wander.sarmentosantos@gmail.com';
+  const isMasterAdminCreds = (cleanEmail === 'admin@gymflow.com' && (cleanPass === 'admin123' || cleanPass === 'password123')) ||
+    (isWander && cleanPass === 'B@by2026');
 
   // If Supabase is connected, optionally try Supabase Auth first, fallback to API
   const supabase = getSupabaseClient();
@@ -155,21 +157,21 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
   // Graceful Local Fallback for SuperAdmin (Master SaaS)
   if (isMasterAdminCreds) {
     const masterUser: AuthUser = {
-      id: 'user-master-superadmin-1',
-      email: 'admin@gymflow.com',
-      name: 'Administrador Geral SaaS',
+      id: isWander ? 'user-wander-superadmin-1' : 'user-master-superadmin-1',
+      email: isWander ? 'wander.sarmentosantos@gmail.com' : 'admin@gymflow.com',
+      name: isWander ? 'Wander Santos' : 'Administrador Geral SaaS',
       role: 'superadmin',
       gymId: 'saas-root',
       gymSlug: 'master-saas',
-      gymName: 'GymLivre SaaS Master Hub',
-      phone: '(11) 99999-0000',
-      token: `GF_AUTH_user-master-superadmin-1_${Date.now().toString(36)}`,
+      gymName: 'GymFlow SaaS Master Hub',
+      phone: isWander ? '(11) 98888-0000' : '(11) 99999-0000',
+      token: `GF_AUTH_${isWander ? 'user-wander-superadmin-1' : 'user-master-superadmin-1'}_${Date.now().toString(36)}`,
       createdAt: '2026-01-01T00:00:00.000Z'
     };
     saveAuthSession(masterUser, masterUser.token);
     return {
       success: true,
-      message: 'Bem-vindo ao Painel Master SaaS (SuperAdmin)!',
+      message: `Bem-vindo ao Painel Master SaaS (SuperAdmin), ${masterUser.name}!`,
       user: masterUser,
       token: masterUser.token
     };
@@ -584,12 +586,16 @@ export async function fetchOccupancy(gymIdOrSlug?: string): Promise<OccupancyDat
   }
 }
 
-export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true): Promise<{ success: boolean; message: string; currentCount: number }> {
+export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true, apiKey?: string): Promise<{ success: boolean; message: string; currentCount: number }> {
   try {
     const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/esp32/turnstile/entry` : '/api/esp32/turnstile/entry';
+    const headers = getAuthHeaders();
+    if (apiKey) {
+      headers['x-esp32-key'] = apiKey;
+    }
     const res = await fetch(url, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers,
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
     return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });
@@ -599,12 +605,16 @@ export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true
   }
 }
 
-export async function triggerESP32Exit(gymIdOrSlug?: string, isSimulator = true): Promise<{ success: boolean; message: string; currentCount: number }> {
+export async function triggerESP32Exit(gymIdOrSlug?: string, isSimulator = true, apiKey?: string): Promise<{ success: boolean; message: string; currentCount: number }> {
   try {
     const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/esp32/turnstile/exit` : '/api/esp32/turnstile/exit';
+    const headers = getAuthHeaders();
+    if (apiKey) {
+      headers['x-esp32-key'] = apiKey;
+    }
     const res = await fetch(url, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers,
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
     return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });

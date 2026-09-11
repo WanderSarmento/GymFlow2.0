@@ -325,14 +325,14 @@ export default function App() {
   // Handlers for ESP32 Simulation
   const handleSimulateEntry = async () => {
     if (!currentGym) return;
-    const res = await triggerESP32Entry(currentGym.slug, true);
+    const res = await triggerESP32Entry(currentGym.slug, true, currentGym.apiKey);
     await loadGymData(currentGym.slug, true);
     return res;
   };
 
   const handleSimulateExit = async () => {
     if (!currentGym) return;
-    const res = await triggerESP32Exit(currentGym.slug, true);
+    const res = await triggerESP32Exit(currentGym.slug, true, currentGym.apiKey);
     await loadGymData(currentGym.slug, true);
     return res;
   };

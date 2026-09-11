@@ -1,87 +1,7 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-10T18:59:41.140Z",
+  "updatedAt": "2026-09-11T15:56:54.826Z",
   "gyms": [
-    {
-      "profile": {
-        "id": "gym-test-gym-1-mtuv91g2",
-        "slug": "test-gym-1",
-        "name": "Test Gym",
-        "slogan": "Monitoramento de Lotação em Tempo Real",
-        "city": "Brasil",
-        "neighborhood": "Unidade Principal",
-        "address": "",
-        "contactPhone": "",
-        "maxCapacity": 100,
-        "currentCount": 0,
-        "turnstileLocked": false,
-        "isOpen": true,
-        "themeColor": "cyan",
-        "logoEmoji": "⚡",
-        "apiKey": "GF_KEY_TEST_GYM_1_FNGVKY",
-        "ownerName": "Gestor Responsável",
-        "ownerEmail": "test@gym.com",
-        "createdAt": "2026-09-10T01:46:13.010Z",
-        "operatingHours": {
-          "weekdays": {
-            "open": "06:00",
-            "close": "23:00",
-            "isOpen": true
-          },
-          "saturday": {
-            "open": "07:00",
-            "close": "17:00",
-            "isOpen": true
-          },
-          "sunday": {
-            "open": "08:00",
-            "close": "14:00",
-            "isOpen": true
-          }
-        }
-      },
-      "currentCount": 0,
-      "maxCapacity": 100,
-      "turnstileLocked": false,
-      "isOpen": true,
-      "announcements": [
-        {
-          "id": "ann-gym-test-gym-1-mtuv91g2-welcome",
-          "gymId": "gym-test-gym-1-mtuv91g2",
-          "title": "Bem-vindos ao Monitor em Tempo Real da Test Gym!",
-          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
-          "category": "novidade",
-          "priority": "high",
-          "date": "10/09/2026",
-          "author": "Gestor Responsável",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "6084d113-1b78-4ed2-9050-9e3002a822f6",
-          "title": "Bem-vindos ao Monitor em Tempo Real da Test Gym!",
-          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
-          "category": "novidade",
-          "priority": "high",
-          "date": "10/09/2026",
-          "author": "Gestor Responsável",
-          "pinned": true,
-          "active": true
-        }
-      ],
-      "accessLogs": [
-        {
-          "id": "log-gym-test-gym-1-mtuv91g2-init",
-          "gymId": "gym-test-gym-1-mtuv91g2",
-          "timestamp": "2026-09-10T01:46:13.010Z",
-          "type": "manual_adjust",
-          "source": "reception_manual",
-          "description": "Academia Test Gym cadastrada com sucesso no GymFlow SaaS!",
-          "countAfter": 0,
-          "status": "success"
-        }
-      ]
-    },
     {
       "profile": {
         "id": "gym-iron-gym-moema-mtuviu2b",
@@ -158,96 +78,6 @@
           "source": "reception_manual",
           "description": "Academia Iron Gym Moema cadastrada com sucesso no GymFlow SaaS!",
           "countAfter": 0,
-          "status": "success"
-        }
-      ]
-    },
-    {
-      "profile": {
-        "id": "gym-fitflow-moema",
-        "slug": "fitflow-moema",
-        "name": "FitFlow Club Moema",
-        "slogan": "Sua academia inteligente de alta performance",
-        "city": "São Paulo - SP",
-        "neighborhood": "Moema Nobre",
-        "address": "Av. Ibirapuera, 2450",
-        "contactPhone": "(11) 98765-4321",
-        "maxCapacity": 85,
-        "currentCount": 38,
-        "turnstileLocked": false,
-        "isOpen": true,
-        "themeColor": "cyan",
-        "visualTheme": "dark",
-        "logoEmoji": "⚡",
-        "apiKey": "GF_KEY_A0C0501F16BC4E31",
-        "ownerName": "Carlos Henrique Gestor",
-        "ownerEmail": "carlos@fitflow.com.br",
-        "createdAt": "2026-08-29T14:47:46.393418+00:00",
-        "operatingHours": {
-          "sunday": {
-            "open": "08:00",
-            "close": "14:00",
-            "isOpen": true
-          },
-          "saturday": {
-            "open": "07:00",
-            "close": "17:00",
-            "isOpen": true
-          },
-          "weekdays": {
-            "open": "06:00",
-            "close": "23:00",
-            "isOpen": true
-          }
-        }
-      },
-      "currentCount": 38,
-      "maxCapacity": 85,
-      "turnstileLocked": false,
-      "isOpen": true,
-      "announcements": [
-        {
-          "id": "e08fb9ef-0942-4de2-b11e-d19c5b1661be",
-          "title": "Manutenção Preventiva das Catracas e Rede",
-          "content": "No próximo domingo às 05h realizaremos a atualização do firmware das catracas inteligentes ESP32.",
-          "category": "manutencao",
-          "priority": "high",
-          "date": "28/08/2026",
-          "author": "Coordenação Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "83d8cd89-4ba8-4ed0-903f-8af183514a02",
-          "title": "Novo App de Lotação GymFlow no Ar!",
-          "content": "Alunos agora podem acompanhar o fluxo de treino em tempo real direto pelo smartphone.",
-          "category": "novidade",
-          "priority": "medium",
-          "date": "28/08/2026",
-          "author": "Recepção",
-          "pinned": true,
-          "active": true
-        }
-      ],
-      "accessLogs": [
-        {
-          "id": "log-gym-fitflow-moema-1",
-          "gymId": "gym-fitflow-moema",
-          "timestamp": "2026-09-10T16:02:26.287Z",
-          "type": "entry",
-          "source": "esp32_button",
-          "description": "Acesso liberado via Catraca (FitFlow Club Moema)",
-          "countAfter": 38,
-          "status": "success"
-        },
-        {
-          "id": "log-gym-fitflow-moema-2",
-          "gymId": "gym-fitflow-moema",
-          "timestamp": "2026-09-10T15:57:26.287Z",
-          "type": "exit",
-          "source": "esp32_button",
-          "description": "Saída registrada via Catraca Física (ESP32)",
-          "countAfter": 37,
           "status": "success"
         }
       ]
@@ -520,6 +350,17 @@
           "author": "Wander Santos",
           "pinned": true,
           "active": true
+        },
+        {
+          "id": "3a9e9638-ebc4-4f1a-b208-b883b1b4b9e2",
+          "title": "Bem-vindos ao Monitor em Tempo Real da GymFlow Prime Exemplo!",
+          "content": "Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "Wander Santos",
+          "pinned": true,
+          "active": true
         }
       ],
       "accessLogs": [
@@ -534,13 +375,103 @@
           "status": "success"
         }
       ]
+    },
+    {
+      "profile": {
+        "id": "gym-ctwr-mtw1ksej",
+        "slug": "ctwr",
+        "name": "ctwr",
+        "slogan": "Monitoramento de Lotação em Tempo Real",
+        "city": "Uruçuca",
+        "neighborhood": "centro",
+        "address": "",
+        "contactPhone": "",
+        "maxCapacity": 40,
+        "currentCount": 35,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "emerald",
+        "visualTheme": "dark",
+        "logoEmoji": "🏋️",
+        "apiKey": "GF_LIVE_KEY_CTWR_mtw1ksej",
+        "ownerName": "wanderson ramos",
+        "ownerEmail": "ctwr@gmail.com",
+        "createdAt": "2026-09-10T21:54:02.706271+00:00",
+        "operatingHours": {
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "weekdays": {
+            "open": "06:00",
+            "close": "22:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 35,
+      "maxCapacity": 40,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "1ccb24b8-94a3-4109-8e01-85a88b04928d",
+          "title": "Bem-vindos ao GymFlow da CTWR!",
+          "content": "Painel em tempo real ativo. Alunos e equipe agora contam com monitoramento de catraca e fluxo.",
+          "category": "novidade",
+          "priority": "high",
+          "date": "10/09/2026",
+          "author": "wanderson ramos",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "93628c4e-8530-4e1a-82c9-9ad5f839b1de",
+          "title": "funcionamos aos domingos!",
+          "content": "ao domingos funcionamos ate as 10:00",
+          "category": "horario",
+          "priority": "medium",
+          "date": "10/09/2026",
+          "author": "Administração FitFlow",
+          "pinned": false,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-ctwr-mtw1ksej-1",
+          "gymId": "gym-ctwr-mtw1ksej",
+          "timestamp": "2026-09-11T14:28:23.602Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (ctwr)",
+          "countAfter": 35,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-ctwr-mtw1ksej-2",
+          "gymId": "gym-ctwr-mtw1ksej",
+          "timestamp": "2026-09-11T14:23:23.602Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 34,
+          "status": "success"
+        }
+      ]
     }
   ],
   "users": [
     {
       "id": "user-master-superadmin-1",
       "email": "admin@gymflow.com",
-      "password": "admin123",
+      "password": "$2b$10$dJ4mGvYVDK0gA0U92.tJz.AwfcBlDGxaEgKXpdzdJvJV6b2aCGMWu",
       "name": "Administrador Geral SaaS",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -550,9 +481,20 @@
       "createdAt": "2026-01-01T00:00:00.000Z"
     },
     {
+      "id": "a7278327-af02-4d84-8102-3849da5a220f",
+      "email": "wander.sarmentosantos@gmail.com",
+      "password": "password123",
+      "name": "Wander Santos",
+      "role": "owner",
+      "gymId": "gym-gymflow-prime-mtvw637l",
+      "gymSlug": "gymflow-prime",
+      "gymName": "GymFlow Prime Exemplo",
+      "createdAt": "2026-09-10T18:59:43.401954+00:00"
+    },
+    {
       "id": "6ec3f3a1-3b5a-4587-9613-54b59a060cbc",
       "email": "test@gym.com",
-      "password": "password123",
+      "password": "$2b$10$0att81dNgRyNOlslnXzd5OTItdikqrivKbzQx9/uxYf2uBAI1g2I.",
       "name": "Gestor Responsável",
       "role": "owner",
       "gymId": "gym-test-gym-1-mtuv91g2",
@@ -574,7 +516,7 @@
     {
       "id": "0a3386eb-a0f3-4b69-9a5c-fdcd361d5036",
       "email": "carlos@fitflow.com.br",
-      "password": "password123",
+      "password": "$2b$10$3.cY5ySiA0aAFxxhxOMyWOW/pVkvLb1Nbx6/Fym4/Va8ZVIXMDZG6",
       "name": "Carlos Henrique Gestor",
       "role": "owner",
       "gymId": "gym-fitflow-moema",
@@ -585,7 +527,7 @@
     {
       "id": "user-rec-fitflow-moema",
       "email": "recepcao@fitflow-moema.com",
-      "password": "password123",
+      "password": "$2b$10$DsHggMmBnvnxdkwlPvgab.X.19wbljSy8CkGfb6AaBPhXoaEyxJBG",
       "name": "Recepção - FitFlow Club Moema",
       "role": "reception",
       "gymId": "gym-fitflow-moema",
@@ -594,7 +536,7 @@
       "createdAt": "2026-08-29T14:47:46.393418+00:00"
     },
     {
-      "id": "user-iron-muscle-ct-2",
+      "id": "7904e3e6-971b-4f80-9bab-ef35ca0f31fd",
       "email": "renato@ironmuscle.com.br",
       "password": "password123",
       "name": "Renato Iron Treinador",
@@ -602,13 +544,12 @@
       "gymId": "gym-iron-muscle-ct",
       "gymSlug": "iron-muscle-ct",
       "gymName": "Iron Muscle CT",
-      "phone": "(41) 99123-4567",
-      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+      "createdAt": "2026-09-10T21:54:29.014955+00:00"
     },
     {
       "id": "user-rec-iron-muscle-ct",
       "email": "recepcao@iron-muscle-ct.com",
-      "password": "password123",
+      "password": "$2b$10$3TNAwfmLfAMLynLLxKooQORM9R4AKEvXuxDp28FnsRYxsRXMLuc8S",
       "name": "Recepção - Iron Muscle CT",
       "role": "reception",
       "gymId": "gym-iron-muscle-ct",
@@ -617,7 +558,7 @@
       "createdAt": "2026-08-29T14:47:46.393418+00:00"
     },
     {
-      "id": "user-powerfit-barra-3",
+      "id": "41d7c056-9a54-42c4-b694-064289d0cc14",
       "email": "juliana@powerfit24h.com",
       "password": "password123",
       "name": "Juliana Lima",
@@ -625,13 +566,12 @@
       "gymId": "gym-powerfit-barra",
       "gymSlug": "powerfit-barra",
       "gymName": "PowerFit 24h Barra",
-      "phone": "(21) 98456-7890",
-      "createdAt": "2026-08-29T14:47:46.393418+00:00"
+      "createdAt": "2026-09-10T21:55:43.254679+00:00"
     },
     {
       "id": "user-rec-powerfit-barra",
       "email": "recepcao@powerfit-barra.com",
-      "password": "password123",
+      "password": "$2b$10$eA4dWInNx/8TCDTa1R.LW.9l7F72SY7cg/D2LNe8P87E1mBOcD68u",
       "name": "Recepção - PowerFit 24h Barra",
       "role": "reception",
       "gymId": "gym-powerfit-barra",
@@ -642,7 +582,7 @@
     {
       "id": "user-academia-teste-perm-owner",
       "email": "batel@academia.com",
-      "password": "password123",
+      "password": "$2b$10$WjxdIkw9xTRm1X1yskIWj.8PVI6.FF6LeoEOuv6vsS7M2y6IRG6lu",
       "name": "Carlos Batel",
       "role": "owner",
       "gymId": "gym-academia-teste-perm-mtvpylff",
@@ -654,7 +594,7 @@
     {
       "id": "user-rec-test-gym-1",
       "email": "recepcao@test-gym-1.com",
-      "password": "password123",
+      "password": "$2b$10$5w4YRw54nz8SQAQSff0qN.COmASV0TumvOG9nUoFSufWK.fTBM8qm",
       "name": "Recepção - Test Gym",
       "role": "reception",
       "gymId": "gym-test-gym-1-mtuv91g2",
@@ -665,7 +605,7 @@
     {
       "id": "user-rec-iron-gym-moema",
       "email": "recepcao@iron-gym-moema.com",
-      "password": "password123",
+      "password": "$2b$10$4qSGEj6Bwruirgl.m36NzeWMNPf73vFoNJP7DP0lr2k48jUfSLdzy",
       "name": "Recepção - Iron Gym Moema",
       "role": "reception",
       "gymId": "gym-iron-gym-moema-mtuviu2b",
@@ -674,49 +614,51 @@
       "createdAt": "2026-09-10T16:05:29.159269+00:00"
     },
     {
-      "id": "user-gymflow-prime-owner",
-      "email": "wander.sarmentosantos@gmail.com",
-      "password": "password123",
-      "name": "Wander Santos",
-      "role": "owner",
-      "gymId": "gym-gymflow-prime-mtvw637l",
-      "gymSlug": "gymflow-prime",
-      "gymName": "GymFlow Prime Exemplo",
-      "phone": "(11) 98888-0000",
-      "createdAt": "2026-09-10T18:59:41.121Z"
-    },
-    {
       "id": "user-rec-academia-wander",
       "email": "recepcao@academia-wander.com",
-      "password": "password123",
+      "password": "$2b$10$rsPfQSRIMSBJKuzIL3/Sgu4gVKdob6MUh0i1wll0oA6CyOMO2lRRG",
       "name": "Recepção - Academia do Wander",
       "role": "reception",
       "gymId": "gym-academia-wander-mtvsuh5a",
       "gymSlug": "academia-wander",
       "gymName": "Academia do Wander",
       "createdAt": "2026-09-10T17:26:41.014451+00:00"
+    },
+    {
+      "id": "user-rec-gymflow-prime",
+      "email": "recepcao@gymflow-prime.com",
+      "password": "$2b$10$UoXRndAth/ON8IQ2LHX5Jes.tc8IFlvYWjn1zedXy51bOJgqBlOmq",
+      "name": "Recepção - GymFlow Prime Exemplo",
+      "role": "reception",
+      "gymId": "gym-gymflow-prime-mtvw637l",
+      "gymSlug": "gymflow-prime",
+      "gymName": "GymFlow Prime Exemplo",
+      "createdAt": "2026-09-10T18:59:41.942968+00:00"
+    },
+    {
+      "id": "d82776bb-3460-4064-9bd1-bc36f4f31f5c",
+      "email": "ctwr@gmail.com",
+      "password": "senha1234",
+      "name": "wanderson ramos",
+      "role": "owner",
+      "gymId": "gym-ctwr-mtw1ksej",
+      "gymSlug": "ctwr",
+      "gymName": "ctwr",
+      "createdAt": "2026-09-10T21:54:03.382324+00:00"
+    },
+    {
+      "id": "user-rec-ctwr",
+      "email": "recepcao@ctwr.com",
+      "password": "$2b$10$SnRI4N3KlEDjQqk5l//WOOOoa/k1xhAXCbDXsSGkcUYMwH2RYjDxW",
+      "name": "Recepção - ctwr",
+      "role": "reception",
+      "gymId": "gym-ctwr-mtw1ksej",
+      "gymSlug": "ctwr",
+      "gymName": "ctwr",
+      "createdAt": "2026-09-10T21:54:02.706271+00:00"
     }
   ],
   "saasAccounts": [
-    {
-      "gymId": "gym-test-gym-1-mtuv91g2",
-      "gymSlug": "test-gym-1",
-      "gymName": "Test Gym",
-      "ownerName": "Gestor Responsável",
-      "ownerEmail": "test@gym.com",
-      "city": "Brasil",
-      "plan": "starter",
-      "planName": "STARTER",
-      "monthlyFee": 149,
-      "status": "trial",
-      "isSystemBlocked": false,
-      "turnstilesLimit": 2,
-      "maxCapacity": 100,
-      "nextDueDate": "2026-09-25",
-      "createdAt": "2026-09-10T16:05:28.934687+00:00",
-      "apiKey": "GF_KEY_TEST_GYM_1_FNGVKY",
-      "invoices": []
-    },
     {
       "gymId": "gym-iron-gym-moema-mtuviu2b",
       "gymSlug": "iron-gym-moema",
@@ -737,48 +679,21 @@
       "invoices": []
     },
     {
-      "gymId": "gym-fitflow-moema",
-      "gymSlug": "fitflow-moema",
-      "gymName": "FitFlow Club Moema",
-      "ownerName": "Carlos Henrique Gestor",
-      "ownerEmail": "carlos@fitflow.com.br",
-      "ownerPhone": "(11) 98765-4321",
-      "city": "São Paulo - SP",
-      "plan": "pro",
-      "planName": "Plano Pro Performance",
-      "monthlyFee": 299,
-      "status": "active",
-      "isSystemBlocked": false,
-      "blockedAt": null,
-      "turnstilesLimit": 6,
-      "maxCapacity": 85,
-      "lastPaymentDate": "2026-08-15",
-      "nextDueDate": "2026-09-15",
-      "trialEndsAt": null,
-      "createdAt": "2026-08-29T14:47:46.393418+00:00",
-      "apiKey": "GF_KEY_A0C0501F16BC4E31",
-      "invoices": []
-    },
-    {
       "gymId": "gym-iron-muscle-ct",
       "gymSlug": "iron-muscle-ct",
       "gymName": "Iron Muscle CT",
       "ownerName": "Renato Iron Treinador",
       "ownerEmail": "renato@ironmuscle.com.br",
-      "ownerPhone": "(41) 99123-4567",
       "city": "Curitiba - PR",
-      "plan": "enterprise",
-      "planName": "Plano Enterprise",
-      "monthlyFee": 599,
+      "plan": "starter",
+      "planName": "STARTER",
+      "monthlyFee": 149,
       "status": "active",
       "isSystemBlocked": false,
-      "blockedAt": null,
-      "turnstilesLimit": 20,
+      "turnstilesLimit": 2,
       "maxCapacity": 60,
-      "lastPaymentDate": "2026-08-15",
       "nextDueDate": "2026-09-15",
-      "trialEndsAt": null,
-      "createdAt": "2026-08-29T14:47:46.393418+00:00",
+      "createdAt": "2026-09-10T21:54:29.414773+00:00",
       "apiKey": "GF_KEY_854CCCE653EF42AF",
       "invoices": []
     },
@@ -788,56 +703,18 @@
       "gymName": "PowerFit 24h Barra",
       "ownerName": "Juliana Lima",
       "ownerEmail": "juliana@powerfit24h.com",
-      "ownerPhone": "(21) 98456-7890",
       "city": "Rio de Janeiro - RJ",
       "plan": "starter",
-      "planName": "Plano Starter",
+      "planName": "STARTER",
       "monthlyFee": 149,
       "status": "active",
       "isSystemBlocked": false,
-      "blockedAt": null,
       "turnstilesLimit": 2,
       "maxCapacity": 120,
-      "lastPaymentDate": "2026-08-15",
       "nextDueDate": "2026-09-15",
-      "trialEndsAt": null,
-      "createdAt": "2026-08-29T14:47:46.393418+00:00",
+      "createdAt": "2026-09-10T21:55:43.64985+00:00",
       "apiKey": "GF_KEY_1C9624AB94E4443D",
       "invoices": []
-    },
-    {
-      "gymId": "gym-academia-teste-perm-mtvpylff",
-      "gymSlug": "academia-teste-perm",
-      "gymName": "Academia Teste Permanente",
-      "ownerName": "Carlos Batel",
-      "ownerEmail": "batel@academia.com",
-      "ownerPhone": "(41) 99999-8888",
-      "city": "Curitiba - PR",
-      "plan": "starter",
-      "planName": "Plano Starter",
-      "monthlyFee": 149,
-      "status": "trial",
-      "isSystemBlocked": false,
-      "blockedAt": null,
-      "turnstilesLimit": 2,
-      "maxCapacity": 150,
-      "lastPaymentDate": null,
-      "nextDueDate": "2026-09-25",
-      "trialEndsAt": "2026-09-25",
-      "createdAt": "2026-09-10T16:05:53.787Z",
-      "apiKey": "GF_KEY_ACADEMIA_TESTE_PERM_NY8GYC",
-      "invoices": [
-        {
-          "id": "inv-gym-academia-teste-perm-mtvpylff-mtvpylfy",
-          "gymId": "gym-academia-teste-perm-mtvpylff",
-          "gymName": "Academia Teste Permanente",
-          "amount": 149,
-          "dueDate": "2026-09-25",
-          "status": "pending",
-          "referenceMonth": "09/2026",
-          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
-        }
-      ]
     },
     {
       "gymId": "gym-academia-wander-mtvsuh5a",
@@ -856,7 +733,19 @@
       "nextDueDate": "2026-09-25",
       "createdAt": "2026-09-10T17:26:43.65366+00:00",
       "apiKey": "GF_KEY_ACADEMIA_WANDER_WDIAB6",
-      "invoices": []
+      "invoices": [
+        {
+          "id": "inv-gym-academia-wander-mtvsuh5a-mtvsuh5t",
+          "gymId": "gym-academia-wander-mtvsuh5a",
+          "gymName": "Academia do Wander",
+          "referenceMonth": "09/2026",
+          "amount": 149,
+          "dueDate": "2026-09-25",
+          "status": "pending",
+          "paidDate": null,
+          "notes": null
+        }
+      ]
     },
     {
       "gymId": "gym-gymflow-prime-mtvw637l",
@@ -864,33 +753,49 @@
       "gymName": "GymFlow Prime Exemplo",
       "ownerName": "Wander Santos",
       "ownerEmail": "wander.sarmentosantos@gmail.com",
-      "ownerPhone": "(11) 98888-0000",
       "city": "São Paulo - SP",
-      "plan": "starter",
-      "planName": "Plano Starter",
-      "monthlyFee": 149,
+      "plan": "pro",
+      "planName": "PRO",
+      "monthlyFee": 299,
       "status": "trial",
       "isSystemBlocked": false,
-      "blockedAt": null,
       "turnstilesLimit": 2,
       "maxCapacity": 150,
-      "lastPaymentDate": null,
       "nextDueDate": "2026-09-25",
-      "trialEndsAt": "2026-09-25",
-      "createdAt": "2026-09-10T18:59:41.121Z",
+      "createdAt": "2026-09-10T19:13:14.857295+00:00",
       "apiKey": "GF_KEY_GYMFLOW_PRIME_OUC7SJ",
       "invoices": [
         {
           "id": "inv-gym-gymflow-prime-mtvw637l-mtvw6384",
           "gymId": "gym-gymflow-prime-mtvw637l",
           "gymName": "GymFlow Prime Exemplo",
+          "referenceMonth": "09/2026",
           "amount": 149,
           "dueDate": "2026-09-25",
           "status": "pending",
-          "referenceMonth": "09/2026",
-          "notes": "Primeira mensalidade pós-período de testes de 15 dias"
+          "paidDate": null,
+          "notes": null
         }
       ]
+    },
+    {
+      "gymId": "gym-ctwr-mtw1ksej",
+      "gymSlug": "ctwr",
+      "gymName": "ctwr",
+      "ownerName": "wanderson ramos",
+      "ownerEmail": "ctwr@gmail.com",
+      "city": "Uruçuca",
+      "plan": "starter",
+      "planName": "STARTER",
+      "monthlyFee": 149,
+      "status": "trial",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 40,
+      "nextDueDate": "2026-10-10",
+      "createdAt": "2026-09-10T21:54:03.913682+00:00",
+      "apiKey": "GF_LIVE_KEY_CTWR_mtw1ksej",
+      "invoices": []
     }
   ]
 }

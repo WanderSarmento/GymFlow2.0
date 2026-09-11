@@ -235,6 +235,16 @@ ALTER TABLE public.esp32_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
 
 -- 8.1. Academias: Leitura pública para a tela dos alunos; Modificação por gestores/donos
+-- Recomendação de segurança: Alunos e visitantes consomem a VIEW public_gyms para não expor a coluna api_key
+CREATE OR REPLACE VIEW public.public_gyms AS
+SELECT 
+    id, slug, name, slogan, city, neighborhood, address, contact_phone, 
+    max_capacity, current_count, theme_color, logo_emoji, is_open, 
+    opening_time_today, closing_time_today, turnstile_locked, updated_at
+FROM public.gyms;
+
+GRANT SELECT ON public.public_gyms TO anon, authenticated;
+
 CREATE POLICY "Public Read Gyms" ON public.gyms
     FOR SELECT USING (true);
 
