@@ -253,8 +253,8 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
 
       {/* Modal: Create Announcement */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3.5 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-3.5 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header - Fixed at top */}
             <div className="flex items-center justify-between border-b border-gray-800 p-5 sm:p-8 pb-4">

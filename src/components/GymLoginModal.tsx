@@ -335,7 +335,7 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className={`relative w-full rounded-3xl bg-zinc-950 border border-zinc-800 shadow-2xl p-6 sm:p-8 text-zinc-100 overflow-hidden flex flex-col max-h-[92vh] ${
         mode === 'register' ? 'max-w-2xl' : 'max-w-md'
       }`}>
@@ -364,12 +364,15 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
                 </span>
               </div>
               <h2 className="text-xl font-black font-['Outfit'] text-white">
-                {mode === 'login' && 'Entrar na Academia'}
+                {mode === 'login' && 'Bem-vindo de volta! 👋'}
                 {mode === 'register' && 'Cadastrar Nova Academia'}
                 {mode === 'register_success' && 'Cadastro Concluído!'}
                 {mode === 'forgot_request' && 'Recuperar Senha'}
                 {mode === 'forgot_reset' && 'Nova Senha de Acesso'}
               </h2>
+              {mode === 'login' && (
+                <p className="text-[10px] text-zinc-500 font-medium">Acesse sua conta para gerenciar sua unidade.</p>
+              )}
             </div>
           </div>
 

@@ -138,6 +138,8 @@ export default function App() {
           hash === '#master';
 
         if (isSuperAdminRoute) {
+          // If accessing admin route but not logged in, we'll keep the tab but show the gate
+          // If already logged in, we'll show the dashboard
           setActiveTab('saas_admin');
         } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
           setActiveTab('student');
@@ -146,6 +148,16 @@ export default function App() {
           setActiveTab('reception');
         } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
           setActiveTab('esp32');
+        } else {
+          // Default for root link / no params: Reception (which shows login portal if no user)
+          setActiveTab('reception');
+          
+          // If hitting root link without being logged in, open the login modal automatically
+          if (!getStoredAuthUser()) {
+            setTimeout(() => {
+              setIsLoginModalOpen(true);
+            }, 100);
+          }
         }
 
         const allGyms = await fetchGyms();
@@ -427,7 +439,7 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className={`flex-1 mx-auto max-w-7xl w-full px-6 py-8 pb-32 sm:pb-8 ${(isDirectStudentLink || activeTab === 'student') && !isInitialLoading ? 'pt-12' : ''}`}>
+      <main className={`flex-1 mx-auto max-w-7xl w-full px-6 py-8 pb-32 md:pb-8 ${(isDirectStudentLink || activeTab === 'student') && !isInitialLoading ? 'pt-12' : ''}`}>
         
         {/* Initial Loading Screen */}
         {isInitialLoading && (
@@ -447,11 +459,11 @@ export default function App() {
               <div className="mx-auto w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center text-3xl font-black mb-6 shadow-2xl">
                 ⚡
               </div>
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
-                Bem-vindo ao GymLivre
+              <h2 className="text-4xl sm:text-6xl font-black tracking-tighter text-white leading-[1.1]">
+                Olá! Seja muito <span className="text-cyan-400">Bem-vindo</span> ao GymLivre
               </h2>
-              <p className="text-zinc-500 text-sm sm:text-lg max-w-md mx-auto font-medium">
-                Sua plataforma central de gestão e monitoramento de lotação para academias.
+              <p className="text-zinc-400 text-sm sm:text-lg max-w-lg mx-auto font-medium leading-relaxed">
+                A solução completa para monitorar a lotação da sua unidade e oferecer a melhor experiência para seus alunos em tempo real.
               </p>
             </div>
 
@@ -503,20 +515,10 @@ export default function App() {
             <div className="flex flex-col items-center text-center space-y-2 mb-4">
               <div className="text-4xl mb-2 relative">
                 {currentGym.logoEmoji || '⚡'}
-                {isSupabaseActive && (
-                  <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-950 border-2 border-emerald-500 shadow-lg shadow-emerald-500/40">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  </div>
-                )}
               </div>
               <div className="flex flex-col items-center">
-                <h2 className="text-2xl font-bold text-white leading-tight">{currentGym.name}</h2>
-                {isSupabaseActive && (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-400/10 text-[10px] font-bold text-emerald-400 border border-emerald-400/20 mt-1 uppercase tracking-widest">
-                    <Database className="h-2.5 w-2.5" />
-                    Supabase Ativo
-                  </span>
-                )}
+                <h3 className="text-cyan-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Seja Bem-vindo</h3>
+                <h2 className="text-3xl font-black text-white leading-tight">{currentGym.name}</h2>
               </div>
               <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Situação em Tempo Real</p>
             </div>
@@ -678,7 +680,7 @@ export default function App() {
         {!isInitialLoading && !currentUser && activeTab === 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in duration-300 py-12">
             <div className="w-16 h-16 rounded-3xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/10">
-              ⚡
+              <Lock className="w-8 h-8" />
             </div>
             <div className="space-y-2 max-w-md">
               <h3 className="text-2xl font-bold text-white font-['Outfit']">Painel SaaS Master</h3>
@@ -687,6 +689,7 @@ export default function App() {
               </p>
             </div>
             <button
+              id="admin-gate-login-btn"
               onClick={() => {
                 setLoginModalMode('login');
                 setIsLoginModalOpen(true);
