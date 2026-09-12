@@ -3,7 +3,6 @@ import { Dumbbell, Shield, Cpu, RefreshCw, Plus, Sparkles, Lock, User, LogOut, D
 import { OccupancyData, GymProfile, AuthUser } from '../types';
 import { GymSwitcher } from './GymSwitcher';
 import { THEME_COLOR_CONFIG } from '../data/gymData';
-import { isSupabaseConfigured } from '../lib/supabase';
 
 interface NavbarProps {
   occupancy: OccupancyData;
@@ -65,7 +64,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
-  const isSupabaseActive = isSupabaseConfigured();
   const isSuperAdmin = currentUser?.role === 'superadmin';
 
   return (

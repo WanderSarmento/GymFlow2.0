@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { AuthUser, LoginCredentials, PasswordResetRequest, GymProfile, CreateGymInput, GymThemeColor } from '../types';
 import { loginUser, requestPasswordRecovery, resetPasswordWithCode, registerGym } from '../services/api';
-import { THEME_COLOR_CONFIG } from '../data/gymData';
+import { THEME_COLOR_CONFIG, ALL_THEME_OPTIONS } from '../data/gymData';
 
 interface GymLoginModalProps {
   isOpen: boolean;
@@ -42,7 +42,7 @@ interface GymLoginModalProps {
 type AuthMode = 'login' | 'register' | 'forgot_request' | 'forgot_reset' | 'register_success';
 
 const EMOJI_OPTIONS = ['⚡', '🔥', '💪', '🌿', '🏋️', '🥊', '🏆', '💎', '🚀', '⭐', '🎯', '✨'];
-const THEME_OPTIONS: GymThemeColor[] = ['cyan', 'emerald', 'amber', 'violet', 'rose', 'blue'];
+const THEME_OPTIONS: GymThemeColor[] = ALL_THEME_OPTIONS;
 
 export const GymLoginModal: React.FC<GymLoginModalProps> = ({
   isOpen,
@@ -721,11 +721,16 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
               {/* Personalização Visual Rápida */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1.5 flex items-center gap-1">
-                    <Palette className="h-3 w-3 text-cyan-400" />
-                    Cor do Tema
-                  </label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-bold text-zinc-400 uppercase flex items-center gap-1">
+                      <Palette className="h-3 w-3 text-cyan-400" />
+                      Cor do Tema
+                    </label>
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      {THEME_COLOR_CONFIG[regThemeColor]?.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {THEME_OPTIONS.map((theme) => {
                       const cfg = THEME_COLOR_CONFIG[theme];
                       const isSelected = regThemeColor === theme;
@@ -733,14 +738,18 @@ export const GymLoginModal: React.FC<GymLoginModalProps> = ({
                         <button
                           key={theme}
                           type="button"
+                          title={cfg.name}
                           onClick={() => setRegThemeColor(theme)}
                           className={`w-7 h-7 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
                             isSelected
-                              ? `${cfg.border} scale-110 shadow-lg ring-2 ring-white/20 bg-zinc-800`
+                              ? `${cfg.border} scale-110 shadow-lg ring-2 ${cfg.ring} bg-zinc-800`
                               : 'border-zinc-800 opacity-60 hover:opacity-100 bg-zinc-900'
                           }`}
                         >
-                          <span className={`w-3 h-3 rounded-full ${cfg.primary.split(' ')[0]}`} />
+                          <span 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: cfg.hex }}
+                          />
                         </button>
                       );
                     })}

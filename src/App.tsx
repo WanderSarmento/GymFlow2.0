@@ -8,7 +8,6 @@ import { AnnouncementsBoard } from './components/AnnouncementsBoard';
 import { ReceptionControlPanel } from './components/ReceptionControlPanel';
 import { AccessAuditLogs } from './components/AccessAuditLogs';
 import { ESP32HardwarePanel } from './components/ESP32HardwarePanel';
-import { StudentWorkoutPlanner } from './components/StudentWorkoutPlanner';
 import { GymRegistrationModal } from './components/GymRegistrationModal';
 import { GymShareModal } from './components/GymShareModal';
 import { GymCustomizerModal } from './components/GymCustomizerModal';
@@ -67,7 +66,7 @@ export default function App() {
   const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
-  const [receptionSubTab, setReceptionSubTab] = useState<'announcements' | 'audit'>('announcements');
+  const [receptionSubTab, setReceptionSubTab] = useState<'announcements' | 'audit' | 'crowd'>('announcements');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDirectStudentLink, setIsDirectStudentLink] = useState(false);
@@ -539,6 +538,11 @@ export default function App() {
                 isAdminMode={false}
               />
             </div>
+
+            {/* Prediction */}
+            <div className="space-y-6">
+              <CrowdPredictorChart />
+            </div>
           </div>
         )}
 
@@ -590,33 +594,43 @@ export default function App() {
               onOpenCustomizeModal={() => setIsCustomizeModalOpen(true)}
             />
 
-            {/* Sub-Tabs: Mural vs Auditoria */}
+            {/* Sub-Tabs: Mural vs Auditoria vs Previsão */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit">
+              <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800/50 w-fit overflow-x-auto touch-scroll">
                 <button
                   onClick={() => setReceptionSubTab('announcements')}
-                  className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shrink-0 ${
                     receptionSubTab === 'announcements'
                       ? 'bg-zinc-100 text-black shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  Mural de Avisos
+                  Mural
+                </button>
+                <button
+                  onClick={() => setReceptionSubTab('crowd')}
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shrink-0 ${
+                    receptionSubTab === 'crowd'
+                      ? 'bg-zinc-100 text-black shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Fluxo & Previsão
                 </button>
                 <button
                   onClick={() => setReceptionSubTab('audit')}
-                  className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer shrink-0 ${
                     receptionSubTab === 'audit'
                       ? 'bg-zinc-100 text-black shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  Auditoria & Logs
+                  Auditoria
                 </button>
               </div>
               
               <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-widest px-1">
-                {receptionSubTab === 'announcements' ? '📢 Gestão de Comunicados' : '📋 Registros de Telemetria'}
+                {receptionSubTab === 'announcements' ? '📢 Gestão de Comunicados' : receptionSubTab === 'crowd' ? '📊 Análise de Ocupação' : '📋 Registros de Telemetria'}
               </div>
             </div>
 
@@ -629,6 +643,10 @@ export default function App() {
                     onDeleteAnnouncement={handleDeleteAnnouncement}
                     isAdminMode={true}
                   />
+                </div>
+              ) : receptionSubTab === 'crowd' ? (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <CrowdPredictorChart />
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

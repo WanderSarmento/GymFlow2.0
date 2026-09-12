@@ -1,73 +1,209 @@
-import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig } from '../types.ts';
+import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig, GymThemeColor } from '../types.ts';
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
 export const INITIAL_GYMS: GymProfile[] = [];
 
-export const THEME_COLOR_CONFIG: Record<string, {
+export interface ThemeColorItem {
   name: string;
+  category: 'azul' | 'verde' | 'laranja' | 'roxo' | 'vermelho' | 'ciano';
+  hex: string;
   primary: string;
   badge: string;
   glow: string;
   border: string;
   text: string;
   bgGradient: string;
-}> = {
+  ring: string;
+}
+
+export const THEME_COLOR_CONFIG: Record<GymThemeColor, ThemeColorItem> = {
   cyan: {
     name: 'Cyan Neon',
+    category: 'ciano',
+    hex: '#22d3ee',
     primary: 'bg-cyan-400 text-black',
     badge: 'bg-cyan-400/10 text-cyan-400 border-cyan-400/20',
     glow: 'shadow-[0_0_20px_rgba(34,211,238,0.25)]',
     border: 'border-cyan-400/40',
     text: 'text-cyan-400',
-    bgGradient: 'from-cyan-500/20 via-transparent to-transparent'
+    bgGradient: 'from-cyan-500/20 via-transparent to-transparent',
+    ring: 'ring-cyan-400'
+  },
+  blue: {
+    name: 'Azul Elétrico',
+    category: 'azul',
+    hex: '#3b82f6',
+    primary: 'bg-blue-500 text-white',
+    badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    glow: 'shadow-[0_0_20px_rgba(59,130,246,0.25)]',
+    border: 'border-blue-500/40',
+    text: 'text-blue-400',
+    bgGradient: 'from-blue-500/20 via-transparent to-transparent',
+    ring: 'ring-blue-500'
+  },
+  indigo: {
+    name: 'Azul Índigo',
+    category: 'azul',
+    hex: '#6366f1',
+    primary: 'bg-indigo-500 text-white',
+    badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    glow: 'shadow-[0_0_20px_rgba(99,102,241,0.25)]',
+    border: 'border-indigo-500/40',
+    text: 'text-indigo-400',
+    bgGradient: 'from-indigo-500/20 via-transparent to-transparent',
+    ring: 'ring-indigo-500'
   },
   emerald: {
     name: 'Verde Esmeralda',
+    category: 'verde',
+    hex: '#34d399',
     primary: 'bg-emerald-400 text-black',
     badge: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20',
     glow: 'shadow-[0_0_20px_rgba(52,211,153,0.25)]',
     border: 'border-emerald-400/40',
     text: 'text-emerald-400',
-    bgGradient: 'from-emerald-500/20 via-transparent to-transparent'
+    bgGradient: 'from-emerald-500/20 via-transparent to-transparent',
+    ring: 'ring-emerald-400'
+  },
+  green: {
+    name: 'Verde Neon',
+    category: 'verde',
+    hex: '#22c55e',
+    primary: 'bg-green-500 text-black',
+    badge: 'bg-green-500/10 text-green-400 border-green-500/20',
+    glow: 'shadow-[0_0_20px_rgba(34,197,94,0.25)]',
+    border: 'border-green-500/40',
+    text: 'text-green-400',
+    bgGradient: 'from-green-500/20 via-transparent to-transparent',
+    ring: 'ring-green-500'
+  },
+  lime: {
+    name: 'Verde Limão',
+    category: 'verde',
+    hex: '#a3e635',
+    primary: 'bg-lime-400 text-black',
+    badge: 'bg-lime-400/10 text-lime-400 border-lime-400/20',
+    glow: 'shadow-[0_0_20px_rgba(163,230,53,0.25)]',
+    border: 'border-lime-400/40',
+    text: 'text-lime-400',
+    bgGradient: 'from-lime-500/20 via-transparent to-transparent',
+    ring: 'ring-lime-400'
+  },
+  teal: {
+    name: 'Teal Petróleo',
+    category: 'verde',
+    hex: '#2dd4bf',
+    primary: 'bg-teal-400 text-black',
+    badge: 'bg-teal-400/10 text-teal-400 border-teal-400/20',
+    glow: 'shadow-[0_0_20px_rgba(45,212,191,0.25)]',
+    border: 'border-teal-400/40',
+    text: 'text-teal-400',
+    bgGradient: 'from-teal-500/20 via-transparent to-transparent',
+    ring: 'ring-teal-400'
+  },
+  orange: {
+    name: 'Laranja Sunset',
+    category: 'laranja',
+    hex: '#f97316',
+    primary: 'bg-orange-500 text-white',
+    badge: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    glow: 'shadow-[0_0_20px_rgba(249,115,22,0.25)]',
+    border: 'border-orange-500/40',
+    text: 'text-orange-400',
+    bgGradient: 'from-orange-500/20 via-transparent to-transparent',
+    ring: 'ring-orange-500'
   },
   amber: {
-    name: 'Âmbar / Laranja Ouro',
+    name: 'Âmbar Dourado',
+    category: 'laranja',
+    hex: '#fbbf24',
     primary: 'bg-amber-400 text-black',
     badge: 'bg-amber-400/10 text-amber-400 border-amber-400/20',
     glow: 'shadow-[0_0_20px_rgba(251,191,36,0.25)]',
     border: 'border-amber-400/40',
     text: 'text-amber-400',
-    bgGradient: 'from-amber-500/20 via-transparent to-transparent'
+    bgGradient: 'from-amber-500/20 via-transparent to-transparent',
+    ring: 'ring-amber-400'
+  },
+  purple: {
+    name: 'Roxo Imperial',
+    category: 'roxo',
+    hex: '#a855f7',
+    primary: 'bg-purple-500 text-white',
+    badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    glow: 'shadow-[0_0_20px_rgba(168,85,247,0.25)]',
+    border: 'border-purple-500/40',
+    text: 'text-purple-400',
+    bgGradient: 'from-purple-500/20 via-transparent to-transparent',
+    ring: 'ring-purple-500'
   },
   violet: {
-    name: 'Violeta / Roxo Tech',
-    primary: 'bg-violet-400 text-black',
-    badge: 'bg-violet-400/10 text-violet-400 border-violet-400/20',
-    glow: 'shadow-[0_0_20px_rgba(167,139,250,0.25)]',
-    border: 'border-violet-400/40',
+    name: 'Violeta Tech',
+    category: 'roxo',
+    hex: '#8b5cf6',
+    primary: 'bg-violet-500 text-white',
+    badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    glow: 'shadow-[0_0_20px_rgba(139,92,246,0.25)]',
+    border: 'border-violet-500/40',
     text: 'text-violet-400',
-    bgGradient: 'from-violet-500/20 via-transparent to-transparent'
+    bgGradient: 'from-violet-500/20 via-transparent to-transparent',
+    ring: 'ring-violet-500'
+  },
+  fuchsia: {
+    name: 'Fúcsia Neon',
+    category: 'roxo',
+    hex: '#d946ef',
+    primary: 'bg-fuchsia-500 text-white',
+    badge: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
+    glow: 'shadow-[0_0_20px_rgba(217,70,239,0.25)]',
+    border: 'border-fuchsia-500/40',
+    text: 'text-fuchsia-400',
+    bgGradient: 'from-fuchsia-500/20 via-transparent to-transparent',
+    ring: 'ring-fuchsia-500'
   },
   rose: {
-    name: 'Rose / Vermelho Rubi',
-    primary: 'bg-rose-400 text-black',
-    badge: 'bg-rose-400/10 text-rose-400 border-rose-400/20',
+    name: 'Rose Rubi',
+    category: 'vermelho',
+    hex: '#fb7185',
+    primary: 'bg-rose-500 text-white',
+    badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     glow: 'shadow-[0_0_20px_rgba(251,113,133,0.25)]',
     border: 'border-rose-400/40',
     text: 'text-rose-400',
-    bgGradient: 'from-rose-500/20 via-transparent to-transparent'
+    bgGradient: 'from-rose-500/20 via-transparent to-transparent',
+    ring: 'ring-rose-500'
   },
-  blue: {
-    name: 'Azul Elétrico',
-    primary: 'bg-blue-400 text-black',
-    badge: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
-    glow: 'shadow-[0_0_20px_rgba(96,165,250,0.25)]',
-    border: 'border-blue-400/40',
-    text: 'text-blue-400',
-    bgGradient: 'from-blue-500/20 via-transparent to-transparent'
+  red: {
+    name: 'Vermelho Fogo',
+    category: 'vermelho',
+    hex: '#ef4444',
+    primary: 'bg-red-500 text-white',
+    badge: 'bg-red-500/10 text-red-400 border-red-500/20',
+    glow: 'shadow-[0_0_20px_rgba(239,68,68,0.25)]',
+    border: 'border-red-500/40',
+    text: 'text-red-400',
+    bgGradient: 'from-red-500/20 via-transparent to-transparent',
+    ring: 'ring-red-500'
   }
 };
+
+export const ALL_THEME_OPTIONS: GymThemeColor[] = [
+  'cyan',
+  'blue',
+  'indigo',
+  'emerald',
+  'green',
+  'lime',
+  'teal',
+  'orange',
+  'amber',
+  'purple',
+  'violet',
+  'fuchsia',
+  'rose',
+  'red'
+];
 
 
 export const GYM_SCHEDULE: DaySchedule[] = [

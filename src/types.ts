@@ -1,6 +1,20 @@
 export type OccupancyStatus = 'empty' | 'low' | 'moderate' | 'high' | 'full';
 
-export type GymThemeColor = 'cyan' | 'emerald' | 'violet' | 'amber' | 'rose' | 'blue';
+export type GymThemeColor =
+  | 'cyan'
+  | 'emerald'
+  | 'violet'
+  | 'amber'
+  | 'rose'
+  | 'blue'
+  | 'orange'
+  | 'purple'
+  | 'green'
+  | 'lime'
+  | 'red'
+  | 'teal'
+  | 'indigo'
+  | 'fuchsia';
 
 export interface GymOperatingHours {
   weekdays: { open: string; close: string; isOpen: boolean };

@@ -30,8 +30,10 @@ import {
   Zap,
   Info,
   LogOut,
-  Settings2
+  Settings2,
+  Palette
 } from 'lucide-react';
+import { THEME_COLOR_CONFIG, ALL_THEME_OPTIONS } from '../data/gymData';
 import {
   SaaSMetrics,
   GymSaaSAccount,
@@ -1098,6 +1100,45 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
                   onChange={e => setNewGymForm({ ...newGymForm, city: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-zinc-800 border border-zinc-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
                 />
+              </div>
+            </div>
+
+            {/* Visual Theme and Color Selection */}
+            <div className="space-y-2 pt-2 border-t border-zinc-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-indigo-400" /> Cor Visual da Academia ({ALL_THEME_OPTIONS.length} Cores)
+                </label>
+                <span className="text-[10px] text-zinc-400 font-medium">
+                  {THEME_COLOR_CONFIG[newGymForm.themeColor || 'cyan']?.name}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                {ALL_THEME_OPTIONS.map(colorKey => {
+                  const cfg = THEME_COLOR_CONFIG[colorKey];
+                  const isSelected = newGymForm.themeColor === colorKey;
+                  return (
+                    <button
+                      key={colorKey}
+                      type="button"
+                      onClick={() => setNewGymForm({ ...newGymForm, themeColor: colorKey })}
+                      className={`px-2 py-1.5 rounded-xl border text-left flex items-center justify-between text-xs transition ${
+                        isSelected
+                          ? `bg-zinc-800 ${cfg.border} ring-1 ${cfg.ring} text-white font-bold`
+                          : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span 
+                          className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20"
+                          style={{ backgroundColor: cfg.hex }}
+                        />
+                        <span className="truncate text-[11px]">{cfg.name}</span>
+                      </div>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

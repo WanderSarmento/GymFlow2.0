@@ -17,8 +17,8 @@ import {
   QrCode,
   Key
 } from 'lucide-react';
-import { CreateGymInput, GymProfile, AuthUser } from '../types';
-import { THEME_COLOR_CONFIG } from '../data/gymData';
+import { CreateGymInput, GymProfile, AuthUser, GymThemeColor } from '../types';
+import { THEME_COLOR_CONFIG, ALL_THEME_OPTIONS } from '../data/gymData';
 import { registerGym, getStoredAuthUser } from '../services/api';
 
 interface GymRegistrationModalProps {
@@ -29,7 +29,7 @@ interface GymRegistrationModalProps {
 }
 
 const EMOJI_OPTIONS = ['⚡', '🔥', '💪', '🌿', '🏋️', '🥊', '🏆', '💎', '🚀', '⭐', '🎯', '✨'];
-const THEME_OPTIONS = ['cyan', 'emerald', 'amber', 'violet', 'rose', 'blue'] as const;
+const THEME_OPTIONS: GymThemeColor[] = ALL_THEME_OPTIONS;
 
 export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
   isOpen,
@@ -358,10 +358,15 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-2">
-                    Cor Tema Visual
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-medium text-zinc-300">
+                      Cor Tema Visual ({THEME_OPTIONS.length} cores)
+                    </label>
+                    <span className="text-[10px] text-zinc-400">
+                      {THEME_COLOR_CONFIG[formData.themeColor || 'cyan']?.name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto pr-1 custom-scrollbar">
                     {THEME_OPTIONS.map((colorKey) => {
                       const cfg = THEME_COLOR_CONFIG[colorKey];
                       const isSelected = formData.themeColor === colorKey;
@@ -370,14 +375,20 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                           key={colorKey}
                           type="button"
                           onClick={() => setFormData({ ...formData, themeColor: colorKey })}
-                          className={`px-2 py-1.5 rounded-lg text-xs font-medium border text-left flex items-center gap-1.5 transition-all ${
+                          className={`px-2 py-1.5 rounded-lg text-xs font-medium border text-left flex items-center justify-between gap-1.5 transition-all ${
                             isSelected
-                              ? 'bg-zinc-700 border-cyan-400 text-white font-semibold'
+                              ? `bg-zinc-800 ${cfg.border} ring-1 ${cfg.ring} text-white font-semibold`
                               : 'bg-zinc-800/60 border-zinc-700/80 text-zinc-400 hover:text-zinc-200'
                           }`}
                         >
-                          <span className={`w-2.5 h-2.5 rounded-full ${cfg.primary.split(' ')[0]}`} />
-                          <span className="truncate">{cfg.name.split(' ')[0]}</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span 
+                              className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" 
+                              style={{ backgroundColor: cfg.hex }}
+                            />
+                            <span className="truncate text-[11px]">{cfg.name}</span>
+                          </div>
+                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
                         </button>
                       );
                     })}

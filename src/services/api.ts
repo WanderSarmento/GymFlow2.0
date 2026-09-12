@@ -115,7 +115,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<{ succes
           createdAt: data.user.created_at
         };
         saveAuthSession(authUser, data.session?.access_token);
-        return { success: true, message: `Bem-vindo(a) via Supabase, ${authUser.name}!`, user: authUser, token: data.session?.access_token };
+        return { success: true, message: `Bem-vindo(a), ${authUser.name}!`, user: authUser, token: data.session?.access_token };
       }
     } catch (err) {
       console.warn('Tentando autenticação via servidor GymLivre...', err);
