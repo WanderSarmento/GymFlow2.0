@@ -24,6 +24,12 @@ export const CrowdPredictorChart: React.FC = () => {
   const dayStats = WEEKLY_CROWD_DATA[selectedDay] || WEEKLY_CROWD_DATA[1];
   const daySchedule = GYM_SCHEDULE.find(s => s.dayId === selectedDay) || GYM_SCHEDULE[1];
 
+  // Calculate the top 3 least crowded hours
+  const quietestHours = [...dayStats.hours]
+    .sort((a, b) => a.occupancyPercent - b.occupancyPercent)
+    .slice(0, 3)
+    .sort((a, b) => a.hour - b.hour);
+
   // Helper color for bar based on occupancy percent
   const getBarColor = (percent: number, isCurrent: boolean) => {
     if (isCurrent) return '#22d3ee'; // vibrant cyan
@@ -226,6 +232,34 @@ export const CrowdPredictorChart: React.FC = () => {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Top 3 Quietest Hours Table */}
+      <div className="mt-6 border-t border-gray-800 pt-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingDown className="h-4 w-4 text-emerald-400" />
+          <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">Top 3 Horários Mais Tranquilos</h4>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {quietestHours.map((item, idx) => (
+            <div 
+              key={item.hour}
+              className="flex items-center justify-between p-3 rounded-2xl bg-zinc-950/50 border border-zinc-800/50 hover:border-emerald-500/30 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-black text-zinc-500 group-hover:text-emerald-400 transition-colors">
+                  {idx + 1}
+                </span>
+                <span className="text-sm font-bold text-white font-mono">{item.label}</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-black text-emerald-400">{item.occupancyPercent}%</span>
+                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">Lotação</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Smart Workout Advice Box */}
