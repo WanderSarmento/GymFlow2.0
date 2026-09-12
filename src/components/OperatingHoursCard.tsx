@@ -5,9 +5,10 @@ import { GymProfile } from '../types';
 
 interface OperatingHoursCardProps {
   gym?: GymProfile;
+  minimal?: boolean;
 }
 
-export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym }) => {
+export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, minimal = false }) => {
   const currentDay = new Date().getDay(); // 0 = Dom, 1 = Seg, ...
   const currentHour = new Date().getHours();
   const currentMinutes = new Date().getMinutes();
@@ -28,6 +29,42 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym }) =
     }
     return item;
   });
+
+  const todaySchedule = schedule.find(item => item.dayId === currentDay) || schedule[1];
+  const [openH, openM] = todaySchedule.open.split(':').map(Number);
+  const [closeH, closeM] = todaySchedule.close.split(':').map(Number);
+  const openTotalMin = (openH || 6) * 60 + (openM || 0);
+  const closeTotalMin = (closeH || 23) * 60 + (closeM || 0);
+  const isOpenNow = currentTimeMinutes >= openTotalMin && currentTimeMinutes < closeTotalMin;
+
+  if (minimal) {
+    return (
+      <div id="operating-hours-card-minimal" className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-5 backdrop-blur-sm shadow-lg flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 ${theme.text}`}>
+            <Clock className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-white uppercase tracking-tight">{todaySchedule.dayName}</span>
+              <span className={`inline-flex h-1.5 w-1.5 rounded-full ${isOpenNow ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${isOpenNow ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isOpenNow ? 'Aberto' : 'Fechado'}
+              </span>
+            </div>
+            <p className="text-sm font-black text-zinc-300 font-mono mt-0.5">
+              {todaySchedule.open} às {todaySchedule.close}
+            </p>
+          </div>
+        </div>
+        
+        <div className="hidden sm:block text-right">
+          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-[0.2em] block">Status da Unidade</span>
+          <span className="text-[11px] font-bold text-zinc-400 italic">Previsão: {todaySchedule.peakHours[0] || '18h-20h (Pico)'}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="operating-hours-card" className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-8 backdrop-blur-sm shadow-xl">

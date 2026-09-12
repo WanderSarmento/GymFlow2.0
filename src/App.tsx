@@ -532,7 +532,7 @@ export default function App() {
             <LiveOccupancyCard occupancy={occupancy} isStudentView={true} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <OperatingHoursCard gym={currentGym} />
+              <OperatingHoursCard gym={currentGym} minimal={true} />
               <AnnouncementsBoard 
                 announcements={announcements}
                 isAdminMode={false}
