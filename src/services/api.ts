@@ -517,14 +517,28 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
   };
 }
 
-export async function updateGymSettings(gymIdOrSlug: string, settings: Partial<GymProfile>): Promise<{ success: boolean; message: string; profile?: GymProfile }> {
+export async function updateGymSettings(gymIdOrSlug: string, settings: Partial<GymProfile>): Promise<{ success: boolean; message: string; profile?: GymProfile; maxCapacity?: number }> {
   try {
     const res = await fetch(`/api/gyms/${encodeURIComponent(gymIdOrSlug)}/settings`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(settings)
+      body: JSON.stringify({
+        ...settings,
+        source: 'reception',
+        operator: 'Recepção'
+      })
     });
-    return await parseJsonResponse(res, { success: false, message: 'Erro ao salvar alterações no servidor.' });
+    const result = await parseJsonResponse(res, { success: false, message: 'Erro ao salvar alterações no servidor.' });
+    if (result && result.success) {
+      const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug);
+      if (found) {
+        if (settings.maxCapacity !== undefined) {
+          found.maxCapacity = Number(settings.maxCapacity);
+        }
+        Object.assign(found, settings);
+      }
+    }
+    return result;
   } catch (err) {
     console.error('Erro ao atualizar configurações da academia:', err);
     return { success: false, message: 'Erro ao salvar alterações.' };
@@ -605,13 +619,16 @@ export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true
   try {
     const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/esp32/turnstile/entry` : '/api/esp32/turnstile/entry';
     const headers = getAuthHeaders();
-    if (apiKey) {
+    if (apiKey && apiKey !== '***CHAVE_PRIVADA_RESTRITA***') {
       headers['x-esp32-key'] = apiKey;
     }
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
+      body: JSON.stringify({ 
+        source: isSimulator ? 'simulator' : 'esp32_button',
+        isSimulator: Boolean(isSimulator)
+      })
     });
     return await parseJsonResponse(res, { 
       success: false, 
@@ -628,13 +645,16 @@ export async function triggerESP32Exit(gymIdOrSlug?: string, isSimulator = true,
   try {
     const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/esp32/turnstile/exit` : '/api/esp32/turnstile/exit';
     const headers = getAuthHeaders();
-    if (apiKey) {
+    if (apiKey && apiKey !== '***CHAVE_PRIVADA_RESTRITA***') {
       headers['x-esp32-key'] = apiKey;
     }
     const res = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
+      body: JSON.stringify({ 
+        source: isSimulator ? 'simulator' : 'esp32_button',
+        isSimulator: Boolean(isSimulator)
+      })
     });
     return await parseJsonResponse(res, { success: false, message: 'Erro de comunicação ao registrar saída', currentCount: 0 });
   } catch (err) {

@@ -367,12 +367,34 @@ export default function App() {
   };
 
   const handleUpdateCapacity = async (maxCapacity: number) => {
-    if (!currentGym) return;
-    const res = await updateGymSettings(currentGym.slug, { maxCapacity });
-    if (res.success && res.profile) {
-      handleGymUpdated(res.profile);
+    if (!currentGym) return { success: false, message: 'Nenhuma academia selecionada.' };
+
+    const safeCapacity = Math.max(10, Math.min(2000, Number(maxCapacity) || 120));
+
+    // 1. Optimistic UI update immediately
+    setOccupancy(prev => ({
+      ...prev,
+      maxCapacity: safeCapacity,
+      percentage: Math.min(100, Math.round((prev.currentCount / Math.max(1, safeCapacity)) * 100))
+    }));
+    setCurrentGym(prev => prev ? { ...prev, maxCapacity: safeCapacity } : prev);
+    setGyms(prev => prev.map(g => (g.id === currentGym.id || g.slug === currentGym.slug) ? { ...g, maxCapacity: safeCapacity } : g));
+
+    // 2. Try settings update first
+    const res = await updateGymSettings(currentGym.slug, { maxCapacity: safeCapacity });
+    if (res && res.success) {
+      if (res.profile) {
+        handleGymUpdated(res.profile);
+      } else {
+        await loadGymData(currentGym.slug, true);
+      }
+      return res;
     }
-    return res;
+
+    // 3. Fallback: try turnstile action 'set_max_capacity'
+    const actionRes = await sendTurnstileAction(currentGym.slug, 'set_max_capacity', safeCapacity, 'Ajuste rápido pela recepção');
+    await loadGymData(currentGym.slug, true);
+    return actionRes;
   };
 
   // Announcements CRUD

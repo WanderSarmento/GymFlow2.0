@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   Unlock,
@@ -16,7 +16,8 @@ import {
   Info,
   Clock,
   Share2,
-  Power
+  Power,
+  Loader2
 } from 'lucide-react';
 import { OccupancyData, AccessLog } from '../types';
 
@@ -42,6 +43,18 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
   const [maxCapacityInput, setMaxCapacityInput] = useState<string>(String(occupancy.maxCapacity));
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isSavingCapacity, setIsSavingCapacity] = useState(false);
+
+  // Keep inputs synchronized whenever occupancy updates from server or actions
+  useEffect(() => {
+    if (occupancy.maxCapacity) {
+      setMaxCapacityInput(String(occupancy.maxCapacity));
+    }
+  }, [occupancy.maxCapacity]);
+
+  useEffect(() => {
+    setCustomCountInput(String(occupancy.currentCount));
+  }, [occupancy.currentCount]);
 
   const showFeedback = (msg: string) => {
     setActionFeedback(msg);
@@ -74,9 +87,19 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
 
   const handleSaveMaxCapacity = async () => {
     const num = parseInt(maxCapacityInput, 10);
-    if (!isNaN(num) && num > 0) {
-      await onUpdateCapacity(num);
-      showFeedback(`Capacidade máxima ajustada para ${num} pessoas.`);
+    if (!isNaN(num) && num >= 10) {
+      setIsSavingCapacity(true);
+      const res = await onUpdateCapacity(num);
+      setIsSavingCapacity(false);
+      if (res && res.success) {
+        showFeedback(res.message || `Capacidade máxima ajustada para ${num} pessoas.`);
+      } else if (res && res.message) {
+        showFeedback(res.message);
+      } else {
+        showFeedback(`Capacidade máxima ajustada para ${num} pessoas.`);
+      }
+    } else {
+      showFeedback('Informe uma capacidade máxima válida (mínimo 10 pessoas).');
     }
   };
 
@@ -253,11 +276,20 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
                   className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
                 />
                 <button
+                  id="reception-save-max-capacity-btn"
                   type="button"
                   onClick={handleSaveMaxCapacity}
-                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 px-4 py-2 text-xs font-bold uppercase text-black transition-colors cursor-pointer active:scale-95"
+                  disabled={isSavingCapacity}
+                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 disabled:opacity-50 px-4 py-2 text-xs font-bold uppercase text-black transition-colors cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
                 >
-                  Salvar
+                  {isSavingCapacity ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-black" />
+                      <span>Salvando...</span>
+                    </>
+                  ) : (
+                    <span>Salvar</span>
+                  )}
                 </button>
               </div>
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-14T13:18:57.859Z",
+  "updatedAt": "2026-09-14T15:30:59.881Z",
   "gyms": [
     {
       "profile": {
@@ -91,6 +91,96 @@
           "status": "success"
         }
       ]
+    },
+    {
+      "profile": {
+        "id": "gym-fitflow-matrix",
+        "slug": "fitflow-matrix",
+        "name": "FitFlow Club Matrix",
+        "slogan": "A sua melhor experiência de treino",
+        "city": "São Paulo - SP",
+        "neighborhood": "Moema",
+        "address": "Av. Ibirapuera, 2100",
+        "contactPhone": "(11) 98765-4321",
+        "maxCapacity": 180,
+        "currentCount": 15,
+        "themeColor": "cyan",
+        "logoEmoji": "⚡",
+        "ownerName": "Carlos Henrique",
+        "ownerEmail": "carlos@fitflow.com.br",
+        "apiKey": "GF_KEY_MATRIX_2026",
+        "createdAt": "2026-09-14T14:17:59.823Z",
+        "turnstileLocked": false,
+        "isOpen": true,
+        "operatingHours": {
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
+            "isOpen": true
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "17:00",
+            "isOpen": true
+          },
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": true
+          }
+        }
+      },
+      "currentCount": 15,
+      "maxCapacity": 180,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "ann-1",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true,
+          "gymId": "gym-fitflow-matrix"
+        },
+        {
+          "id": "7953f08e-1e23-46b8-8ddf-aaed574388e1",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-fitflow-matrix-1",
+          "gymId": "gym-fitflow-matrix",
+          "timestamp": "2026-09-14T14:15:00.136Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (FitFlow Club Matrix)",
+          "countAfter": 15,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-fitflow-matrix-2",
+          "gymId": "gym-fitflow-matrix",
+          "timestamp": "2026-09-14T14:10:00.136Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 14,
+          "status": "success"
+        }
+      ]
     }
   ],
   "users": [
@@ -109,7 +199,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$hBuIY5wJYtV2mQHEklJsOONCY7OCKrZPIbSYhWD4fu8neJ2lCEm02",
+      "password": "$2b$10$B08230oRDLN99qKLVBVzYejeAc86qIVYXmM/HOLT1vEbAzmIHajZu",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -140,15 +230,15 @@
       "createdAt": "2026-09-10T16:05:29.58812+00:00"
     },
     {
-      "id": "0a3386eb-a0f3-4b69-9a5c-fdcd361d5036",
+      "id": "767f55e0-c085-4356-b0b5-a0d12761909e",
       "email": "carlos@fitflow.com.br",
       "password": "$2b$10$3.cY5ySiA0aAFxxhxOMyWOW/pVkvLb1Nbx6/Fym4/Va8ZVIXMDZG6",
       "name": "Carlos Henrique Gestor",
       "role": "owner",
-      "gymId": "gym-fitflow-moema",
-      "gymSlug": "fitflow-moema",
-      "gymName": "FitFlow Club Moema",
-      "createdAt": "2026-09-10T16:00:36.177067+00:00"
+      "gymId": "gym-fitflow-matrix",
+      "gymSlug": "fitflow-matrix",
+      "gymName": "FitFlow Club Matrix",
+      "createdAt": "2026-09-14T14:18:24.164998+00:00"
     },
     {
       "id": "user-rec-fitflow-moema",
@@ -284,15 +374,15 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "6a01f8eb-ea4f-4069-80f0-57c1abe79d83",
+      "id": "c65123bb-384e-426d-946a-287e35da2a11",
       "email": "ctrw@gmail.com",
-      "password": "$2b$10$SO.rIK8zLta13zNPXCIayeHc4Qu.pSq/uiTaPxmJvnMeOq/CAfHhS",
+      "password": "vemproct2026",
       "name": "Wanderson Ramos",
       "role": "owner",
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-14T12:39:31.379173+00:00"
+      "createdAt": "2026-09-14T15:26:04.654967+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",
@@ -304,6 +394,17 @@
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
       "createdAt": "2026-09-14T12:39:30.677975+00:00"
+    },
+    {
+      "id": "user-rec-fitflow-matrix",
+      "email": "recepcao@fitflow-matrix.com",
+      "password": "$2b$10$7KMaWQScXBVF744v6bSmMOtYg/P68b5gCcP3NbEtKIRBt3poa73mm",
+      "name": "Recepção - FitFlow Club Matrix",
+      "role": "reception",
+      "gymId": "gym-fitflow-matrix",
+      "gymSlug": "fitflow-matrix",
+      "gymName": "FitFlow Club Matrix",
+      "createdAt": "2026-09-14T14:17:59.823Z"
     }
   ],
   "saasAccounts": [
@@ -328,6 +429,26 @@
       "trialEndsAt": null,
       "createdAt": "2026-09-14T12:39:30.677975+00:00",
       "apiKey": "GF_LIVE_KEY_CTRW_ALUNOS_mu18ckyd",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-fitflow-matrix",
+      "gymSlug": "fitflow-matrix",
+      "gymName": "FitFlow Club Matrix",
+      "ownerName": "Carlos Henrique",
+      "ownerEmail": "carlos@fitflow.com.br",
+      "ownerPhone": "(11) 98765-4321",
+      "city": "São Paulo - SP",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "active",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 120,
+      "nextDueDate": "2026-10-14",
+      "createdAt": "2026-09-14T14:17:59.823Z",
+      "apiKey": "GF_KEY_MATRIX_2026",
       "invoices": []
     }
   ],

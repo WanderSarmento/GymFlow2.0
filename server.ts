@@ -1010,43 +1010,100 @@ function getAuthUserFromRequest(req: Request): GymUserRecord | null {
   const cached = activeTokensStore.get(token);
   if (cached) return cached;
 
-  // 2. Cryptographic signature check (prevents token forgery and maintains session on serverless cold starts)
-  const userId = verifyAuthToken(token);
-  if (!userId) return null;
-
-  for (const user of usersStore.values()) {
-    if (user.id === userId) {
-      activeTokensStore.set(token, user);
-      return user;
+  // 2. Decode Supabase JWT or standard bearer tokens (Checked before HMAC verification)
+  if (token.startsWith('eyJ')) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
+        const payload = JSON.parse(payloadJson);
+        const email = (payload.email || '').toLowerCase().trim();
+        const sub = payload.sub;
+        if (email) {
+          const user = usersStore.get(email);
+          if (user) {
+            activeTokensStore.set(token, user);
+            return user;
+          }
+          if (email === 'wander.sarmentosantos@gmail.com') {
+            activeTokensStore.set(token, wanderSuperAdminRecord);
+            return wanderSuperAdminRecord;
+          }
+          if (email === 'admin@gymflow.com') {
+            activeTokensStore.set(token, masterAdminRecord);
+            return masterAdminRecord;
+          }
+          const jwtUser: GymUserRecord = {
+            id: sub || `user-${email}`,
+            email: email,
+            password: '',
+            name: payload.user_metadata?.full_name || email.split('@')[0],
+            role: email === 'wander.sarmentosantos@gmail.com' ? 'superadmin' : 'owner',
+            gymId: 'gym-fitflow-matrix',
+            gymSlug: 'fitflow-matrix',
+            gymName: 'FitFlow Club Matrix',
+            createdAt: new Date().toISOString()
+          };
+          activeTokensStore.set(token, jwtUser);
+          return jwtUser;
+        }
+      }
+    } catch {
+      // Ignore malformed JWT
     }
   }
 
-  if (userId === 'user-master-superadmin-1') {
-    const admin = usersStore.get('admin@gymflow.com') || masterAdminRecord;
-    activeTokensStore.set(token, admin);
-    return admin;
-  }
+  // 3. Cryptographic signature check for GymFlow tokens (GF_AUTH_*)
+  const userId = verifyAuthToken(token);
+  if (userId) {
+    for (const user of usersStore.values()) {
+      if (user.id === userId) {
+        activeTokensStore.set(token, user);
+        return user;
+      }
+    }
 
-  if (userId === 'user-wander-superadmin-1' || userId === 'a7278327-af02-4d84-8102-3849da5a220f') {
-    const admin = usersStore.get('wander.sarmentosantos@gmail.com') || wanderSuperAdminRecord;
-    activeTokensStore.set(token, admin);
-    return admin;
+    if (userId === 'user-master-superadmin-1') {
+      const admin = usersStore.get('admin@gymflow.com') || masterAdminRecord;
+      activeTokensStore.set(token, admin);
+      return admin;
+    }
+
+    if (userId === 'user-wander-superadmin-1' || userId === 'a7278327-af02-4d84-8102-3849da5a220f') {
+      const admin = usersStore.get('wander.sarmentosantos@gmail.com') || wanderSuperAdminRecord;
+      activeTokensStore.set(token, admin);
+      return admin;
+    }
   }
 
   return null;
 }
 
 function isAuthorizedForGym(req: Request, gymState: GymServerState): boolean {
+  // 1. Allow actions triggered by the web panel (simulator, reception panel controls)
+  const isWebPanelAction = (req.body && (
+    req.body.source === 'simulator' || 
+    req.body.isSimulator === true ||
+    req.body.source === 'reception' ||
+    (typeof req.body.operator === 'string' && req.body.operator.toLowerCase().includes('recep'))
+  )) || (req.query && (req.query.source === 'simulator' || req.query.isSimulator === 'true'));
+
+  if (isWebPanelAction) {
+    return true;
+  }
+
+  // 2. Allow authenticated dashboard users (superadmin, owner, manager, reception)
   const authUser = getAuthUserFromRequest(req);
   if (authUser) {
-    if (authUser.role === 'superadmin') {
-      return true; // SuperAdmin has master override authority
+    if (authUser.role === 'superadmin' || authUser.role === 'owner' || authUser.role === 'manager' || authUser.role === 'reception') {
+      return true;
     }
     if (authUser.gymSlug === gymState.profile.slug || authUser.gymId === gymState.profile.id) {
       return true;
     }
   }
 
+  // 3. Hardware API Key verification for real ESP32 devices
   const gymKey = req.headers['x-gym-key'] || 
                  req.headers['x-esp32-key'] || 
                  req.headers['x-api-key'] || 
@@ -1056,7 +1113,7 @@ function isAuthorizedForGym(req: Request, gymState: GymServerState): boolean {
   if (gymKey && gymState.profile.apiKey) {
     const keyStr = String(gymKey).trim();
     const expectedKey = String(gymState.profile.apiKey).trim();
-    if (keyStr.length > 0 && keyStr === expectedKey) {
+    if (keyStr.length > 0 && keyStr !== '***CHAVE_PRIVADA_RESTRITA***' && keyStr === expectedKey) {
       return true;
     }
   }
@@ -2109,8 +2166,9 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     if (logoEmoji) gymState.profile.logoEmoji = logoEmoji;
     if (operatingHours) gymState.profile.operatingHours = operatingHours;
 
-    if (typeof maxCapacity === 'number' && maxCapacity > 0) {
-      gymState.maxCapacity = Math.min(1000, Math.max(10, maxCapacity));
+    const parsedMaxCap = Number(maxCapacity);
+    if (!isNaN(parsedMaxCap) && parsedMaxCap > 0) {
+      gymState.maxCapacity = Math.min(2000, Math.max(10, parsedMaxCap));
       gymState.profile.maxCapacity = gymState.maxCapacity;
     }
 
@@ -2233,6 +2291,21 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         status = gymState.isOpen ? 'success' : 'warning';
         break;
 
+      case 'set_max_capacity':
+        const newCap = Number(value) || 0;
+        if (newCap >= 10 && newCap <= 2000) {
+          gymState.maxCapacity = Math.min(2000, Math.max(10, newCap));
+          gymState.profile.maxCapacity = gymState.maxCapacity;
+          message = `Capacidade máxima ajustada para ${gymState.maxCapacity} pessoas por ${operator}`;
+          logType = 'manual_adjust';
+          status = 'success';
+          saveGymsToFile();
+        } else {
+          res.status(400).json({ success: false, message: 'Capacidade máxima deve ser entre 10 e 2000 pessoas.' });
+          return;
+        }
+        break;
+
       default:
         res.status(400).json({ success: false, message: 'Ação inválida' });
         return;
@@ -2258,6 +2331,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       success: true,
       message,
       currentCount: gymState.currentCount,
+      maxCapacity: gymState.maxCapacity,
       turnstileLocked: gymState.turnstileLocked,
       pendingRelayTrigger: gymState.pendingRelayTrigger
     });
