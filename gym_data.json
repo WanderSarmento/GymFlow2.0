@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-14T15:46:14.189Z",
+  "updatedAt": "2026-09-14T16:05:18.927Z",
   "gyms": [
     {
       "profile": {
@@ -67,6 +67,17 @@
           "author": "Wanderson Ramos",
           "pinned": true,
           "active": true
+        },
+        {
+          "id": "0f499021-82e9-403f-91f0-70b0fe7412a1",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
         }
       ],
       "accessLogs": [
@@ -103,7 +114,7 @@
         "address": "Av. Ibirapuera, 2100",
         "contactPhone": "(11) 98765-4321",
         "maxCapacity": 180,
-        "currentCount": 15,
+        "currentCount": 0,
         "themeColor": "cyan",
         "logoEmoji": "⚡",
         "ownerName": "Carlos Henrique",
@@ -130,7 +141,7 @@
           }
         }
       },
-      "currentCount": 15,
+      "currentCount": 0,
       "maxCapacity": 180,
       "turnstileLocked": false,
       "isOpen": true,
@@ -201,9 +212,74 @@
           "author": "Equipe Técnica",
           "pinned": true,
           "active": true
+        },
+        {
+          "id": "06cfa0e2-51f1-44c0-8bb7-6589c0c89382",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "8d22929b-af12-4ac1-8138-389b09a88436",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "1f965a4a-f417-4919-8742-d4249ec8c588",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "b6c15298-f4fb-4c72-ad10-1839fdfd6617",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
+        },
+        {
+          "id": "e33be7ae-5b5c-40f2-83b4-dad20437ebda",
+          "title": "Manutenção Preventiva",
+          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "14/09/2026",
+          "author": "Equipe Técnica",
+          "pinned": true,
+          "active": true
         }
       ],
       "accessLogs": [
+        {
+          "id": "log-gym-fitflow-matrix-1789401918906",
+          "gymId": "gym-fitflow-matrix",
+          "timestamp": "2026-09-14T16:05:18.906Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Contagem definida para 8 por Recepção",
+          "countAfter": 8,
+          "status": "success"
+        },
         {
           "id": "log-gym-fitflow-matrix-1",
           "gymId": "gym-fitflow-matrix",
@@ -243,7 +319,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$21Bscoseol3Igl2Uhe.KX.4Xibsr2Q5RE8ZzKEms3u7fsX/AbYN7W",
+      "password": "$2b$10$czcWVK7berPZaoFssLV/wOie5dT2BzQdCtPfPSJ.qNJ4oQAwhKw7.",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -274,7 +350,7 @@
       "createdAt": "2026-09-10T16:05:29.58812+00:00"
     },
     {
-      "id": "8324dd6e-b10c-469c-91b1-7a6a4df9376b",
+      "id": "1222a28e-cc81-409b-aacb-eab1afd015f7",
       "email": "carlos@fitflow.com.br",
       "password": "$2b$10$3.cY5ySiA0aAFxxhxOMyWOW/pVkvLb1Nbx6/Fym4/Va8ZVIXMDZG6",
       "name": "Carlos Henrique Gestor",
@@ -282,7 +358,7 @@
       "gymId": "gym-fitflow-matrix",
       "gymSlug": "fitflow-matrix",
       "gymName": "FitFlow Club Matrix",
-      "createdAt": "2026-09-14T15:40:06.295159+00:00"
+      "createdAt": "2026-09-14T15:51:32.38482+00:00"
     },
     {
       "id": "user-rec-fitflow-moema",
@@ -418,7 +494,7 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "c65123bb-384e-426d-946a-287e35da2a11",
+      "id": "3696429d-96ad-414c-920d-90623daa8278",
       "email": "ctrw@gmail.com",
       "password": "vemproct2026",
       "name": "Wanderson Ramos",
@@ -426,7 +502,7 @@
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-14T15:26:04.654967+00:00"
+      "createdAt": "2026-09-14T15:52:07.478055+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",

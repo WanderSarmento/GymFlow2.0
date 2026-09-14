@@ -281,6 +281,9 @@ export default function App() {
 
         if (details.occupancy && (details.occupancy.gymSlug === gymSlug || details.occupancy.gymId === details.profile?.id)) {
           setOccupancy(details.occupancy);
+          // Keep gyms list and currentGym in sync with real-time occupancy counts
+          setGyms(prev => prev.map(g => (g.slug === gymSlug || g.id === details.occupancy.gymId) ? { ...g, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity } : g));
+          setCurrentGym(prev => (prev && (prev.slug === gymSlug || prev.id === details.occupancy.gymId)) ? { ...prev, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity } : prev);
         }
 
         if (details.announcements) {
@@ -425,23 +428,147 @@ export default function App() {
   // Handlers for ESP32 Simulation
   const handleSimulateEntry = async () => {
     if (!currentGym) return;
-    const res = await triggerESP32Entry(currentGym.slug, true, currentGym.apiKey);
-    await loadGymData(currentGym.slug, true);
+    const targetSlug = currentGym.slug;
+    const targetId = currentGym.id;
+
+    // Optimistic increment
+    setOccupancy(prev => {
+      const newCount = Math.min(prev.maxCapacity, prev.currentCount + 1);
+      const ratio = newCount / Math.max(1, prev.maxCapacity);
+      const status = newCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+      return {
+        ...prev,
+        currentCount: newCount,
+        percentage: Math.min(100, Math.round(ratio * 100)),
+        status
+      };
+    });
+
+    const res = await triggerESP32Entry(targetSlug, true, currentGym.apiKey);
+    if (res && res.success && typeof res.currentCount === 'number') {
+      const finalCount = res.currentCount;
+      setOccupancy(prev => {
+        const ratio = finalCount / Math.max(1, prev.maxCapacity);
+        const status = finalCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+        return {
+          ...prev,
+          currentCount: finalCount,
+          percentage: Math.min(100, Math.round(ratio * 100)),
+          status
+        };
+      });
+      setCurrentGym(prev => prev ? { ...prev, currentCount: finalCount } : prev);
+      setGyms(prev => prev.map(g => (g.slug === targetSlug || g.id === targetId) ? { ...g, currentCount: finalCount } : g));
+    }
+    await loadGymData(targetSlug, true);
     return res;
   };
 
   const handleSimulateExit = async () => {
     if (!currentGym) return;
-    const res = await triggerESP32Exit(currentGym.slug, true, currentGym.apiKey);
-    await loadGymData(currentGym.slug, true);
+    const targetSlug = currentGym.slug;
+    const targetId = currentGym.id;
+
+    // Optimistic decrement
+    setOccupancy(prev => {
+      const newCount = Math.max(0, prev.currentCount - 1);
+      const ratio = newCount / Math.max(1, prev.maxCapacity);
+      const status = newCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+      return {
+        ...prev,
+        currentCount: newCount,
+        percentage: Math.min(100, Math.round(ratio * 100)),
+        status
+      };
+    });
+
+    const res = await triggerESP32Exit(targetSlug, true, currentGym.apiKey);
+    if (res && res.success && typeof res.currentCount === 'number') {
+      const finalCount = res.currentCount;
+      setOccupancy(prev => {
+        const ratio = finalCount / Math.max(1, prev.maxCapacity);
+        const status = finalCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+        return {
+          ...prev,
+          currentCount: finalCount,
+          percentage: Math.min(100, Math.round(ratio * 100)),
+          status
+        };
+      });
+      setCurrentGym(prev => prev ? { ...prev, currentCount: finalCount } : prev);
+      setGyms(prev => prev.map(g => (g.slug === targetSlug || g.id === targetId) ? { ...g, currentCount: finalCount } : g));
+    }
+    await loadGymData(targetSlug, true);
     return res;
   };
 
   // Handlers for Reception Actions
   const handleTurnstileAction = async (action: string, value?: any, notes?: string) => {
     if (!currentGym) return;
-    const res = await sendTurnstileAction(currentGym.slug, action, value, notes);
-    await loadGymData(currentGym.slug, true);
+    const targetSlug = currentGym.slug;
+    const targetId = currentGym.id;
+
+    // 1. Optimistic UI update immediately so UI never flickers or reverts
+    let optimisticCount: number | null = null;
+    let optimisticLocked: boolean | null = null;
+
+    if (action === 'reset_count') {
+      optimisticCount = 0;
+    } else if (action === 'set_count') {
+      optimisticCount = Math.max(0, Number(value) || 0);
+    } else if (action === 'adjust_count') {
+      optimisticCount = Math.max(0, occupancy.currentCount + (Number(value) || 0));
+    } else if (action === 'toggle_lock') {
+      optimisticLocked = !occupancy.turnstileLocked;
+    } else if (action === 'set_lock') {
+      optimisticLocked = Boolean(value);
+    }
+
+    if (optimisticCount !== null) {
+      const newCount = optimisticCount;
+      setOccupancy(prev => {
+        const ratio = newCount / Math.max(1, prev.maxCapacity);
+        const status = newCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+        return {
+          ...prev,
+          currentCount: newCount,
+          percentage: Math.min(100, Math.round(ratio * 100)),
+          status
+        };
+      });
+      setCurrentGym(prev => prev ? { ...prev, currentCount: newCount } : prev);
+      setGyms(prev => prev.map(g => (g.slug === targetSlug || g.id === targetId) ? { ...g, currentCount: newCount } : g));
+    }
+
+    if (optimisticLocked !== null) {
+      setOccupancy(prev => ({ ...prev, turnstileLocked: optimisticLocked! }));
+      setCurrentGym(prev => prev ? { ...prev, turnstileLocked: optimisticLocked! } : prev);
+      setGyms(prev => prev.map(g => (g.slug === targetSlug || g.id === targetId) ? { ...g, turnstileLocked: optimisticLocked! } : g));
+    }
+
+    // 2. Perform server action
+    const res = await sendTurnstileAction(targetSlug, action, value, notes);
+
+    // 3. Reconcile with server response
+    if (res && res.success && typeof res.currentCount === 'number') {
+      const finalCount = res.currentCount;
+      const finalLocked = res.turnstileLocked !== undefined ? res.turnstileLocked : undefined;
+      setOccupancy(prev => {
+        const ratio = finalCount / Math.max(1, prev.maxCapacity);
+        const status = finalCount === 0 ? 'empty' : ratio < 0.45 ? 'low' : ratio < 0.75 ? 'moderate' : ratio < 0.95 ? 'high' : 'full';
+        return {
+          ...prev,
+          currentCount: finalCount,
+          turnstileLocked: finalLocked !== undefined ? finalLocked : prev.turnstileLocked,
+          percentage: Math.min(100, Math.round(ratio * 100)),
+          status
+        };
+      });
+      setCurrentGym(prev => prev ? { ...prev, currentCount: finalCount, ...(finalLocked !== undefined ? { turnstileLocked: finalLocked } : {}) } : prev);
+      setGyms(prev => prev.map(g => (g.slug === targetSlug || g.id === targetId) ? { ...g, currentCount: finalCount, ...(finalLocked !== undefined ? { turnstileLocked: finalLocked } : {}) } : g));
+    }
+
+    await loadGymData(targetSlug, true);
     return res;
   };
 

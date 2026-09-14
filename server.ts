@@ -202,15 +202,22 @@ function checkRateLimit(key: string, maxAttempts = 5, windowMs = 60 * 1000): boo
 
 function saveGymsToFile() {
   try {
-    const gymsData = Array.from(gymsStore.values()).map(g => ({
-      profile: g.profile,
-      currentCount: g.currentCount,
-      maxCapacity: g.maxCapacity,
-      turnstileLocked: g.turnstileLocked,
-      isOpen: g.isOpen,
-      announcements: g.announcements || [],
-      accessLogs: g.accessLogs || []
-    }));
+    const gymsData = Array.from(gymsStore.values()).map(g => {
+      // Keep profile runtime counters strictly in sync with live values
+      g.profile.currentCount = g.currentCount;
+      g.profile.maxCapacity = g.maxCapacity;
+      g.profile.turnstileLocked = g.turnstileLocked;
+      g.profile.isOpen = g.isOpen;
+      return {
+        profile: { ...g.profile },
+        currentCount: g.currentCount,
+        maxCapacity: g.maxCapacity,
+        turnstileLocked: g.turnstileLocked,
+        isOpen: g.isOpen,
+        announcements: g.announcements || [],
+        accessLogs: g.accessLogs || []
+      };
+    });
     const usersData = Array.from(usersStore.values());
     const saasData = Array.from(saasAccountsStore.values());
     const deletedGyms = Array.from(deletedGymsStore);
@@ -381,30 +388,50 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
 
   try {
     // 1. Update Gym Profile & Count
-    const { error: gymErr } = await supabase.from('gyms').upsert({
-      id: gymState.profile.id,
-      slug: gymState.profile.slug,
-      name: gymState.profile.name,
-      slogan: gymState.profile.slogan,
-      city: gymState.profile.city,
-      neighborhood: gymState.profile.neighborhood,
-      address: gymState.profile.address,
-      contact_phone: gymState.profile.contactPhone,
-      max_capacity: gymState.maxCapacity,
-      current_count: gymState.currentCount,
-      turnstile_locked: gymState.turnstileLocked,
-      is_open: gymState.isOpen,
-      theme_color: gymState.profile.themeColor,
-      logo_emoji: gymState.profile.logoEmoji,
-      api_key: gymState.profile.apiKey,
-      owner_name: gymState.profile.ownerName,
-      owner_email: gymState.profile.ownerEmail,
-      operating_hours: gymState.profile.operatingHours,
-      updated_at: new Date().toISOString()
-    });
+    // First try a targeted update of dynamic runtime state (never fails not-null constraints)
+    const { data: updatedRows, error: updateErr } = await supabase
+      .from('gyms')
+      .update({
+        current_count: gymState.currentCount,
+        max_capacity: gymState.maxCapacity,
+        turnstile_locked: gymState.turnstileLocked,
+        is_open: gymState.isOpen,
+        updated_at: new Date().toISOString()
+      })
+      .or(`id.eq.${gymState.profile.id},slug.eq.${gymState.profile.slug}`)
+      .select('id');
 
-    if (gymErr) {
-      console.warn(`[GymFlow Supabase] Erro ao salvar academia ${gymId}:`, gymErr);
+    if (updateErr) {
+      console.warn(`[GymFlow Supabase] Erro ao atualizar contagem da academia ${gymId}:`, updateErr);
+    }
+
+    // If no row was updated (e.g. gym not yet in Supabase table), fallback to full upsert
+    if (!updatedRows || updatedRows.length === 0) {
+      const { error: gymErr } = await supabase.from('gyms').upsert({
+        id: gymState.profile.id,
+        slug: gymState.profile.slug,
+        name: gymState.profile.name || 'Academia',
+        slogan: gymState.profile.slogan || 'Monitoramento de Lotação em Tempo Real',
+        city: gymState.profile.city || 'São Paulo - SP',
+        neighborhood: gymState.profile.neighborhood || 'Centro',
+        address: gymState.profile.address || '',
+        contact_phone: gymState.profile.contactPhone || '',
+        max_capacity: gymState.maxCapacity || 80,
+        current_count: gymState.currentCount,
+        turnstile_locked: gymState.turnstileLocked,
+        is_open: gymState.isOpen,
+        theme_color: gymState.profile.themeColor || 'cyan',
+        logo_emoji: gymState.profile.logoEmoji || '⚡',
+        api_key: gymState.profile.apiKey || '',
+        owner_name: gymState.profile.ownerName || 'Gestor',
+        owner_email: gymState.profile.ownerEmail || 'contato@academia.com',
+        operating_hours: gymState.profile.operatingHours || {},
+        updated_at: new Date().toISOString()
+      });
+
+      if (gymErr) {
+        console.warn(`[GymFlow Supabase] Erro ao salvar academia ${gymId}:`, gymErr);
+      }
     }
 
     // 2. Persist Access Log if provided
@@ -963,8 +990,8 @@ export async function ensureStoresSynced(force = false) {
   // since the local memory is just the INITIAL_GYMS placeholder at start.
   const needsInitialSync = isServerless && lastSyncTimestamp === 0;
   
-  // If never synced or empty stores, or older than 20 seconds, or first serverless run
-  if (force || needsInitialSync || lastSyncTimestamp === 0 || gymsStore.size <= 2 || (now - lastSyncTimestamp > 20000)) {
+  // If never synced or empty stores, or older than 60 seconds, or first serverless run
+  if (force || needsInitialSync || lastSyncTimestamp === 0 || gymsStore.size === 0 || (now - lastSyncTimestamp > 60000)) {
     syncPromise = (async () => {
       try {
         console.log('[GymFlow Sync] Iniciando sincronização das stores...');
@@ -2260,6 +2287,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       case 'adjust_count':
         const delta = Number(value) || 0;
         gymState.currentCount = Math.max(0, Math.min(gymState.maxCapacity + 50, gymState.currentCount + delta));
+        gymState.profile.currentCount = gymState.currentCount;
         message = `Ajuste manual (${delta > 0 ? '+' + delta : delta}) por ${operator}`;
         logType = 'manual_adjust';
         break;
@@ -2267,12 +2295,14 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       case 'set_count':
         const exact = Number(value) || 0;
         gymState.currentCount = Math.max(0, Math.min(gymState.maxCapacity + 50, exact));
+        gymState.profile.currentCount = gymState.currentCount;
         message = `Contagem definida para ${exact} por ${operator}`;
         logType = 'manual_adjust';
         break;
 
       case 'reset_count':
         gymState.currentCount = 0;
+        gymState.profile.currentCount = 0;
         message = `Contagem ZERADA pela recepção (${operator})`;
         logType = 'reset';
         status = 'warning';
@@ -2296,7 +2326,6 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
           message = `Capacidade máxima ajustada para ${gymState.maxCapacity} pessoas por ${operator}`;
           logType = 'manual_adjust';
           status = 'success';
-          saveGymsToFile();
         } else {
           res.status(400).json({ success: false, message: 'Capacidade máxima deve ser entre 10 e 2000 pessoas.' });
           return;
@@ -2307,6 +2336,13 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         res.status(400).json({ success: false, message: 'Ação inválida' });
         return;
     }
+
+    // Always synchronize profile dynamic values
+    gymState.profile.currentCount = gymState.currentCount;
+    gymState.profile.maxCapacity = gymState.maxCapacity;
+    gymState.profile.turnstileLocked = gymState.turnstileLocked;
+    gymState.profile.isOpen = gymState.isOpen;
+    saveGymsToFile();
 
     const log: AccessLog = {
       id: `log-${gymState.profile.id}-${Date.now()}`,
@@ -2322,7 +2358,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     if (gymState.accessLogs.length > 2000) gymState.accessLogs.pop();
 
     // Persist to Supabase
-    persistGymStateToSupabase(gymState.profile.id, log);
+    persistGymStateToSupabase(gymState.profile.id, log).catch(console.warn);
 
     res.json({
       success: true,
@@ -2425,11 +2461,13 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     gymState.currentCount += 1;
+    gymState.profile.currentCount = gymState.currentCount;
     gymState.lastAccessTime = new Date().toISOString();
     gymState.lastAccessType = 'entry';
     gymState.esp32.entryButtonPresses += 1;
     if (clientIp) gymState.esp32.ip = clientIp;
     gymState.esp32.lastPing = new Date().toISOString();
+    saveGymsToFile();
 
     const log: AccessLog = {
       id: `log-${Date.now()}`,
@@ -2483,11 +2521,13 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     if (gymState.currentCount > 0) {
       gymState.currentCount -= 1;
     }
+    gymState.profile.currentCount = gymState.currentCount;
     gymState.lastAccessTime = new Date().toISOString();
     gymState.lastAccessType = 'exit';
     gymState.esp32.exitButtonPresses += 1;
     if (clientIp) gymState.esp32.ip = clientIp;
     gymState.esp32.lastPing = new Date().toISOString();
+    saveGymsToFile();
 
     const log: AccessLog = {
       id: `log-${Date.now()}`,
@@ -3093,6 +3133,13 @@ void sendHeartbeat() {
     } else if (action === 'reset_count') {
       gymState.currentCount = 0;
     }
+
+    gymState.profile.currentCount = gymState.currentCount;
+    gymState.profile.maxCapacity = gymState.maxCapacity;
+    gymState.profile.turnstileLocked = gymState.turnstileLocked;
+    gymState.profile.isOpen = gymState.isOpen;
+    saveGymsToFile();
+    persistGymStateToSupabase(gymState.profile.id).catch(console.warn);
 
     res.json({
       success: true,

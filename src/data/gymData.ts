@@ -26,7 +26,7 @@ export const INITIAL_GYMS: GymProfile[] = [
     address: 'Av. Ibirapuera, 2100',
     contactPhone: '(11) 98765-4321',
     maxCapacity: 120,
-    currentCount: 15,
+    currentCount: 0,
     themeColor: 'cyan',
     logoEmoji: '⚡',
     ownerName: 'Carlos Henrique',
