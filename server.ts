@@ -92,6 +92,27 @@ const activeTokensStore = new Map<string, GymUserRecord>();
 const passwordResetsStore = new Map<string, { email: string; code: string; expiresAt: number; gymSlug: string }>();
 const saasAccountsStore = new Map<string, SaaSServerAccount>();
 const saasPlansStore = new Map<string, SaaSPlanConfig>();
+const deletedGymsStore = new Set<string>();
+const auditLogsStore: any[] = [];
+
+// Helper to add audit logs
+function addAuditLog(user: AuthUser, action: string, details: any, req: Request) {
+  const log = {
+    id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString(),
+    userId: user.id,
+    userEmail: user.email,
+    userName: user.name,
+    userRole: user.role,
+    action,
+    details,
+    ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+    userAgent: req.headers['user-agent'] || 'unknown'
+  };
+  auditLogsStore.unshift(log);
+  if (auditLogsStore.length > 1000) auditLogsStore.pop(); // Keep last 1000
+  console.log(`[Audit Log] ${user.email} performed ${action}`);
+}
 
 const isServerless = Boolean(
   process.env.VERCEL ||
@@ -192,13 +213,15 @@ function saveGymsToFile() {
     }));
     const usersData = Array.from(usersStore.values());
     const saasData = Array.from(saasAccountsStore.values());
+    const deletedGyms = Array.from(deletedGymsStore);
 
     const payload = {
       version: 2,
       updatedAt: new Date().toISOString(),
       gyms: gymsData,
       users: usersData,
-      saasAccounts: saasData
+      saasAccounts: saasData,
+      deletedGyms
     };
 
     fs.writeFileSync(STORAGE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
@@ -218,6 +241,9 @@ function loadGymsFromFile() {
       const savedGyms = Array.isArray(parsed) ? parsed : (parsed.gyms || []);
       const savedUsers: GymUserRecord[] = (!Array.isArray(parsed) && Array.isArray(parsed.users)) ? parsed.users : [];
       const savedSaaS: SaaSServerAccount[] = (!Array.isArray(parsed) && Array.isArray(parsed.saasAccounts)) ? parsed.saasAccounts : [];
+      const savedDeleted: string[] = (!Array.isArray(parsed) && Array.isArray(parsed.deletedGyms)) ? parsed.deletedGyms : [];
+
+      savedDeleted.forEach(id => deletedGymsStore.add(id));
 
       savedGyms.forEach((saved: any) => {
         if (!saved || !saved.profile) return;
@@ -720,6 +746,12 @@ async function syncGymsFromSupabase() {
       }
 
       gyms.forEach((row: any, i: number) => {
+        // PERMANENT DELETION CHECK: If gym is in the deleted blacklist, do NOT re-sync it
+        if (deletedGymsStore.has(row.id) || deletedGymsStore.has(row.slug)) {
+          console.log(`[GymFlow Sync] Ignorando academia na blacklist de exclusão: ${row.name} (${row.id})`);
+          return;
+        }
+
         const gym: GymProfile = {
           id: row.id,
           slug: row.slug,
@@ -3407,6 +3439,9 @@ void sendHeartbeat() {
       }
     }
 
+    // AUDIT LOG: Destruction action
+    addAuditLog(user, 'DELETE_GYM', { targetId, targetSlug, gymName }, req);
+
     // 1. Delete from Supabase FIRST, awaiting all operations in order of foreign keys
     const supabase = getSupabaseAdmin();
     if (supabase) {
@@ -3464,7 +3499,11 @@ void sendHeartbeat() {
       }
     }
 
-    // 2. Remove from in-memory stores
+    // 2. Remove from in-memory stores and add to exclusion blacklist
+    deletedGymsStore.add(targetId);
+    deletedGymsStore.add(targetSlug);
+    deletedGymsStore.add(targetParam);
+
     saasAccountsStore.delete(targetId);
     saasAccountsStore.delete(targetSlug);
     saasAccountsStore.delete(targetParam);
@@ -3505,6 +3544,15 @@ void sendHeartbeat() {
       success: true,
       message: `Academia "${gymName}" e todos os seus dados foram removidos permanentemente.`
     });
+  });
+
+  app.get('/api/saas/audit-logs', async (req: Request, res: Response) => {
+    const user = getAuthUserFromRequest(req);
+    if (!user || user.role !== 'superadmin') {
+      res.status(403).json({ success: false, message: 'Acesso negado.' });
+      return;
+    }
+    res.json({ logs: auditLogsStore });
   });
 
   // SaaS Plan Management (SuperAdmin only)

@@ -139,9 +139,16 @@ export default function App() {
           hash === '#master';
 
         if (isSuperAdminRoute) {
-          // If accessing admin route but not logged in, we'll keep the tab but show the gate
-          // If already logged in, we'll show the dashboard
-          setActiveTab('saas_admin');
+          const storedUser = getStoredAuthUser();
+          if (storedUser && storedUser.role === 'superadmin') {
+            setActiveTab('saas_admin');
+          } else {
+            // Redirect to root reception if not a superadmin to follow security best practices
+            setActiveTab('reception');
+            if (!storedUser) {
+              setTimeout(() => setIsLoginModalOpen(true), 100);
+            }
+          }
         } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
           setActiveTab('student');
           if (gymParam) setIsDirectStudentLink(true);
@@ -461,15 +468,16 @@ export default function App() {
         {/* Unified Login Portal (Only shown if not logged in and not looking at a specific gym via URL/student mode) */}
         {!isInitialLoading && !currentUser && !isDirectStudentLink && activeTab !== 'student' && activeTab !== 'saas_admin' && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="space-y-4">
-              <div className="mx-auto w-16 h-16 bg-white text-black rounded-3xl flex items-center justify-center text-3xl font-black mb-6 shadow-2xl">
+            <div className="space-y-6">
+              <div className="mx-auto w-20 h-20 bg-white text-black rounded-[2.5rem] flex items-center justify-center text-4xl font-black mb-8 shadow-[0_20px_50px_rgba(255,255,255,0.1)] animate-bounce-subtle">
                 ⚡
               </div>
-              <h2 className="text-4xl sm:text-6xl font-black tracking-tighter text-white leading-[1.1]">
-                Olá! Seja muito <span className="text-cyan-400">Bem-vindo</span> ao GymLivre
+              <h2 className="text-5xl sm:text-7xl font-black tracking-tighter text-white leading-[1.1]">
+                Olá! Seja muito <br />
+                <span className="text-cyan-400">Bem-vindo</span> ao GymLivre
               </h2>
-              <p className="text-zinc-400 text-sm sm:text-lg max-w-lg mx-auto font-medium leading-relaxed">
-                A solução completa para monitorar a lotação da sua unidade e oferecer a melhor experiência para seus alunos em tempo real.
+              <p className="text-zinc-400 text-base sm:text-xl max-w-xl mx-auto font-medium leading-relaxed">
+                A plataforma inteligente para gestão de fluxo, lotação e experiência do aluno em tempo real.
               </p>
             </div>
 
@@ -523,8 +531,8 @@ export default function App() {
                 {currentGym.logoEmoji || '⚡'}
               </div>
               <div className="flex flex-col items-center">
-                <h3 className="text-cyan-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Seja Bem-vindo</h3>
-                <h2 className="text-3xl font-black text-white leading-tight">{currentGym.name}</h2>
+                <h3 className="text-cyan-400 text-[10px] font-extrabold uppercase tracking-[0.4em] mb-2 opacity-80">Portal do Aluno</h3>
+                <h2 className="text-4xl font-black text-white leading-tight tracking-tight">{currentGym.name}</h2>
               </div>
               <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Situação em Tempo Real</p>
             </div>
