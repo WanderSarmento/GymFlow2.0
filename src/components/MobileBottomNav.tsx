@@ -1,18 +1,22 @@
 import React from 'react';
 import { Dumbbell, Shield, Cpu, ShieldAlert } from 'lucide-react';
-import { OccupancyData } from '../types';
+import { OccupancyData, AuthUser } from '../types';
 
 interface MobileBottomNavProps {
   activeTab: 'student' | 'reception' | 'esp32' | 'saas_admin';
   setActiveTab: (tab: 'student' | 'reception' | 'esp32' | 'saas_admin') => void;
   occupancy: OccupancyData;
+  currentUser: AuthUser | null;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeTab,
   setActiveTab,
-  occupancy
+  occupancy,
+  currentUser
 }) => {
+  const isSuperAdmin = currentUser?.role === 'superadmin';
+  
   return (
     <nav
       id="mobile-bottom-navigation"
@@ -95,26 +99,28 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         </button>
 
         {/* Tab 4: Admin SaaS */}
-        <button
-          id="mobile-nav-saas-admin"
-          type="button"
-          onClick={() => setActiveTab('saas_admin')}
-          className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 px-2 transition-all active:scale-95 cursor-pointer ${
-            activeTab === 'saas_admin'
-              ? 'text-indigo-400 bg-indigo-500/15'
-              : 'text-indigo-400/60 hover:text-indigo-300'
-          }`}
-        >
-          <div className="relative">
-            <ShieldAlert className={`h-5 w-5 ${activeTab === 'saas_admin' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-            {activeTab === 'saas_admin' && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-3 rounded-full bg-indigo-400"></span>
-            )}
-          </div>
-          <span className={`text-[11px] uppercase tracking-wider ${activeTab === 'saas_admin' ? 'font-black text-indigo-300' : 'font-semibold'}`}>
-            SaaS
-          </span>
-        </button>
+        {isSuperAdmin && (
+          <button
+            id="mobile-nav-saas-admin"
+            type="button"
+            onClick={() => setActiveTab('saas_admin')}
+            className={`flex min-h-[48px] min-w-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-1.5 px-2 transition-all active:scale-95 cursor-pointer ${
+              activeTab === 'saas_admin'
+                ? 'text-indigo-400 bg-indigo-500/15'
+                : 'text-indigo-400/60 hover:text-indigo-300'
+            }`}
+          >
+            <div className="relative">
+              <ShieldAlert className={`h-5 w-5 ${activeTab === 'saas_admin' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+              {activeTab === 'saas_admin' && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-3 rounded-full bg-indigo-400"></span>
+              )}
+            </div>
+            <span className={`text-[11px] uppercase tracking-wider ${activeTab === 'saas_admin' ? 'font-black text-indigo-300' : 'font-semibold'}`}>
+              SaaS
+            </span>
+          </button>
+        )}
 
       </div>
     </nav>

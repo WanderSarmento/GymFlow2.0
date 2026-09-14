@@ -125,14 +125,16 @@ export default function App() {
           viewParam === 'admin' ||
           viewParam === 'superadmin' ||
           viewParam === 'master' ||
-          pathname === '/admin' ||
-          pathname === '/admin/' ||
-          pathname === '/superadmin' ||
-          pathname === '/superadmin/' ||
-          pathname === '/saas' ||
-          pathname === '/saas/' ||
-          pathname === '/master' ||
-          pathname === '/master/' ||
+          (pathname !== '/' && (
+            pathname === '/admin' ||
+            pathname === '/admin/' ||
+            pathname === '/superadmin' ||
+            pathname === '/superadmin/' ||
+            pathname === '/saas' ||
+            pathname === '/saas/' ||
+            pathname === '/master' ||
+            pathname === '/master/'
+          )) ||
           hash === '#admin' ||
           hash === '#superadmin' ||
           hash === '#saas' ||
@@ -146,7 +148,10 @@ export default function App() {
             // Redirect to root reception if not a superadmin to follow security best practices
             setActiveTab('reception');
             if (!storedUser) {
-              setTimeout(() => setIsLoginModalOpen(true), 100);
+              setTimeout(() => {
+                setLoginModalMode('login');
+                setIsLoginModalOpen(true);
+              }, 100);
             }
           }
         } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
@@ -155,7 +160,10 @@ export default function App() {
         } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception') || pathname === '/login') {
           setActiveTab('reception');
           if (pathname === '/login' && !getStoredAuthUser()) {
-            setTimeout(() => setIsLoginModalOpen(true), 100);
+            setTimeout(() => {
+              setLoginModalMode('login');
+              setIsLoginModalOpen(true);
+            }, 100);
           }
         } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
           setActiveTab('esp32');
@@ -165,11 +173,12 @@ export default function App() {
           
           // If hitting root link without being logged in, open the login modal automatically
           // to direct the user immediately to the login area as requested.
-          if (!getStoredAuthUser() && pathname === '/') {
+          const storedUser = getStoredAuthUser();
+          if (!storedUser && (pathname === '/' || pathname === '')) {
             setTimeout(() => {
               setLoginModalMode('login');
               setIsLoginModalOpen(true);
-            }, 150);
+            }, 500); // Slightly longer delay for smoother initial load
           }
         }
 
@@ -777,6 +786,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           occupancy={occupancy}
+          currentUser={currentUser}
         />
       )}
 

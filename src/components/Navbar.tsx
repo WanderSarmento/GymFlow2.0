@@ -136,6 +136,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               Hardware
             </button>
+            
+            {isSuperAdmin && (
+              <button
+                id="tab-saas-view"
+                type="button"
+                onClick={() => setActiveTab('saas_admin')}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                  activeTab === 'saas_admin' ? 'bg-indigo-500 text-white shadow-sm' : 'text-indigo-400/70 hover:text-indigo-300'
+                }`}
+              >
+                Painel Master
+              </button>
+            )}
           </nav>
         )}
 
