@@ -91,53 +91,56 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
       {isOpen && (
         <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
           
-          <div className="px-3 py-2 border-b border-zinc-800/80 mb-1.5">
+          <div className="px-3 py-2 border-b border-zinc-800/80 mb-1.5 flex items-center justify-between">
             <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
-              {isAdminMode ? 'ACADEMIA ATUAL' : `ACADEMIAS (${gyms.length})`}
+              {`UNIDADES (${gyms.length})`}
+            </span>
+            <span className="text-[9px] text-cyan-400 font-mono">
+              Ativa: {currentGym.slug}
             </span>
           </div>
 
-          {/* List of Gyms - Only visible if not in reception/admin mode */}
-          {!isAdminMode && (
-            <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar border-b border-zinc-800/80 pb-2 mb-2">
-              {gyms.map((g) => {
-                const isSelected = g.id === currentGym.id;
-                
-                return (
-                  <button
-                    key={g.id}
-                    id={`select-gym-${g.slug}-btn`}
-                    type="button"
-                    onClick={() => {
-                      onSelectGym(g);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
-                      isSelected 
-                        ? 'bg-zinc-900 text-white border border-zinc-800' 
-                        : 'hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 truncate">
-                      <span className="text-lg shrink-0 opacity-80">{g.logoEmoji || '⚡'}</span>
-                      <div className="truncate">
-                        <div className="text-xs font-bold truncate">
-                          {g.name}
-                        </div>
-                        <div className="text-[10px] text-zinc-500 truncate font-medium">
-                          {g.city || g.slug}
-                        </div>
+          {/* List of Gyms */}
+          <div className="max-h-60 overflow-y-auto space-y-1 pr-1 custom-scrollbar border-b border-zinc-800/80 pb-2 mb-2">
+            {gyms.map((g) => {
+              const isSelected = g.id === currentGym.id || g.slug === currentGym.slug;
+              
+              return (
+                <button
+                  key={g.id}
+                  id={`select-gym-${g.slug}-btn`}
+                  type="button"
+                  onClick={() => {
+                    onSelectGym(g);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all ${
+                    isSelected 
+                      ? 'bg-zinc-900 text-white border border-cyan-500/40' 
+                      : 'hover:bg-zinc-900/50 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 truncate">
+                    <span className="text-lg shrink-0 opacity-80">{g.logoEmoji || '⚡'}</span>
+                    <div className="truncate">
+                      <div className="text-xs font-bold truncate">
+                        {g.name}
+                      </div>
+                      <div className="text-[10px] text-zinc-500 truncate font-medium">
+                        {g.city || g.slug}
                       </div>
                     </div>
+                  </div>
 
-                    {isSelected && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white shrink-0 ml-2" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  {isSelected && (
+                    <div className="flex items-center gap-1.5 text-cyan-400 shrink-0 ml-2">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
           {/* SaaS Actions inside dropdown */}
           <div className="space-y-1">

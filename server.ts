@@ -2063,9 +2063,6 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   app.get('/api/gyms/:gymIdOrSlug', (req: Request, res: Response) => {
     let gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
     if (!gymState) {
-      gymState = getDefaultGymState();
-    }
-    if (!gymState) {
       res.status(404).json({ success: false, message: 'Academia não encontrada.' });
       return;
     }

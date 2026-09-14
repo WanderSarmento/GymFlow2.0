@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { LiveOccupancyCard } from './components/LiveOccupancyCard';
@@ -62,9 +62,37 @@ const DEFAULT_EMPTY_OCCUPANCY: OccupancyData = {
   pendingRelayTrigger: null
 };
 
+const SELECTED_GYM_STORAGE_KEY = 'gymflow_selected_gym_slug';
+
 export default function App() {
   const [gyms, setGyms] = useState<GymProfile[]>(INITIAL_GYMS);
-  const [currentGym, setCurrentGym] = useState<GymProfile | null>(INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null);
+  const [currentGym, setCurrentGym] = useState<GymProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const gymParam = urlParams.get('gym');
+        if (gymParam) {
+          const match = INITIAL_GYMS.find(g => g.slug === gymParam || g.id === gymParam);
+          if (match) return match;
+        }
+        const storedSlug = localStorage.getItem(SELECTED_GYM_STORAGE_KEY);
+        if (storedSlug) {
+          const match = INITIAL_GYMS.find(g => g.slug === storedSlug || g.id === storedSlug);
+          if (match) return match;
+        }
+      } catch {}
+    }
+    return INITIAL_GYMS.length > 0 ? INITIAL_GYMS[0] : null;
+  });
+  const activeGymSlugRef = useRef<string | null>(null);
+
+  // Synchronize ref on currentGym change
+  useEffect(() => {
+    if (currentGym?.slug) {
+      activeGymSlugRef.current = currentGym.slug;
+    }
+  }, [currentGym?.slug]);
+
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredAuthUser());
   const [activeTab, setActiveTab] = useState<'student' | 'reception' | 'esp32' | 'saas_admin'>('reception');
   const [receptionSubTab, setReceptionSubTab] = useState<'announcements' | 'audit' | 'crowd'>('announcements');
@@ -113,6 +141,7 @@ export default function App() {
   useEffect(() => {
     async function initGyms() {
       try {
+        const storedUser = getStoredAuthUser();
         const urlParams = new URLSearchParams(window.location.search);
         const gymParam = urlParams.get('gym') || (window.location.hash.includes('gym=') ? window.location.hash.split('gym=')[1]?.split('&')[0] : null);
         const viewParam = urlParams.get('view')?.toLowerCase();
@@ -142,7 +171,6 @@ export default function App() {
           hash === '#master';
 
         if (isSuperAdminRoute) {
-          const storedUser = getStoredAuthUser();
           if (storedUser && storedUser.role === 'superadmin') {
             setActiveTab('saas_admin');
           } else {
@@ -160,7 +188,7 @@ export default function App() {
           if (gymParam) setIsDirectStudentLink(true);
         } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception') || pathname === '/login') {
           setActiveTab('reception');
-          if (pathname === '/login' && !getStoredAuthUser()) {
+          if (pathname === '/login' && !storedUser) {
             setTimeout(() => {
               setLoginModalMode('login');
               setIsLoginModalOpen(true);
@@ -174,7 +202,6 @@ export default function App() {
           
           // If hitting root link without being logged in, open the login modal automatically
           // to direct the user immediately to the login area as requested.
-          const storedUser = getStoredAuthUser();
           if (!storedUser && (pathname === '/' || pathname === '')) {
             setTimeout(() => {
               setLoginModalMode('login');
@@ -186,20 +213,41 @@ export default function App() {
         const allGyms = await fetchGyms();
         if (allGyms && allGyms.length > 0) {
           setGyms(allGyms);
-          let selected = allGyms[0];
-          if (gymParam) {
-            const match = allGyms.find(g => g.slug === gymParam || g.id === gymParam);
-            if (match) selected = match;
+          
+          let targetSlug = gymParam;
+          if (!targetSlug && storedUser && storedUser.role !== 'superadmin' && storedUser.gymSlug) {
+            targetSlug = storedUser.gymSlug;
           }
-          setCurrentGym(selected);
+          if (!targetSlug) {
+            try {
+              targetSlug = localStorage.getItem(SELECTED_GYM_STORAGE_KEY) || null;
+            } catch {}
+          }
+          if (!targetSlug && activeGymSlugRef.current) {
+            targetSlug = activeGymSlugRef.current;
+          }
+          if (!targetSlug) {
+            targetSlug = allGyms[0].slug;
+          }
+
+          const match = allGyms.find(g => g.slug === targetSlug || g.id === targetSlug) || allGyms[0];
+          activeGymSlugRef.current = match.slug;
+          setCurrentGym(match);
+          safeUpdateUrlParam('gym', match.slug);
+          try {
+            localStorage.setItem(SELECTED_GYM_STORAGE_KEY, match.slug);
+          } catch {}
+          loadGymData(match.slug, false);
         } else {
           setGyms([]);
           setCurrentGym(null);
+          activeGymSlugRef.current = null;
         }
       } catch (err) {
         console.error('[GymFlow Init] Erro crítico na inicialização:', err);
         setGyms([]);
         setCurrentGym(null);
+        activeGymSlugRef.current = null;
       }
     }
     initGyms().finally(() => setIsInitialLoading(false));
@@ -208,15 +256,30 @@ export default function App() {
   // 2. Load gym data whenever currentGym changes or polled
   const loadGymData = useCallback(async (gymSlug: string, silent = false) => {
     if (!gymSlug) return;
+    // Guard against race conditions: only proceed if this gym is STILL the active gym
+    if (activeGymSlugRef.current && activeGymSlugRef.current !== gymSlug) {
+      return;
+    }
     if (!silent) setIsRefreshing(true);
     try {
       const details = await fetchGymDetails(gymSlug);
+      // Double-check after async fetch: did the active gym change during transit?
+      if (activeGymSlugRef.current && activeGymSlugRef.current !== gymSlug) {
+        return;
+      }
       if (details) {
-        if (details.profile) {
-          setCurrentGym(details.profile);
+        // Enforce strict gym slug matching: never apply details belonging to another gym!
+        if (details.profile && (details.profile.slug === gymSlug || details.profile.id === gymSlug)) {
+          setCurrentGym(prev => {
+            if (!prev) return details.profile;
+            if (prev.slug === gymSlug || prev.id === details.profile.id) {
+              return { ...prev, ...details.profile };
+            }
+            return prev;
+          });
         }
 
-        if (details.occupancy) {
+        if (details.occupancy && (details.occupancy.gymSlug === gymSlug || details.occupancy.gymId === details.profile?.id)) {
           setOccupancy(details.occupancy);
         }
 
@@ -233,20 +296,18 @@ export default function App() {
     } finally {
       if (!silent) setIsRefreshing(false);
     }
-  }, [occupancy.lastAccessTime]);
-
-  // Initial load when currentGym is ready
-  useEffect(() => {
-    if (currentGym?.slug) {
-      loadGymData(currentGym.slug, false);
-    }
-  }, [currentGym?.slug]);
+  }, []);
 
   // Real-time polling every 3 seconds for active gym
   useEffect(() => {
-    if (!currentGym?.slug) return;
+    const slug = currentGym?.slug;
+    if (!slug) return;
+    activeGymSlugRef.current = slug;
+
     const interval = setInterval(() => {
-      loadGymData(currentGym.slug, true);
+      if (activeGymSlugRef.current === slug) {
+        loadGymData(slug, true);
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [currentGym?.slug, loadGymData]);
@@ -270,6 +331,11 @@ export default function App() {
 
   // Switch active gym
   const handleSelectGym = (gym: GymProfile) => {
+    if (!gym || !gym.slug) return;
+    activeGymSlugRef.current = gym.slug;
+    try {
+      localStorage.setItem(SELECTED_GYM_STORAGE_KEY, gym.slug);
+    } catch {}
     setCurrentGym(gym);
     safeUpdateUrlParam('gym', gym.slug);
     loadGymData(gym.slug, false);
@@ -278,6 +344,10 @@ export default function App() {
   // Gym creation callback
   const handleGymCreated = (newGym: GymProfile) => {
     setGyms(prev => [newGym, ...prev.filter(g => g.id !== newGym.id)]);
+    activeGymSlugRef.current = newGym.slug;
+    try {
+      localStorage.setItem(SELECTED_GYM_STORAGE_KEY, newGym.slug);
+    } catch {}
     setCurrentGym(newGym);
     if (currentUser?.role !== 'superadmin') {
       setActiveTab('reception');
@@ -289,8 +359,10 @@ export default function App() {
   // Gym update callback
   const handleGymUpdated = (updatedGym: GymProfile) => {
     setGyms(prev => prev.map(g => g.id === updatedGym.id ? updatedGym : g));
-    setCurrentGym(updatedGym);
-    loadGymData(updatedGym.slug, true);
+    if (activeGymSlugRef.current === updatedGym.slug) {
+      setCurrentGym(updatedGym);
+      loadGymData(updatedGym.slug, true);
+    }
   };
 
   // Auth Handlers
@@ -316,6 +388,12 @@ export default function App() {
       const match = gyms.find(g => g.slug === user.gymSlug || g.id === user.gymId);
       if (match) {
         handleSelectGym(match);
+      } else {
+        fetchGymDetails(user.gymSlug).then(details => {
+          if (details && details.profile) {
+            handleSelectGym(details.profile);
+          }
+        });
       }
     }
   };
@@ -332,6 +410,7 @@ export default function App() {
     setActiveTab('reception');
     setIsDirectStudentLink(false);
     try {
+      localStorage.removeItem(SELECTED_GYM_STORAGE_KEY);
       const url = new URL(window.location.href);
       url.searchParams.delete('view');
       url.searchParams.delete('admin');

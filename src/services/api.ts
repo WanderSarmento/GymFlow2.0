@@ -481,7 +481,7 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
     console.info(`[GymFlow] Operando com dados locais para academia '${gymIdOrSlug}'.`);
   }
 
-  const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug) || INITIAL_GYMS[0];
+  const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug);
   if (!found) return null;
 
   return {
