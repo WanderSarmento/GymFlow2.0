@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,19 +9,57 @@ import {
   Cell,
   ReferenceLine
 } from 'recharts';
-import { Calendar, Clock, Sparkles, AlertCircle, CheckCircle, TrendingDown, Info } from 'lucide-react';
+import { Calendar, Clock, Sparkles, AlertCircle, CheckCircle, TrendingDown, Info, Loader2 } from 'lucide-react';
 import { WEEKLY_CROWD_DATA, GYM_SCHEDULE } from '../data/gymData';
-import { HourlyCrowdItem } from '../types';
+import { HourlyCrowdItem, DayCrowdStats } from '../types';
+import { fetchGymPrediction } from '../services/api';
 
-export const CrowdPredictorChart: React.FC = () => {
+interface CrowdPredictorChartProps {
+  gymSlug?: string;
+}
+
+export const CrowdPredictorChart: React.FC<CrowdPredictorChartProps> = ({ gymSlug }) => {
   const currentDayOfWeek = new Date().getDay(); // 0 = Dom, 1 = Seg, ...
   const currentHour = new Date().getHours();
 
-  // Selected day state (defaults to today, or Monday if Sunday evening)
+  // Prediction data state
+  const [predictionData, setPredictionData] = useState<Record<number, DayCrowdStats>>(WEEKLY_CROWD_DATA);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isUsingRealData, setIsUsingRealData] = useState<boolean>(false);
+
+  // Selected day state (defaults to today)
   const [selectedDay, setSelectedDay] = useState<number>(currentDayOfWeek);
   const [workoutDuration, setWorkoutDuration] = useState<number>(60); // 45, 60, 90 min
 
-  const dayStats = WEEKLY_CROWD_DATA[selectedDay] || WEEKLY_CROWD_DATA[1];
+  useEffect(() => {
+    async function loadPrediction() {
+      if (!gymSlug) return;
+      
+      setIsLoading(true);
+      const realDataArray = await fetchGymPrediction(gymSlug);
+      
+      if (realDataArray && realDataArray.length > 0) {
+        // Check if we have any actual data in the realData (if all occupancy is 0, it might be too new)
+        const hasData = realDataArray.some(day => day.hours.some(h => h.occupancyPercent > 0));
+        
+        if (hasData) {
+          // Convert array to Record<number, DayCrowdStats>
+          const realDataRecord: Record<number, DayCrowdStats> = {};
+          realDataArray.forEach(day => {
+            realDataRecord[day.dayId] = day;
+          });
+          
+          setPredictionData(realDataRecord);
+          setIsUsingRealData(true);
+        }
+      }
+      setIsLoading(false);
+    }
+    
+    loadPrediction();
+  }, [gymSlug]);
+
+  const dayStats = predictionData[selectedDay] || WEEKLY_CROWD_DATA[selectedDay] || WEEKLY_CROWD_DATA[1];
   const daySchedule = GYM_SCHEDULE.find(s => s.dayId === selectedDay) || GYM_SCHEDULE[1];
 
   // Calculate the top 3 least crowded hours
@@ -103,8 +141,15 @@ export const CrowdPredictorChart: React.FC = () => {
               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                 Movimentação Semanal
               </h3>
-              <h2 className="text-lg font-black font-['Outfit'] text-white">
+              <h2 className="text-lg font-black font-['Outfit'] text-white flex items-center gap-2">
                 Previsão de Movimento ao Longo da Semana
+                {isUsingRealData && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-400 border border-emerald-500/20">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    Baseado em dados reais
+                  </span>
+                )}
+                {isLoading && <Loader2 className="h-4 w-4 text-cyan-400 animate-spin" />}
               </h2>
             </div>
           </div>

@@ -26,6 +26,7 @@ import {
   triggerESP32Exit,
   sendTurnstileAction,
   createAnnouncement,
+  updateAnnouncement,
   deleteAnnouncement,
   updateGymSettings,
   getStoredAuthUser,
@@ -385,6 +386,16 @@ export default function App() {
     return false;
   };
 
+  const handleUpdateAnnouncement = async (id: string, item: Partial<Announcement>): Promise<boolean> => {
+    if (!currentGym) return false;
+    const success = await updateAnnouncement(currentGym.slug, id, item);
+    if (success) {
+      setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, ...item } : a));
+      return true;
+    }
+    return false;
+  };
+
   const handleDeleteAnnouncement = async (id: string): Promise<boolean> => {
     if (!currentGym) return false;
     const success = await deleteAnnouncement(currentGym.slug, id);
@@ -563,7 +574,7 @@ export default function App() {
 
             {/* Prediction */}
             <div className="space-y-6">
-              <CrowdPredictorChart />
+              <CrowdPredictorChart gymSlug={currentGym?.slug} />
             </div>
           </div>
         )}
@@ -662,13 +673,14 @@ export default function App() {
                   <AnnouncementsBoard
                     announcements={announcements}
                     onAddAnnouncement={handleAddAnnouncement}
+                    onUpdateAnnouncement={handleUpdateAnnouncement}
                     onDeleteAnnouncement={handleDeleteAnnouncement}
                     isAdminMode={true}
                   />
                 </div>
               ) : receptionSubTab === 'crowd' ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <CrowdPredictorChart />
+                  <CrowdPredictorChart gymSlug={currentGym?.slug} />
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

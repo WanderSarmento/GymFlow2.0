@@ -19,6 +19,7 @@ import { Announcement, AnnouncementCategory, AnnouncementPriority } from '../typ
 interface AnnouncementsBoardProps {
   announcements: Announcement[];
   onAddAnnouncement?: (announcement: Partial<Announcement>) => Promise<boolean>;
+  onUpdateAnnouncement?: (id: string, announcement: Partial<Announcement>) => Promise<boolean>;
   onDeleteAnnouncement?: (id: string) => Promise<boolean>;
   isAdminMode?: boolean;
 }
@@ -26,6 +27,7 @@ interface AnnouncementsBoardProps {
 export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   announcements,
   onAddAnnouncement = async () => false,
+  onUpdateAnnouncement = async () => false,
   onDeleteAnnouncement = async () => false,
   isAdminMode = false
 }) => {
@@ -33,6 +35,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // New announcement form state
   const [formTitle, setFormTitle] = useState('');
@@ -41,6 +44,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   const [formPriority, setFormPriority] = useState<AnnouncementPriority>('medium');
   const [formPinned, setFormPinned] = useState(false);
   const [formAuthor, setFormAuthor] = useState('Administração FitFlow');
+  const [formActive, setFormActive] = useState(true);
 
   const getCategoryConfig = (category: AnnouncementCategory) => {
     switch (category) {
@@ -66,24 +70,62 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
     return matchesCategory && matchesSearch;
   });
 
+  const handleEdit = (announcement: Announcement) => {
+    setEditingId(announcement.id);
+    setFormTitle(announcement.title);
+    setFormContent(announcement.content);
+    setFormCategory(announcement.category);
+    setFormPriority(announcement.priority);
+    setFormPinned(announcement.pinned);
+    setFormAuthor(announcement.author);
+    setFormActive(announcement.active !== false);
+    setIsModalOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingId(null);
+    setFormTitle('');
+    setFormContent('');
+    setFormCategory('manutencao');
+    setFormPriority('medium');
+    setFormPinned(false);
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim() || !formContent.trim()) return;
 
     setIsSubmitting(true);
-    const success = await onAddAnnouncement({
-      title: formTitle.trim(),
-      content: formContent.trim(),
-      category: formCategory,
-      priority: formPriority,
-      pinned: formPinned,
-      author: formAuthor.trim() || 'Equipe GymLivre'
-    });
+    
+    let success = false;
+    
+    if (editingId) {
+      success = await onUpdateAnnouncement(editingId, {
+        title: formTitle.trim(),
+        content: formContent.trim(),
+        category: formCategory,
+        priority: formPriority,
+        pinned: formPinned,
+        author: formAuthor.trim() || 'Equipe GymLivre',
+        active: formActive
+      });
+    } else {
+      success = await onAddAnnouncement({
+        title: formTitle.trim(),
+        content: formContent.trim(),
+        category: formCategory,
+        priority: formPriority,
+        pinned: formPinned,
+        author: formAuthor.trim() || 'Equipe GymLivre'
+      });
+    }
 
     setIsSubmitting(false);
     if (success) {
       setFormTitle('');
       setFormContent('');
+      setEditingId(null);
       setIsModalOpen(false);
     }
   };
@@ -113,7 +155,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
             <button
               id="btn-open-new-announcement"
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleAddNew}
               className="flex min-h-[44px] items-center gap-2 rounded-xl bg-white hover:bg-gray-200 text-black px-4 py-2.5 text-xs font-bold uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
@@ -211,23 +253,34 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono text-gray-500">
-                      {item.date}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-gray-500">
+                        {item.date}
+                      </span>
 
-                    {isAdminMode && (
-                      <button
-                        id={`delete-announcement-${item.id}`}
-                        type="button"
-                        onClick={() => onDeleteAnnouncement(item.id)}
-                        title="Excluir comunicado"
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
+                      {isAdminMode && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            id={`edit-announcement-${item.id}`}
+                            type="button"
+                            onClick={() => handleEdit(item)}
+                            title="Editar comunicado"
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-gray-800 transition-colors"
+                          >
+                            <Wrench className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            id={`delete-announcement-${item.id}`}
+                            type="button"
+                            onClick={() => onDeleteAnnouncement(item.id)}
+                            title="Excluir comunicado"
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                 </div>
 
                 {/* Title */}
@@ -260,10 +313,10 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
             <div className="flex items-center justify-between border-b border-gray-800 p-5 sm:p-8 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                  <Bell className="h-4 w-4" />
+                  {editingId ? <Wrench className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                 </div>
                 <h3 className="font-['Outfit'] text-lg font-black text-white">
-                  Novo Comunicado
+                  {editingId ? 'Editar Comunicado' : 'Novo Comunicado'}
                 </h3>
               </div>
               <button
@@ -371,9 +424,26 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                       />
                     </div>
                     <label htmlFor="checkbox-ann-pinned" className="text-gray-300 font-bold text-xs cursor-pointer select-none">
-                      Fixar este comunicado no topo
+                      Fixar no topo
                     </label>
                   </div>
+
+                  {editingId && (
+                    <div className="flex items-center gap-3 pt-2 sm:pt-4 min-h-[44px]">
+                      <div className="relative flex items-center">
+                        <input
+                          id="checkbox-ann-active"
+                          type="checkbox"
+                          checked={formActive}
+                          onChange={(e) => setFormActive(e.target.checked)}
+                          className="h-6 w-6 rounded-lg border-gray-700 bg-gray-900 text-emerald-400 focus:ring-emerald-400 cursor-pointer transition-all"
+                        />
+                      </div>
+                      <label htmlFor="checkbox-ann-active" className="text-gray-300 font-bold text-xs cursor-pointer select-none">
+                        Comunicado Ativo
+                      </label>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
@@ -395,7 +465,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   disabled={isSubmitting}
                   className="w-full sm:w-auto min-h-[48px] rounded-2xl bg-white hover:bg-zinc-200 text-black px-10 py-3 text-sm font-black uppercase tracking-wider shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer order-1 sm:order-2"
                 >
-                  {isSubmitting ? 'Publicando...' : 'Salvar Comunicado'}
+                  {isSubmitting ? 'Salvando...' : editingId ? 'Atualizar Comunicado' : 'Salvar Comunicado'}
                 </button>
               </div>
             </div>

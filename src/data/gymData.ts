@@ -2,8 +2,6 @@ import { Announcement, DaySchedule, DayCrowdStats, GymProfile, SaaSPlanConfig, G
 
 export const DEFAULT_MAX_CAPACITY = 80;
 
-export const INITIAL_GYMS: GymProfile[] = [];
-
 export interface ThemeColorItem {
   name: string;
   category: 'azul' | 'verde' | 'laranja' | 'roxo' | 'vermelho' | 'ciano';
@@ -16,6 +14,48 @@ export interface ThemeColorItem {
   bgGradient: string;
   ring: string;
 }
+
+export const INITIAL_GYMS: GymProfile[] = [
+  {
+    id: 'gym-fitflow-matrix',
+    slug: 'fitflow-matrix',
+    name: 'FitFlow Club Matrix',
+    slogan: 'A sua melhor experiência de treino',
+    city: 'São Paulo - SP',
+    neighborhood: 'Moema',
+    address: 'Av. Ibirapuera, 2100',
+    contactPhone: '(11) 98765-4321',
+    maxCapacity: 120,
+    currentCount: 15,
+    themeColor: 'cyan',
+    logoEmoji: '⚡',
+    ownerName: 'Carlos Henrique',
+    ownerEmail: 'carlos@fitflow.com.br',
+    apiKey: 'GF_KEY_MATRIX_2026',
+    createdAt: new Date().toISOString(),
+    turnstileLocked: false,
+    isOpen: true,
+    operatingHours: {
+      weekdays: { open: '06:00', close: '23:00', isOpen: true },
+      saturday: { open: '07:00', close: '17:00', isOpen: true },
+      sunday: { open: '08:00', close: '14:00', isOpen: true }
+    }
+  }
+];
+
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann-1',
+    title: 'Manutenção Preventiva',
+    content: 'As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.',
+    category: 'manutencao',
+    priority: 'medium',
+    date: new Date().toLocaleDateString('pt-BR'),
+    author: 'Equipe Técnica',
+    pinned: true,
+    active: true
+  }
+];
 
 export const THEME_COLOR_CONFIG: Record<GymThemeColor, ThemeColorItem> = {
   cyan: {
@@ -205,7 +245,6 @@ export const ALL_THEME_OPTIONS: GymThemeColor[] = [
   'red'
 ];
 
-
 export const GYM_SCHEDULE: DaySchedule[] = [
   {
     dayId: 0,
@@ -283,7 +322,19 @@ export const GYM_SCHEDULE: DaySchedule[] = [
   }
 ];
 
-export const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann-1',
+    title: 'Manutenção Preventiva',
+    content: 'As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.',
+    category: 'manutencao',
+    priority: 'medium',
+    date: new Date().toLocaleDateString('pt-BR'),
+    author: 'Equipe Técnica',
+    pinned: true,
+    active: true
+  }
+];
 
 // Helper to generate hourly crowd data by day of the week
 export const WEEKLY_CROWD_DATA: Record<number, DayCrowdStats> = {

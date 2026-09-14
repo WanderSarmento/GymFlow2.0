@@ -58,24 +58,39 @@ export function getAuthHeaders(): Record<string, string> {
 async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
   try {
     const contentType = res.headers.get('content-type') || '';
+    const text = await res.text();
+    
     if (contentType.includes('application/json')) {
-      const text = await res.text();
       if (text && text.trim()) {
         try {
-          return JSON.parse(text) as T;
-        } catch {
-          return fallback;
+          const data = JSON.parse(text);
+          // If fallback is an object, merge with parsed data to ensure required fields exist
+          if (typeof data === 'object' && data !== null && typeof fallback === 'object' && fallback !== null) {
+            return { ...fallback, ...data };
+          }
+          return data as T;
+        } catch (err) {
+          console.error('[GymFlow API] Falha ao processar JSON:', err);
         }
       }
     }
+    
     // For non-JSON responses (e.g. HTML error page or empty proxy responses)
     if (!res.ok) {
-      const rawText = await res.text().catch(() => '');
-      console.warn(`[GymFlow API] Resposta não-JSON recebida (HTTP ${res.status}):`, rawText.slice(0, 100));
+      console.warn(`[GymFlow API] Resposta não-JSON recebida (HTTP ${res.status}):`, text.slice(0, 100));
+      // Special handling for common HTTP errors if they are not already JSON
+      if (typeof fallback === 'object' && fallback !== null && 'message' in (fallback as any)) {
+        const errorMsg = res.status === 404 ? 'Serviço não encontrado' : 
+                         res.status === 401 ? 'Não autorizado' : 
+                         res.status === 403 ? 'Acesso negado' : 
+                         res.status >= 500 ? 'Erro interno no servidor' : 
+                         (fallback as any).message;
+        return { ...fallback, message: errorMsg, success: false };
+      }
     }
     return fallback;
   } catch (err) {
-    console.warn('[GymFlow API] Erro ao decodificar JSON:', err);
+    console.error('[GymFlow API] Erro crítico no processamento da resposta:', err);
     return fallback;
   }
 }
@@ -247,14 +262,14 @@ export async function resetPasswordWithCode(payload: PasswordResetRequest): Prom
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    return await parseJsonResponse(res, {
-      success: false,
-      message: 'Não foi possível redefinir a senha neste momento.'
+    return await parseJsonResponse(res, { 
+      success: false, 
+      message: 'Não foi possível redefinir a senha no momento. Tente novamente mais tarde.' 
     });
   } catch (err: any) {
     return {
       success: false,
-      message: 'Erro ao redefinir senha. Tente novamente.'
+      message: 'Erro de conexão ao redefinir senha. Verifique sua internet.'
     };
   }
 }
@@ -598,10 +613,14 @@ export async function triggerESP32Entry(gymIdOrSlug?: string, isSimulator = true
       headers,
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
-    return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });
+    return await parseJsonResponse(res, { 
+      success: false, 
+      message: 'Erro de comunicação com o servidor ao registrar entrada', 
+      currentCount: 0 
+    });
   } catch (err) {
     console.error('Erro ao enviar entrada ESP32:', err);
-    return { success: false, message: 'Erro de conexão com o servidor', currentCount: 0 };
+    return { success: false, message: 'Erro de conexão com o servidor da academia', currentCount: 0 };
   }
 }
 
@@ -617,10 +636,10 @@ export async function triggerESP32Exit(gymIdOrSlug?: string, isSimulator = true,
       headers,
       body: JSON.stringify({ source: isSimulator ? 'simulator' : 'esp32_button' })
     });
-    return await parseJsonResponse(res, { success: false, message: 'Servidor temporariamente indisponível', currentCount: 0 });
+    return await parseJsonResponse(res, { success: false, message: 'Erro de comunicação ao registrar saída', currentCount: 0 });
   } catch (err) {
     console.error('Erro ao enviar saída ESP32:', err);
-    return { success: false, message: 'Erro de conexão com o servidor', currentCount: 0 };
+    return { success: false, message: 'Erro de conexão ao servidor da academia', currentCount: 0 };
   }
 }
 
@@ -692,6 +711,21 @@ export async function createAnnouncement(gymIdOrSlug: string, announcement: Part
   }
 }
 
+export async function updateAnnouncement(gymIdOrSlug: string, id: string, announcement: Partial<Announcement>): Promise<boolean> {
+  try {
+    const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${id}` : `/api/announcements/${id}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(announcement)
+    });
+    return res.ok;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
 export async function deleteAnnouncement(gymIdOrSlug: string, id: string): Promise<boolean> {
   try {
     const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${id}` : `/api/announcements/${id}`;
@@ -724,6 +758,20 @@ export async function fetchESP32ArduinoCode(gymIdOrSlug?: string, serverUrl?: st
     return data?.code || '// Falha ao carregar código C++ do ESP32';
   } catch (err) {
     return '// Falha ao carregar código C++ do ESP32 (Acesso restrito à administração da academia)';
+  }
+}
+
+export async function fetchGymPrediction(slug: string): Promise<DayCrowdStats[] | null> {
+  try {
+    const res = await fetch(`/api/gyms/${encodeURIComponent(slug)}/prediction`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return null;
+    const data = await parseJsonResponse<{ success: boolean; prediction: DayCrowdStats[] } | null>(res, null);
+    return data?.prediction || null;
+  } catch (err) {
+    console.error('Error fetching gym prediction:', err);
+    return null;
   }
 }
 

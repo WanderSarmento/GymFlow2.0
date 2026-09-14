@@ -728,13 +728,25 @@ async function syncGymsFromSupabase() {
       const validGymSlugs = new Set(gyms.map((g: any) => g.slug));
 
       // Remove from memory any gyms that were deleted from Supabase
+      // Only delete if it's a gym that was previously synced (likely has a UUID-like ID)
+      // and is not one of the INITIAL_GYMS bootstrapped locally.
+      const initialIds = new Set(INITIAL_GYMS.map(g => g.id));
+      const initialSlugs = new Set(INITIAL_GYMS.map(g => g.slug));
+
       for (const [id, state] of gymsStore.entries()) {
+        const isInitial = initialIds.has(id) || initialSlugs.has(state.profile.slug);
+        if (isInitial) continue; // Don't purge bootstrapped local gyms
+
         if (!validGymIds.has(state.profile.id) && !validGymSlugs.has(state.profile.slug)) {
-          console.log(`[GymFlow Sync] Removendo da memória academia deletada no Supabase: ${state.profile.name} (${id})`);
-          gymsStore.delete(id);
-          saasAccountsStore.delete(id);
-          if (state.profile.id) saasAccountsStore.delete(state.profile.id);
-          if (state.profile.slug) saasAccountsStore.delete(state.profile.slug);
+          // If it looks like a Supabase ID (UUID format) but is missing, then purge it
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(state.profile.id);
+          if (isUuid) {
+            console.log(`[GymFlow Sync] Removendo da memória academia deletada no Supabase: ${state.profile.name} (${id})`);
+            gymsStore.delete(id);
+            saasAccountsStore.delete(id);
+            if (state.profile.id) saasAccountsStore.delete(state.profile.id);
+            if (state.profile.slug) saasAccountsStore.delete(state.profile.slug);
+          }
         }
       }
 
@@ -2237,7 +2249,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       status
     };
     gymState.accessLogs.unshift(log);
-    if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
+    if (gymState.accessLogs.length > 2000) gymState.accessLogs.pop();
 
     // Persist to Supabase
     persistGymStateToSupabase(gymState.profile.id, log);
@@ -2361,7 +2373,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       status: 'success'
     };
     gymState.accessLogs.unshift(log);
-    if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
+    if (gymState.accessLogs.length > 2000) gymState.accessLogs.pop();
 
     // Persist to Supabase
     persistGymStateToSupabase(gymState.profile.id, log);
@@ -2419,7 +2431,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       status: 'success'
     };
     gymState.accessLogs.unshift(log);
-    if (gymState.accessLogs.length > 50) gymState.accessLogs.pop();
+    if (gymState.accessLogs.length > 2000) gymState.accessLogs.pop();
 
     // Persist to Supabase
     persistGymStateToSupabase(gymState.profile.id, log);
@@ -2572,6 +2584,47 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     gymState.announcements = gymState.announcements.filter(a => a.id !== req.params.id);
     saveGymsToFile();
     res.json({ success: true, message: 'Comunicado removido' });
+  });
+
+  app.put('/api/gyms/:gymIdOrSlug/announcements/:id', (req: Request, res: Response) => {
+    const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
+    if (!gymState) {
+      res.status(404).json({ success: false, message: 'Academia não encontrada' });
+      return;
+    }
+
+    if (!isAuthorizedForGym(req, gymState)) {
+      res.status(403).json({
+        success: false,
+        message: 'Acesso negado: Apenas a administração desta academia pode editar comunicados.'
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const { title, content, category, priority, pinned, author, active } = req.body;
+    
+    const index = gymState.announcements.findIndex(a => a.id === id);
+    if (index === -1) {
+      res.status(404).json({ success: false, message: 'Comunicado não encontrado' });
+      return;
+    }
+
+    // Update existing announcement
+    gymState.announcements[index] = {
+      ...gymState.announcements[index],
+      title: title || gymState.announcements[index].title,
+      content: content || gymState.announcements[index].content,
+      category: category || gymState.announcements[index].category,
+      priority: priority || gymState.announcements[index].priority,
+      author: author || gymState.announcements[index].author,
+      pinned: pinned !== undefined ? Boolean(pinned) : gymState.announcements[index].pinned,
+      active: active !== undefined ? Boolean(active) : gymState.announcements[index].active
+    };
+
+    // If pinning changed, we might want to reorder, but for now simple update is fine
+    saveGymsToFile();
+    res.json({ success: true, announcement: gymState.announcements[index] });
   });
 
   // Dedicated Arduino C++ Code Generator for Gym
@@ -2796,6 +2849,86 @@ void sendHeartbeat() {
 `;
 
     res.json({ code: inoCode, apiKey, gymSlug });
+  });
+
+  app.get('/api/gyms/:slug/prediction', (req: Request, res: Response) => {
+    const { slug } = req.params;
+    const gymState = getGymStateByIdOrSlug(slug);
+    
+    if (!gymState) {
+      res.status(404).json({ success: false, message: 'Academia não encontrada.' });
+      return;
+    }
+
+    // Process real logs to find patterns
+    // dayOfWeek -> hour -> [counts]
+    const history: Record<number, Record<number, number[]>> = {};
+    
+    gymState.accessLogs.forEach(log => {
+      if (!log.timestamp) return;
+      const date = new Date(log.timestamp);
+      const day = date.getDay();
+      const hour = date.getHours();
+      
+      if (!history[day]) history[day] = {};
+      if (!history[day][hour]) history[day][hour] = [];
+      
+      // Use countAfter as the snapshot of occupancy at that moment
+      history[day][hour].push(log.countAfter);
+    });
+
+    const days = [0, 1, 2, 3, 4, 5, 6];
+    const prediction = days.map(dayId => {
+      const dayName = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][dayId];
+      const dayShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dayId];
+      
+      const hours = Array.from({ length: 24 }, (_, hour) => {
+        const counts = history[dayId]?.[hour] || [];
+        let avgCount = 0;
+        
+        if (counts.length > 0) {
+          avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
+        } else {
+          // Fallback logic if no data for this hour: 
+          // We could use the mock data here, but let's just return 0 and let frontend merge if needed
+          // Or better: find the nearest hour with data
+          avgCount = 0; 
+        }
+
+        const occupancyPercent = Math.round((avgCount / gymState.maxCapacity) * 100);
+        let level: 'low' | 'moderate' | 'peak' = 'low';
+        if (occupancyPercent > 75) level = 'peak';
+        else if (occupancyPercent > 40) level = 'moderate';
+
+        return {
+          hour,
+          label: `${hour.toString().padStart(2, '0')}:00`,
+          occupancyPercent,
+          level,
+          averagePeople: Math.round(avgCount)
+        };
+      });
+
+      // Calculate best/peak times for the day
+      const sortedHours = [...hours].sort((a, b) => b.occupancyPercent - a.occupancyPercent);
+      const peakTimes = sortedHours.slice(0, 2).map(h => h.label).join(' e ');
+      const bestTimes = hours
+        .filter(h => h.occupancyPercent < 30 && h.hour >= 6 && h.hour <= 22)
+        .slice(0, 2)
+        .map(h => h.label)
+        .join(', ') || 'Início da manhã';
+
+      return {
+        dayId,
+        dayName,
+        dayShort,
+        hours,
+        bestTimes,
+        peakTimes
+      };
+    });
+
+    res.json({ success: true, prediction });
   });
 
   // ==========================================
@@ -3612,7 +3745,7 @@ void sendHeartbeat() {
       res.status(500).json({
         success: false,
         message: 'Erro interno no servidor da API.',
-        error: err?.message || 'Internal Server Error'
+        error: err?.message || 'Erro Interno do Servidor'
       });
       return;
     }
@@ -3641,20 +3774,22 @@ void sendHeartbeat() {
     }
 
     // Sync from Supabase in background
-    syncGymsFromSupabase().catch(err => {
-      console.error('[GymFlow Supabase] Initial sync failed:', err);
+    syncGymsFromSupabase().then(() => {
+      console.log('[GymFlow Supabase] Sincronização inicial concluída.');
+    }).catch(err => {
+      console.error('[GymFlow Supabase] Sincronização inicial falhou:', err);
     });
 
     if (!isServerless) {
       app.listen(PORT, '0.0.0.0', () => {
-        console.log(`[GymFlow SaaS Server] Running on http://localhost:${PORT}`);
+        console.log(`[GymFlow SaaS Server] Servidor ON na porta ${PORT}`);
       });
     }
   }
 
   if (!isServerless) {
     startServer().catch(err => {
-      console.error('[GymFlow SaaS Server] Failed to start:', err);
+      console.error('[GymFlow SaaS Server] Falha ao iniciar servidor:', err);
     });
   }
 

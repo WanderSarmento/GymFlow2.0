@@ -103,7 +103,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
     logoEmoji: '🏋️',
     ownerName: '',
     ownerEmail: '',
-    ownerPassword: 'password123',
+    ownerPassword: 'senha123',
     plan: 'pro',
     monthlyFee: 299,
     trialDays: 15
@@ -488,7 +488,7 @@ export function SaaSAdminDashboard({ currentUser, onSelectGym, onOpenLoginModal,
               <span className="text-xs text-zinc-500 font-normal">bloqueadas</span>
             </div>
             <div className="text-[10px] sm:text-[11px] text-zinc-500 mt-1 flex flex-wrap gap-1">
-              <span>Inadimplência:</span> 
+              <span>Pendentes:</span> 
               <strong className="text-rose-400">{metrics?.delinquencyRate || 0}%</strong> 
               <span className="text-zinc-700">•</span>
               <span>{metrics?.overdueGyms || 0} atrasadas</span>
