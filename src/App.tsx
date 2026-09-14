@@ -152,8 +152,11 @@ export default function App() {
         } else if (viewParam === 'student' || pathname.startsWith('/aluno') || pathname.startsWith('/student')) {
           setActiveTab('student');
           if (gymParam) setIsDirectStudentLink(true);
-        } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception')) {
+        } else if (viewParam === 'reception' || pathname.startsWith('/recepcao') || pathname.startsWith('/reception') || pathname === '/login') {
           setActiveTab('reception');
+          if (pathname === '/login' && !getStoredAuthUser()) {
+            setTimeout(() => setIsLoginModalOpen(true), 100);
+          }
         } else if (viewParam === 'esp32' || pathname.startsWith('/hardware') || pathname.startsWith('/esp32')) {
           setActiveTab('esp32');
         } else {
@@ -161,10 +164,12 @@ export default function App() {
           setActiveTab('reception');
           
           // If hitting root link without being logged in, open the login modal automatically
-          if (!getStoredAuthUser()) {
+          // to direct the user immediately to the login area as requested.
+          if (!getStoredAuthUser() && pathname === '/') {
             setTimeout(() => {
+              setLoginModalMode('login');
               setIsLoginModalOpen(true);
-            }, 100);
+            }, 150);
           }
         }
 
