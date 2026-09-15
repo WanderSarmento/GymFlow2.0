@@ -19,7 +19,9 @@ import {
   SaaSMetrics,
   CreateSaaSGymInput,
   UserRole,
-  SaaSPlanConfig
+  SaaSPlanConfig,
+  DayCrowdStats,
+  HourlyCrowdItem
 } from './src/types.ts';
 
 interface GymUserRecord {
@@ -2313,6 +2315,112 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       profile: gymState.profile,
       maxCapacity: gymState.maxCapacity,
       isOpen: gymState.isOpen
+    });
+  });
+
+  // ==========================================
+  // HEATMAP & PEAK HOURS ANALYSIS
+  // ==========================================
+
+  function calculateGymHeatmap(gymState: GymServerState): DayCrowdStats {
+    const now = new Date();
+    const dayId = now.getDay();
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const shorts = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    // Base template for typical gym traffic peaks (6-9h and 17-21h)
+    const baseTemplate = [
+      { h: 0, p: 5 }, { h: 1, p: 2 }, { h: 2, p: 1 }, { h: 3, p: 1 }, { h: 4, p: 2 }, { h: 5, p: 8 },
+      { h: 6, p: 30 }, { h: 7, p: 65 }, { h: 8, p: 60 }, { h: 9, p: 35 }, { h: 10, p: 25 }, { h: 11, p: 30 },
+      { h: 12, p: 45 }, { h: 13, p: 40 }, { h: 14, p: 30 }, { h: 15, p: 40 }, { h: 16, p: 55 }, { h: 17, p: 80 },
+      { h: 18, p: 95 }, { h: 19, p: 90 }, { h: 20, p: 75 }, { h: 21, p: 50 }, { h: 22, p: 30 }, { h: 23, p: 10 }
+    ];
+
+    // Get real data from logs (last 15 days for better average)
+    const historyDays = 15;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - historyDays);
+    
+    const hourlyRealSum = Array.from({ length: 24 }, () => ({ total: 0, count: 0 }));
+    
+    gymState.accessLogs.forEach(log => {
+      const logDate = new Date(log.timestamp);
+      if (logDate >= cutoffDate) {
+        const hour = logDate.getHours();
+        hourlyRealSum[hour].total += log.countAfter;
+        hourlyRealSum[hour].count += 1;
+      }
+    });
+
+    const hours: HourlyCrowdItem[] = baseTemplate.map(temp => {
+      const real = hourlyRealSum[temp.h];
+      const avgRealPercent = real.count > 0 ? (real.total / real.count / gymState.maxCapacity) * 100 : null;
+      
+      // Blend real data with template (70% real weight if data exists)
+      let occupancyPercent = temp.p;
+      if (avgRealPercent !== null) {
+        occupancyPercent = Math.round((avgRealPercent * 0.7) + (temp.p * 0.3));
+      }
+
+      // Cap at 100%
+      occupancyPercent = Math.min(100, Math.max(0, occupancyPercent));
+
+      let level: HourlyCrowdItem['level'] = 'low';
+      if (occupancyPercent > 70) level = 'peak';
+      else if (occupancyPercent > 35) level = 'moderate';
+
+      return {
+        hour: temp.h,
+        label: `${temp.h}h`,
+        occupancyPercent,
+        level,
+        averagePeople: Math.round((occupancyPercent / 100) * gymState.maxCapacity)
+      };
+    });
+
+    // Identify tranquility windows (low occupancy between 6h and 22h)
+    const quietHours = hours
+      .filter(h => h.hour >= 6 && h.hour <= 22 && h.level === 'low')
+      .map(h => h.hour);
+    
+    // Group consecutive quiet hours for better display
+    let bestTimes = 'Manhã (10h-11h) e Tarde (14h-16h)';
+    if (quietHours.length > 0) {
+      const morningQuiet = quietHours.filter(h => h < 12);
+      const afternoonQuiet = quietHours.filter(h => h >= 12 && h < 18);
+      
+      if (morningQuiet.length > 0 && afternoonQuiet.length > 0) {
+        bestTimes = `${morningQuiet[0]}h-${morningQuiet[morningQuiet.length-1]}h e ${afternoonQuiet[0]}h-${afternoonQuiet[afternoonQuiet.length-1]}h`;
+      } else if (quietHours.length > 1) {
+        bestTimes = `${quietHours[0]}h às ${quietHours[quietHours.length-1]}h`;
+      }
+    }
+    
+    const peakHours = hours
+      .filter(h => h.level === 'peak' && h.hour >= 6 && h.hour <= 22)
+      .map(h => `${h.hour}h`);
+
+    return {
+      dayId,
+      dayName: days[dayId],
+      dayShort: shorts[dayId],
+      hours,
+      bestTimes,
+      peakTimes: peakHours.length > 0 ? peakHours.join(' e ') : '18h às 20h'
+    };
+  }
+
+  app.get('/api/gyms/:gymIdOrSlug/heatmap', (req: Request, res: Response) => {
+    const gymState = getGymStateByIdOrSlug(req.params.gymIdOrSlug);
+    if (!gymState) {
+      res.status(404).json({ success: false, message: 'Academia não encontrada.' });
+      return;
+    }
+
+    const heatmap = calculateGymHeatmap(gymState);
+    res.json({
+      success: true,
+      heatmap
     });
   });
 

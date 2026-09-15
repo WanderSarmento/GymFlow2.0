@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { LiveOccupancyCard } from './components/LiveOccupancyCard';
-import { CrowdPredictorChart } from './components/CrowdPredictorChart';
+import { OccupancyHeatmap } from './components/OccupancyHeatmap';
 import { OperatingHoursCard } from './components/OperatingHoursCard';
 import { AnnouncementsBoard } from './components/AnnouncementsBoard';
 import { ReceptionControlPanel } from './components/ReceptionControlPanel';
@@ -955,7 +955,7 @@ export default function App() {
 
             {/* Prediction */}
             <div className="space-y-6">
-              <CrowdPredictorChart gymSlug={currentGym?.slug} />
+              <OccupancyHeatmap gymSlug={currentGym?.slug} />
             </div>
           </div>
         )}
@@ -1059,7 +1059,7 @@ export default function App() {
                 </div>
               ) : receptionSubTab === 'crowd' ? (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <CrowdPredictorChart gymSlug={currentGym?.slug} />
+                  <OccupancyHeatmap gymSlug={currentGym?.slug} />
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
