@@ -616,22 +616,28 @@ export default function App() {
 
   const handleUpdateAnnouncement = async (id: string, item: Partial<Announcement>): Promise<boolean> => {
     if (!currentGym) return false;
+    // Optimistic update
+    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, ...item } : a));
     const success = await updateAnnouncement(currentGym.slug, id, item);
-    if (success) {
-      setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, ...item } : a));
-      return true;
+    if (!success) {
+      // Revert from server if failed
+      loadGymData(currentGym.slug, false);
+      return false;
     }
-    return false;
+    return true;
   };
 
   const handleDeleteAnnouncement = async (id: string): Promise<boolean> => {
     if (!currentGym) return false;
+    // Optimistic delete
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
     const success = await deleteAnnouncement(currentGym.slug, id);
-    if (success) {
-      setAnnouncements(prev => prev.filter(a => a.id !== id));
-      return true;
+    if (!success) {
+      // Revert from server if failed
+      loadGymData(currentGym.slug, false);
+      return false;
     }
-    return false;
+    return true;
   };
 
   // Filtered gyms list based on user role

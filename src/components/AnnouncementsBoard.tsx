@@ -12,7 +12,8 @@ import {
   Search,
   Filter,
   CheckCircle2,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { Announcement, AnnouncementCategory, AnnouncementPriority } from '../types';
 
@@ -36,6 +37,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // New announcement form state
   const [formTitle, setFormTitle] = useState('');
@@ -127,6 +129,16 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
       setFormContent('');
       setEditingId(null);
       setIsModalOpen(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+    try {
+      await onDeleteAnnouncement(id);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -272,11 +284,16 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                           <button
                             id={`delete-announcement-${item.id}`}
                             type="button"
-                            onClick={() => onDeleteAnnouncement(item.id)}
+                            onClick={() => handleDelete(item.id)}
+                            disabled={deletingId === item.id}
                             title="Excluir comunicado"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors disabled:opacity-50"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {deletingId === item.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
                           </button>
                         </div>
                       )}

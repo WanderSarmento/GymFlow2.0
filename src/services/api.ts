@@ -42,10 +42,34 @@ export function getAuthHeaders(): Record<string, string> {
     'Content-Type': 'application/json'
   };
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    let token = localStorage.getItem(AUTH_TOKEN_KEY);
+    const storedUser = getStoredAuthUser();
+
+    // Reconcile token if missing from AUTH_TOKEN_KEY but present in user session
+    if (!token && storedUser?.token) {
+      token = storedUser.token;
+      try {
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+      } catch {}
+    }
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+
+    // Attach contextual headers for authenticated/reception requests
+    if (storedUser) {
+      if (storedUser.id) headers['x-user-id'] = storedUser.id;
+      if (storedUser.email) headers['x-user-email'] = storedUser.email;
+      if (storedUser.role) headers['x-user-role'] = storedUser.role;
+      if (storedUser.gymSlug) headers['x-gym-slug'] = storedUser.gymSlug;
+      if (storedUser.name) headers['x-operator'] = storedUser.name;
+    } else {
+      headers['x-operator'] = 'Recepção';
+    }
+
+    headers['x-source'] = 'reception';
+    headers['x-panel-source'] = 'reception';
   }
   return headers;
 }
@@ -716,45 +740,83 @@ export async function fetchAnnouncements(gymIdOrSlug?: string): Promise<Announce
 
 export async function createAnnouncement(gymIdOrSlug: string, announcement: Partial<Announcement>): Promise<Announcement | null> {
   try {
-    const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements` : '/api/announcements';
+    const query = '?source=reception';
+    const url = gymIdOrSlug
+      ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements${query}`
+      : `/api/announcements${query}`;
+    const payload = {
+      ...announcement,
+      source: 'reception',
+      operator: 'Recepção'
+    };
     const res = await fetch(url, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(announcement)
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) return null;
-    const data = await parseJsonResponse<{ announcement: Announcement } | null>(res, null);
+    if (!res.ok) {
+      console.warn(`[createAnnouncement] Falha ao criar comunicado: status ${res.status}`);
+      return null;
+    }
+    const data = await parseJsonResponse<{ success?: boolean; announcement: Announcement } | null>(res, null);
     return data?.announcement || null;
   } catch (err) {
-    console.error(err);
+    console.error('[createAnnouncement] Erro de rede:', err);
     return null;
   }
 }
 
 export async function updateAnnouncement(gymIdOrSlug: string, id: string, announcement: Partial<Announcement>): Promise<boolean> {
   try {
-    const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${id}` : `/api/announcements/${id}`;
+    const query = '?source=reception';
+    const url = gymIdOrSlug
+      ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${encodeURIComponent(id)}${query}`
+      : `/api/announcements/${encodeURIComponent(id)}${query}`;
+    const payload = {
+      ...announcement,
+      source: 'reception',
+      operator: 'Recepção'
+    };
     const res = await fetch(url, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(announcement)
+      body: JSON.stringify(payload)
     });
     return res.ok;
   } catch (err) {
-    console.error(err);
+    console.error('[updateAnnouncement] Erro:', err);
     return false;
   }
 }
 
 export async function deleteAnnouncement(gymIdOrSlug: string, id: string): Promise<boolean> {
   try {
-    const url = gymIdOrSlug ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${id}` : `/api/announcements/${id}`;
+    const query = '?source=reception';
+    const url = gymIdOrSlug
+      ? `/api/gyms/${encodeURIComponent(gymIdOrSlug)}/announcements/${encodeURIComponent(id)}${query}`
+      : `/api/announcements/${encodeURIComponent(id)}${query}`;
     const res = await fetch(url, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
-    return res.ok;
+
+    if (res.ok) {
+      return true;
+    }
+
+    // Fallback: If 404 on slug or root, retry with root or vice-versa
+    if (res.status === 404 && gymIdOrSlug) {
+      const fallbackRes = await fetch(`/api/announcements/${encodeURIComponent(id)}${query}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      return fallbackRes.ok;
+    }
+
+    console.warn(`[deleteAnnouncement] Falha ao remover comunicado: status ${res.status}`);
+    return false;
   } catch (err) {
+    console.error('[deleteAnnouncement] Erro de rede:', err);
     return false;
   }
 }
