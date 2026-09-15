@@ -16,6 +16,7 @@ import { SupabaseIntegrationModal } from './components/SupabaseIntegrationModal'
 import { SaaSAdminDashboard } from './components/SaaSAdminDashboard';
 import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { isSupabaseConfigured } from './lib/supabase';
+import { RemoteControlPanel } from './components/RemoteControlPanel';
 import {
   fetchGyms,
   fetchGymDetails,
@@ -997,6 +998,14 @@ export default function App() {
               occupancy={occupancy}
               onSimulateEntry={handleSimulateEntry}
               onSimulateExit={handleSimulateExit}
+            />
+
+            {/* Quick Remote Control for Personals */}
+            <RemoteControlPanel 
+              gymSlug={currentGym.slug}
+              occupancy={occupancy}
+              onActionComplete={() => loadGymData(currentGym.slug, true)}
+              operatorName={currentUser?.name || 'Instrutor'}
             />
 
             {/* Reception Controls */}
