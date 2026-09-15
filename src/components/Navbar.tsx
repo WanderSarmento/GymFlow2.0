@@ -68,16 +68,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-[#0C0C0D]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
         
         {/* Brand & Gym Switcher */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${theme.primary} text-xl shadow-inner`}>
+        <div className="flex items-center gap-2 sm:gap-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl ${theme.primary} text-base sm:text-xl shadow-inner`}>
               {currentGym?.logoEmoji || '⚡'}
             </div>
             
-            <div className="hidden sm:block">
+            <div className="hidden lg:block">
               <h1 className="text-lg font-bold tracking-tight text-white leading-none">
                 GYM<span className="text-cyan-400">LIVRE</span>
               </h1>
@@ -163,25 +163,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               id="manual-refresh-btn"
               type="button"
               aria-label="Atualizar Dados em Tempo Real"
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
             </button>
             
             {currentUser ? (
-              <div className="relative flex items-center gap-2" ref={dropdownRef}>
+              <div className="relative flex items-center gap-1 sm:gap-2" ref={dropdownRef}>
                 <button
                   id="user-profile-btn"
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-zinc-600 transition-all overflow-hidden cursor-pointer"
+                  className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-zinc-600 transition-all overflow-hidden cursor-pointer"
                   title={`Usuário: ${currentUser.name}`}
                 >
                   {currentUser.name.charAt(0).toUpperCase()}
@@ -191,7 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id="navbar-quick-logout-btn"
                   type="button"
                   onClick={onLogout}
-                  className="p-2.5 rounded-xl bg-zinc-900/80 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 transition-all cursor-pointer"
+                  className="hidden sm:flex p-2.5 rounded-xl bg-zinc-900/80 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 transition-all cursor-pointer"
                   title="Sair da Conta (Logout)"
                   aria-label="Sair da Conta"
                 >

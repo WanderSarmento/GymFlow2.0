@@ -4,15 +4,11 @@ import { OccupancyData } from '../types';
 
 interface LiveOccupancyCardProps {
   occupancy: OccupancyData;
-  onSimulateEntry?: () => void;
-  onSimulateExit?: () => void;
   isStudentView?: boolean;
 }
 
 export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
   occupancy,
-  onSimulateEntry,
-  onSimulateExit,
   isStudentView = false
 }) => {
   const percentage = occupancy.percentage;
@@ -196,24 +192,6 @@ export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
           </div>
 
           <div className="flex items-center gap-4 pt-2 justify-center md:justify-start">
-            {!isStudentView && (onSimulateEntry || onSimulateExit) && (
-              <div className="flex gap-2">
-                <button
-                  onClick={onSimulateEntry}
-                  disabled={occupancy.turnstileLocked || occupancy.currentCount >= occupancy.maxCapacity}
-                  className="px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-bold transition-all disabled:opacity-30 cursor-pointer"
-                >
-                  Entrada
-                </button>
-                <button
-                  onClick={onSimulateExit}
-                  disabled={occupancy.currentCount <= 0}
-                  className="px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-bold transition-all disabled:opacity-30 cursor-pointer"
-                >
-                  Saída
-                </button>
-              </div>
-            )}
             <div className="text-[10px] text-zinc-600 font-medium uppercase tracking-wider">
               Leitura: {formatLastAccess(occupancy.lastAccessTime)}
             </div>

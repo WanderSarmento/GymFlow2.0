@@ -16,7 +16,6 @@ import { SupabaseIntegrationModal } from './components/SupabaseIntegrationModal'
 import { SaaSAdminDashboard } from './components/SaaSAdminDashboard';
 import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { isSupabaseConfigured } from './lib/supabase';
-import { RemoteControlPanel } from './components/RemoteControlPanel';
 import {
   fetchGyms,
   fetchGymDetails,
@@ -993,19 +992,9 @@ export default function App() {
         {currentUser && currentGym && activeTab === 'reception' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             
-            {/* Live Occupancy Status Card with quick sim */}
+            {/* Live Occupancy Status Card */}
             <LiveOccupancyCard
               occupancy={occupancy}
-              onSimulateEntry={handleSimulateEntry}
-              onSimulateExit={handleSimulateExit}
-            />
-
-            {/* Quick Remote Control for Personals */}
-            <RemoteControlPanel 
-              gymSlug={currentGym.slug}
-              occupancy={occupancy}
-              onActionComplete={() => loadGymData(currentGym.slug, true)}
-              operatorName={currentUser?.name || 'Instrutor'}
             />
 
             {/* Reception Controls */}
@@ -1088,8 +1077,6 @@ export default function App() {
             {/* Live Occupancy Status Card */}
             <LiveOccupancyCard
               occupancy={occupancy}
-              onSimulateEntry={handleSimulateEntry}
-              onSimulateExit={handleSimulateExit}
             />
 
             {/* ESP32 Hardware Simulator & Code Generator tailored for this Gym */}

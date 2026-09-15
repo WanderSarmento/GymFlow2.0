@@ -69,22 +69,22 @@ export const GymSwitcher: React.FC<GymSwitcherProps> = ({
         id="gym-switcher-trigger-btn"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer group"
+        className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer group"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="text-lg leading-none opacity-80 group-hover:opacity-100 transition-opacity">
+        <span className="text-base sm:text-lg leading-none opacity-80 group-hover:opacity-100 transition-opacity shrink-0">
           {currentGym.logoEmoji || '⚡'}
         </span>
         <div className="flex flex-col text-left">
-          <span className="font-bold text-xs truncate max-w-[120px] sm:max-w-[160px] leading-tight">
+          <span className="font-bold text-[10px] sm:text-xs truncate max-w-[80px] xs:max-w-[120px] sm:max-w-[160px] leading-tight">
             {currentGym.name}
           </span>
-          <span className="text-[10px] text-zinc-500 truncate max-w-[120px] sm:max-w-[160px] leading-tight font-medium uppercase tracking-wider">
+          <span className="hidden sm:block text-[10px] text-zinc-500 truncate max-w-[120px] sm:max-w-[160px] leading-tight font-medium uppercase tracking-wider">
             {currentGym.city || currentGym.slug}
           </span>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-zinc-500 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu */}

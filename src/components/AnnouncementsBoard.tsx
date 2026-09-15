@@ -285,38 +285,12 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                     )}
                   </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <span className="text-[11px] font-mono text-gray-500">
                         {item.date}
                       </span>
 
-                      {isAdminMode && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            id={`edit-announcement-${item.id}`}
-                            type="button"
-                            onClick={() => handleEdit(item)}
-                            title="Editar comunicado"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-gray-800 transition-colors"
-                          >
-                            <Wrench className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            id={`delete-announcement-${item.id}`}
-                            type="button"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={deletingId === item.id}
-                            title="Excluir comunicado"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors disabled:opacity-50"
-                          >
-                            {deletingId === item.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      )}
+                      {/* Botoes removidos para o rodape */}
                     </div>
                 </div>
 
@@ -333,7 +307,34 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                 {/* Footer / Author */}
                 <div className="mt-3.5 flex items-center justify-between text-[11px] text-gray-500 border-t border-gray-800/80 pt-2.5">
                   <span>Publicado por: <strong className="text-gray-300 font-semibold">{item.author}</strong></span>
-                  <span className="text-gray-500 font-mono">GymLivre System</span>
+                  
+                  {isAdminMode && (
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <button
+                        id={`edit-announcement-footer-${item.id}`}
+                        type="button"
+                        onClick={() => handleEdit(item)}
+                        title="Editar comunicado"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-gray-800 transition-all active:scale-95 bg-gray-900/30 border border-gray-800/50"
+                      >
+                        <Wrench className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        id={`delete-announcement-footer-${item.id}`}
+                        type="button"
+                        onClick={() => handleDelete(item.id)}
+                        disabled={deletingId === item.id}
+                        title="Excluir comunicado"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-all active:scale-95 bg-gray-900/30 border border-gray-800/50 disabled:opacity-50"
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             );

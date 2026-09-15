@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Shield,
   Unlock,
@@ -6,6 +7,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   UserPlus,
+  UserMinus,
   RotateCcw,
   Sliders,
   AlertOctagon,
@@ -17,7 +19,9 @@ import {
   Clock,
   Share2,
   Power,
-  Loader2
+  Loader2,
+  Hash,
+  ChevronRight
 } from 'lucide-react';
 import { OccupancyData, AccessLog } from '../types';
 
@@ -129,10 +133,10 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
             </div>
             <div>
               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                Gerenciamento de Acesso
+                Painel Unificado
               </h3>
               <h2 className="text-lg font-black font-['Outfit'] text-white">
-                Controle Manual & Remoto de Catracas
+                Controle de Fluxo & Catracas
               </h2>
             </div>
           </div>
@@ -167,7 +171,7 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               id="reception-edit-profile-btn"
               type="button"
               onClick={onOpenCustomizeModal}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-500/20 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
             >
               <Sliders className="w-3 h-3" />
               <span>Editar Perfil</span>
@@ -181,16 +185,45 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               {occupancy.turnstileLocked ? (
                 <>
                   <Lock className="h-3.5 w-3.5" />
-                  <span>Catracas Travadas</span>
+                  <span>Travadas</span>
                 </>
               ) : (
                 <>
                   <Unlock className="h-3.5 w-3.5" />
-                  <span>Catracas Liberadas</span>
+                  <span>Liberadas</span>
                 </>
               )}
             </span>
           </div>
+        </div>
+
+        {/* Unified Quick Control (Remote-Style Big Buttons) */}
+        <div className="mt-6 grid grid-cols-2 gap-4 h-40">
+          {/* Big Entry Button */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={isExecuting || occupancy.turnstileLocked}
+            onClick={() => handleTriggerAction('remote_unlock_entry')}
+            className="relative group overflow-hidden bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-lg shadow-cyan-900/20 border border-cyan-400/30 disabled:opacity-50"
+          >
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <UserPlus size={40} className="text-white" />
+            <span className="text-white font-black text-xl sm:text-2xl tracking-tighter">ENTRADA +1</span>
+            <div className="absolute bottom-2 right-3 text-[10px] font-bold text-cyan-200 uppercase opacity-60">Pulso Físico</div>
+          </motion.button>
+
+          {/* Big Exit Button */}
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={isExecuting || occupancy.currentCount <= 0}
+            onClick={() => handleTriggerAction('remote_unlock_exit')}
+            className="relative group overflow-hidden bg-zinc-800 rounded-3xl flex flex-col items-center justify-center gap-2 border border-zinc-700 shadow-lg disabled:opacity-50"
+          >
+            <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <UserMinus size={40} className="text-zinc-300" />
+            <span className="text-zinc-300 font-black text-xl sm:text-2xl tracking-tighter">SAÍDA -1</span>
+            <div className="absolute bottom-2 right-3 text-[10px] font-bold text-zinc-500 uppercase opacity-60">Registrar</div>
+          </motion.button>
         </div>
 
         {/* Fast Adjustment & Calibration Bar */}
@@ -200,7 +233,7 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
             {/* Quick +/- buttons */}
             <div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2.5">
-                Ajuste Rápido de Contagem:
+                Calibragem de Contagem:
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -238,208 +271,149 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => handleTriggerAction('reset_count')}
-                  className="min-h-[44px] flex items-center gap-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 text-xs font-bold uppercase transition-colors cursor-pointer active:scale-95 ml-auto sm:ml-0"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 p-2 text-xs font-bold uppercase transition-colors cursor-pointer active:scale-95"
                   title="Zerar contagem da sala"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  <span>Zerar Sala</span>
                 </button>
               </div>
             </div>
 
             {/* Set exact count & max capacity */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-gray-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-5 border-t border-gray-800">
               
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Definir exato:</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={customCountInput}
-                  onFocus={() => { isCountFocusedRef.current = true; }}
-                  onBlur={() => { isCountFocusedRef.current = false; }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSetExactCount();
-                    }
-                  }}
-                  onChange={(e) => setCustomCountInput(e.target.value)}
-                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleSetExactCount}
-                  className="min-h-[44px] rounded-xl bg-gray-800 hover:bg-gray-700 px-4 py-2 text-xs font-bold uppercase text-white transition-colors cursor-pointer active:scale-95"
-                >
-                  Aplicar
-                </button>
+              {/* Exact Count Adjustment */}
+              <div className="space-y-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block">
+                  Definir Contagem Exata:
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={customCountInput}
+                    onFocus={() => { isCountFocusedRef.current = true; }}
+                    onBlur={() => { isCountFocusedRef.current = false; }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSetExactCount();
+                      }
+                    }}
+                    onChange={(e) => setCustomCountInput(e.target.value)}
+                    className="flex-1 min-w-0 min-h-[48px] rounded-2xl bg-gray-900 border border-gray-800 px-4 py-2 text-lg sm:text-sm font-mono text-white text-center focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/20"
+                    placeholder="0"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSetExactCount}
+                    className="min-h-[48px] px-6 rounded-2xl bg-gray-800 hover:bg-gray-700 text-xs font-black uppercase text-white transition-all cursor-pointer active:scale-95 border border-gray-700 shadow-sm"
+                  >
+                    Aplicar
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:border-l sm:border-gray-800 sm:pl-3">
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Capacidade Máx:</span>
-                <input
-                  id="reception-max-capacity-input"
-                  type="number"
-                  min="10"
-                  max="2000"
-                  value={maxCapacityInput}
-                  onFocus={() => { isCapacityFocusedRef.current = true; }}
-                  onBlur={() => {
-                    isCapacityFocusedRef.current = false;
-                    const num = parseInt(maxCapacityInput, 10);
-                    if (!isNaN(num) && num >= 10 && num !== occupancy.maxCapacity && !isSavingCapacity) {
-                      handleSaveMaxCapacity();
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSaveMaxCapacity();
-                    }
-                  }}
-                  onChange={(e) => setMaxCapacityInput(e.target.value)}
-                  className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
-                />
-                <button
-                  id="reception-save-max-capacity-btn"
-                  type="button"
-                  onClick={handleSaveMaxCapacity}
-                  disabled={isSavingCapacity}
-                  className="min-h-[44px] rounded-xl bg-white hover:bg-gray-200 disabled:opacity-50 px-4 py-2 text-xs font-bold uppercase text-black transition-colors cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
-                >
-                  {isSavingCapacity ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-black" />
-                      <span>Salvando...</span>
-                    </>
-                  ) : (
-                    <span>Salvar</span>
-                  )}
-                </button>
+              {/* Max Capacity Adjustment */}
+              <div className="space-y-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block">
+                  Capacidade Máxima:
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    id="reception-max-capacity-input"
+                    type="number"
+                    min="10"
+                    max="2000"
+                    value={maxCapacityInput}
+                    onFocus={() => { isCapacityFocusedRef.current = true; }}
+                    onBlur={() => {
+                      isCapacityFocusedRef.current = false;
+                      const num = parseInt(maxCapacityInput, 10);
+                      if (!isNaN(num) && num >= 10 && num !== occupancy.maxCapacity && !isSavingCapacity) {
+                        handleSaveMaxCapacity();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveMaxCapacity();
+                      }
+                    }}
+                    onChange={(e) => setMaxCapacityInput(e.target.value)}
+                    className="flex-1 min-w-0 min-h-[48px] rounded-2xl bg-gray-900 border border-gray-800 px-4 py-2 text-lg sm:text-sm font-mono text-white text-center focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/20"
+                    placeholder="80"
+                  />
+                  <button
+                    id="reception-save-max-capacity-btn"
+                    type="button"
+                    onClick={handleSaveMaxCapacity}
+                    disabled={isSavingCapacity}
+                    className="min-h-[48px] px-6 rounded-2xl bg-white hover:bg-gray-100 disabled:opacity-50 text-xs font-black uppercase text-black transition-all cursor-pointer active:scale-95 shadow-lg shadow-white/5 flex items-center justify-center gap-2"
+                  >
+                    {isSavingCapacity ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Salvar'
+                    )}
+                  </button>
+                </div>
               </div>
-
             </div>
-
           </div>
         </div>
 
-        {/* Big Virtual Action Buttons Grid */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Secondary Virtual Action Buttons Grid */}
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           
-          {/* Button 1: Remote Entry Release */}
-          <button
-            id="reception-btn-unlock-entry"
-            type="button"
-            disabled={isExecuting || occupancy.turnstileLocked}
-            onClick={() => handleTriggerAction('remote_unlock_entry')}
-            className="group relative flex flex-col justify-between rounded-3xl border border-cyan-400/30 bg-gradient-to-br from-cyan-950/40 via-gray-950 to-black p-6 text-left transition-all hover:border-cyan-400 hover:shadow-[0_0_25px_rgba(34,211,238,0.15)] active:scale-[0.98] disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400 text-black shadow-lg shadow-cyan-400/20">
-                <ArrowUpRight className="h-6 w-6 stroke-[3]" />
-              </div>
-              <span className="rounded-full bg-cyan-400/20 px-2.5 py-0.5 text-[10px] font-black text-cyan-400 uppercase tracking-wider border border-cyan-400/30">
-                Pulso +1
-              </span>
-            </div>
-            <div className="mt-5">
-              <h3 className="font-['Outfit'] text-base font-black text-white group-hover:text-cyan-300 transition-colors">
-                Liberar Entrada
-              </h3>
-              <p className="mt-1 text-xs text-gray-400">
-                Aciona relé da catraca física e soma +1 aluno
-              </p>
-            </div>
-          </button>
-
-          {/* Button 2: Remote Exit Release */}
-          <button
-            id="reception-btn-unlock-exit"
-            type="button"
-            disabled={isExecuting || occupancy.currentCount <= 0}
-            onClick={() => handleTriggerAction('remote_unlock_exit')}
-            className="group relative flex flex-col justify-between rounded-3xl border border-gray-800 bg-gradient-to-br from-gray-900 via-gray-950 to-black p-6 text-left transition-all hover:border-gray-700 hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-800 text-white shadow-md">
-                <ArrowDownLeft className="h-6 w-6 stroke-[3]" />
-              </div>
-              <span className="rounded-full bg-gray-800 px-2.5 py-0.5 text-[10px] font-bold text-gray-300 uppercase tracking-wider border border-gray-700">
-                Pulso -1
-              </span>
-            </div>
-            <div className="mt-5">
-              <h3 className="font-['Outfit'] text-base font-black text-white group-hover:text-gray-200 transition-colors">
-                Liberar Saída
-              </h3>
-              <p className="mt-1 text-xs text-gray-400">
-                Registra saída e subtrai -1 aluno da sala
-              </p>
-            </div>
-          </button>
-
-          {/* Button 3: Guest / Special Pass */}
+          {/* Guest / Special Pass */}
           <button
             id="reception-btn-guest-entry"
             type="button"
             disabled={isExecuting || occupancy.turnstileLocked}
             onClick={() => setIsGuestModalOpen(true)}
-            className="group relative flex flex-col justify-between rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-gray-950 to-black p-6 text-left transition-all hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.98] disabled:opacity-50"
+            className="group relative flex items-center gap-4 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-gray-950 to-black p-5 text-left transition-all hover:border-amber-400 hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500 text-black shadow-md">
-                <UserPlus className="h-6 w-6 stroke-[3]" />
-              </div>
-              <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 uppercase tracking-wider border border-amber-500/30">
-                Visitante
-              </span>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-black shadow-md shrink-0">
+              <UserPlus className="h-6 w-6 stroke-[3]" />
             </div>
-            <div className="mt-5">
-              <h3 className="font-['Outfit'] text-base font-black text-white group-hover:text-amber-300 transition-colors">
+            <div>
+              <h3 className="font-['Outfit'] text-sm font-black text-white group-hover:text-amber-300 transition-colors">
                 Entrada Convidado
               </h3>
-              <p className="mt-1 text-xs text-gray-400">
-                Liberar aula experimental ou visitante com log
+              <p className="text-[10px] text-gray-400">
+                Aula experimental ou visitante com log
               </p>
             </div>
           </button>
 
-          {/* Button 4: Emergency Lock Toggle */}
+          {/* Emergency Lock Toggle */}
           <button
             id="reception-btn-emergency-lock"
             type="button"
             disabled={isExecuting}
             onClick={() => handleTriggerAction('toggle_lock')}
-            className={`group relative flex flex-col justify-between rounded-3xl border p-6 text-left transition-all active:scale-[0.98] ${
+            className={`group relative flex items-center gap-4 rounded-3xl border p-5 text-left transition-all active:scale-[0.98] ${
               occupancy.turnstileLocked
-                ? 'border-cyan-400/60 bg-gradient-to-br from-cyan-950/40 via-gray-950 to-black hover:border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.15)]'
-                : 'border-red-500/50 bg-gradient-to-br from-red-950/40 via-gray-950 to-black hover:border-red-400 hover:shadow-lg hover:shadow-red-500/10'
+                ? 'border-cyan-400/60 bg-gradient-to-br from-cyan-950/20 via-gray-950 to-black hover:border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.15)]'
+                : 'border-red-500/50 bg-gradient-to-br from-red-950/20 via-gray-950 to-black hover:border-red-400 hover:shadow-lg'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-md ${
-                occupancy.turnstileLocked ? 'bg-cyan-400 text-black' : 'bg-red-500 text-white'
-              }`}>
-                {occupancy.turnstileLocked ? <Unlock className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
-              </div>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                occupancy.turnstileLocked ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'
-              }`}>
-                {occupancy.turnstileLocked ? 'Destravar' : 'Segurança'}
-              </span>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-md shrink-0 ${
+              occupancy.turnstileLocked ? 'bg-cyan-400 text-black' : 'bg-red-500 text-white'
+            }`}>
+              {occupancy.turnstileLocked ? <Unlock className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
             </div>
-            <div className="mt-5">
-              <h3 className="font-['Outfit'] text-base font-black text-white">
-                {occupancy.turnstileLocked ? 'Destravar Catracas' : 'Travar Catracas'}
+            <div>
+              <h3 className="font-['Outfit'] text-sm font-black text-white">
+                {occupancy.turnstileLocked ? 'Destravar Fluxo' : 'Travar Catracas'}
               </h3>
-              <p className="mt-1 text-xs text-gray-400">
-                {occupancy.turnstileLocked ? 'Clique para reabrir o fluxo' : 'Bloqueia passagem física e remota'}
+              <p className="text-[10px] text-gray-400">
+                {occupancy.turnstileLocked ? 'Clique para reabrir' : 'Bloqueio total de emergência'}
               </p>
             </div>
           </button>
-
         </div>
 
       </div>
