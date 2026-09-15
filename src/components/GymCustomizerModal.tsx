@@ -12,6 +12,7 @@ import {
   Phone, 
   Sun,
   Moon,
+  Monitor,
   Building2,
   Check
 } from 'lucide-react';
@@ -344,7 +345,7 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
             <label className="block text-[11px] font-semibold text-zinc-300 mb-2.5 uppercase tracking-wider">
               Ambiente e Visibilidade (Tema)
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, visualTheme: 'dark' })}
@@ -360,8 +361,8 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
                   <Moon className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold">Modo Dark</div>
-                  <div className="text-[10px] opacity-60">Ideal para baixa luz</div>
+                  <div className="text-xs font-bold">Dark</div>
+                  <div className="text-[10px] opacity-60">Ideal low light</div>
                 </div>
               </button>
 
@@ -380,8 +381,28 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
                   <Sun className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold">Contraste Alto</div>
-                  <div className="text-[10px] opacity-60">Ideal para recepções claras</div>
+                  <div className="text-xs font-bold">Light</div>
+                  <div className="text-[10px] opacity-60">Fundo claro</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, visualTheme: 'auto' })}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                  formData.visualTheme === 'auto'
+                    ? 'bg-zinc-800 border-indigo-500 text-white shadow-lg shadow-black/20'
+                    : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  formData.visualTheme === 'auto' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-600'
+                }`}>
+                  <Monitor className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <div className="text-xs font-bold">Automático</div>
+                  <div className="text-[10px] opacity-60">Sistema / Hora</div>
                 </div>
               </button>
             </div>

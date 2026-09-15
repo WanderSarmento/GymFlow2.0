@@ -35,6 +35,7 @@ export const INITIAL_GYMS: GymProfile[] = [
     createdAt: new Date().toISOString(),
     turnstileLocked: false,
     isOpen: true,
+    visualTheme: 'auto',
     operatingHours: {
       weekdays: { open: '06:00', close: '23:00', isOpen: true },
       saturday: { open: '07:00', close: '17:00', isOpen: true },

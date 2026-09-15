@@ -44,7 +44,7 @@ export interface GymProfile {
   isSystemBlocked?: boolean;
   blockReason?: string;
   blockedAt?: string | null;
-  visualTheme?: 'dark' | 'light';
+  visualTheme?: 'dark' | 'light' | 'auto';
   operatingHours: GymOperatingHours;
 }
 
@@ -68,7 +68,7 @@ export interface OccupancyData {
   esp32LastPing: string | null;
   esp32DeviceName: string;
   esp32Ip: string;
-  visualTheme?: 'dark' | 'light';
+  visualTheme?: 'dark' | 'light' | 'auto';
   pendingRelayTrigger: 'entry' | 'exit' | null;
   slogan?: string;
   city?: string;
@@ -161,7 +161,7 @@ export interface CreateGymInput {
   ownerEmail: string;
   ownerPassword?: string;
   themeColor: GymThemeColor;
-  visualTheme?: 'dark' | 'light';
+  visualTheme?: 'dark' | 'light' | 'auto';
   logoEmoji: string;
   operatingHours?: GymOperatingHours;
 }

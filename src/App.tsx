@@ -795,7 +795,42 @@ export default function App() {
   }, [gyms, currentUser]);
 
   const theme = THEME_COLOR_CONFIG[currentGym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
-  const visualTheme = currentGym?.visualTheme || 'dark';
+  
+  // Handle automatic theme switching
+  const [systemTheme, setSystemTheme] = React.useState<'light' | 'dark'>('dark');
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      setSystemTheme(mediaQuery.matches ? 'dark' : 'light');
+
+      const handler = (e: MediaQueryListEvent) => {
+        setSystemTheme(e.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      // Fallback for browsers without matchMedia
+      const checkTime = () => {
+        const hour = new Date().getHours();
+        setSystemTheme((hour < 6 || hour >= 18) ? 'dark' : 'light');
+      };
+      checkTime();
+      const interval = setInterval(checkTime, 60000); // Check every minute
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  const visualTheme = React.useMemo(() => {
+    const config = currentGym?.visualTheme || 'dark';
+    if (config === 'auto') {
+      return systemTheme;
+    }
+    return config;
+  }, [currentGym?.visualTheme, systemTheme]);
 
   return (
     <div 

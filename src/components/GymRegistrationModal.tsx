@@ -14,6 +14,7 @@ import {
   Cpu, 
   Sun,
   Moon,
+  Monitor,
   QrCode,
   Key
 } from 'lucide-react';
@@ -401,7 +402,7 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                 <label className="block text-xs font-medium text-zinc-300 mb-2.5">
                   Ambiente e Visibilidade (Tema do Painel)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, visualTheme: 'dark' })}
@@ -417,8 +418,8 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                       <Moon className="w-4 h-4" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xs font-bold">Modo Dark</div>
-                      <div className="text-[10px] opacity-60">Padrão do GymLivre</div>
+                      <div className="text-xs font-bold">Dark</div>
+                      <div className="text-[10px] opacity-60">Fundo escuro</div>
                     </div>
                   </button>
 
@@ -437,8 +438,28 @@ export const GymRegistrationModal: React.FC<GymRegistrationModalProps> = ({
                       <Sun className="w-4 h-4" />
                     </div>
                     <div className="text-left">
-                      <div className="text-xs font-bold">Contraste Alto</div>
-                      <div className="text-[10px] opacity-60">Para locais iluminados</div>
+                      <div className="text-xs font-bold">Light</div>
+                      <div className="text-[10px] opacity-60">Fundo claro</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, visualTheme: 'auto' })}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      formData.visualTheme === 'auto'
+                        ? 'bg-zinc-800 border-indigo-500 text-white shadow-lg'
+                        : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      formData.visualTheme === 'auto' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-600'
+                    }`}>
+                      <Monitor className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold">Auto</div>
+                      <div className="text-[10px] opacity-60">Sistema / Hora</div>
                     </div>
                   </button>
                 </div>
