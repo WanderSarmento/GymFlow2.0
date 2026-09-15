@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-15T09:50:13.335Z",
+  "updatedAt": "2026-09-15T10:09:25.926Z",
   "gyms": [
     {
       "profile": {
@@ -12,8 +12,8 @@
         "neighborhood": "Centro",
         "address": "Av. Paulista, 1500",
         "contactPhone": "739999454533",
-        "maxCapacity": 150,
-        "currentCount": 1,
+        "maxCapacity": 220,
+        "currentCount": 2,
         "turnstileLocked": false,
         "isOpen": true,
         "themeColor": "blue",
@@ -41,8 +41,8 @@
           }
         }
       },
-      "currentCount": 1,
-      "maxCapacity": 150,
+      "currentCount": 2,
+      "maxCapacity": 220,
       "turnstileLocked": false,
       "isOpen": true,
       "announcements": [
@@ -59,6 +59,16 @@
         }
       ],
       "accessLogs": [
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789466337457",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-15T09:58:57.457Z",
+          "type": "manual_adjust",
+          "source": "reception_manual",
+          "description": "Ajuste manual (+1) por Recepção",
+          "countAfter": 2,
+          "status": "success"
+        },
         {
           "id": "log-1789463982520",
           "gymId": "gym-ctrw-alunos-mu18ckyd",
@@ -184,7 +194,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$ikfEdm.wLilnLKlBvkLshenxLm1v4Jyrh2944nfp6FUX8gWEcQ.O6",
+      "password": "$2b$10$W0fZ2.NAJj4Xbm6vIzRZY.PkwMFobWiJZDbdybj/UYEoBH49BXar2",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -359,7 +369,7 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "84282bf6-bbfb-4555-92b7-abf05337e559",
+      "id": "f56f6e44-2b50-4975-87f8-1b00d47bb29e",
       "email": "ctrw@gmail.com",
       "password": "vemproct2026",
       "name": "Wanderson Ramos",
@@ -367,7 +377,7 @@
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-15T09:47:18.454079+00:00"
+      "createdAt": "2026-09-15T10:04:46.782235+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",

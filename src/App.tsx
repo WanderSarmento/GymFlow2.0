@@ -63,19 +63,71 @@ const DEFAULT_EMPTY_OCCUPANCY: OccupancyData = {
 };
 
 const SELECTED_GYM_STORAGE_KEY = 'gymflow_selected_gym_slug';
+const CACHED_GYMS_LIST_KEY = 'gymflow_cached_gyms_list';
+const CACHED_CURRENT_GYM_KEY = 'gymflow_cached_current_gym';
+const CACHED_OCCUPANCY_KEY = 'gymflow_cached_occupancy';
+
+function saveLocalCache(gym: GymProfile | null, occ: OccupancyData | null, gymsList?: GymProfile[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (gym) {
+      localStorage.setItem(CACHED_CURRENT_GYM_KEY, JSON.stringify(gym));
+      localStorage.setItem(SELECTED_GYM_STORAGE_KEY, gym.slug);
+    }
+    if (occ) {
+      localStorage.setItem(CACHED_OCCUPANCY_KEY, JSON.stringify(occ));
+    }
+    if (gymsList && gymsList.length > 0) {
+      localStorage.setItem(CACHED_GYMS_LIST_KEY, JSON.stringify(gymsList));
+    }
+  } catch {}
+}
 
 export default function App() {
-  const [gyms, setGyms] = useState<GymProfile[]>(INITIAL_GYMS);
+  const [gyms, setGyms] = useState<GymProfile[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem(CACHED_GYMS_LIST_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return INITIAL_GYMS;
+  });
+
   const [currentGym, setCurrentGym] = useState<GymProfile | null>(() => {
     if (typeof window !== 'undefined') {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const gymParam = urlParams.get('gym');
+        const storedSlug = gymParam || localStorage.getItem(SELECTED_GYM_STORAGE_KEY);
+
+        const cachedGymStr = localStorage.getItem(CACHED_CURRENT_GYM_KEY);
+        if (cachedGymStr) {
+          const cachedGym: GymProfile = JSON.parse(cachedGymStr);
+          if (cachedGym && (!storedSlug || cachedGym.slug === storedSlug || cachedGym.id === storedSlug)) {
+            return cachedGym;
+          }
+        }
+
+        const cachedListStr = localStorage.getItem(CACHED_GYMS_LIST_KEY);
+        if (cachedListStr) {
+          const cachedList: GymProfile[] = JSON.parse(cachedListStr);
+          if (Array.isArray(cachedList) && cachedList.length > 0) {
+            if (storedSlug) {
+              const found = cachedList.find(g => g.slug === storedSlug || g.id === storedSlug);
+              if (found) return found;
+            }
+            return cachedList[0];
+          }
+        }
+
         if (gymParam) {
           const match = INITIAL_GYMS.find(g => g.slug === gymParam || g.id === gymParam);
           if (match) return match;
         }
-        const storedSlug = localStorage.getItem(SELECTED_GYM_STORAGE_KEY);
         if (storedSlug) {
           const match = INITIAL_GYMS.find(g => g.slug === storedSlug || g.id === storedSlug);
           if (match) return match;
@@ -111,8 +163,37 @@ export default function App() {
   const [isSupabaseActive, setIsSupabaseActive] = useState(() => isSupabaseConfigured());
   const [supabaseStatus, setSupabaseStatus] = useState<'connected' | 'error' | 'not_configured'>('not_configured');
 
-  // Core occupancy and telemetry state
-  const [occupancy, setOccupancy] = useState<OccupancyData>(DEFAULT_EMPTY_OCCUPANCY);
+  // Core occupancy and telemetry state - hydrated instantly from cache
+  const [occupancy, setOccupancy] = useState<OccupancyData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedOccStr = localStorage.getItem(CACHED_OCCUPANCY_KEY);
+        if (cachedOccStr) {
+          const parsed = JSON.parse(cachedOccStr);
+          if (parsed && typeof parsed.maxCapacity === 'number' && parsed.maxCapacity > 0) {
+            return parsed;
+          }
+        }
+        const cachedGymStr = localStorage.getItem(CACHED_CURRENT_GYM_KEY);
+        if (cachedGymStr) {
+          const cachedGym: GymProfile = JSON.parse(cachedGymStr);
+          if (cachedGym && typeof cachedGym.maxCapacity === 'number' && cachedGym.maxCapacity > 0) {
+            return {
+              ...DEFAULT_EMPTY_OCCUPANCY,
+              gymId: cachedGym.id,
+              gymName: cachedGym.name,
+              gymSlug: cachedGym.slug,
+              maxCapacity: cachedGym.maxCapacity,
+              currentCount: cachedGym.currentCount || 0,
+              themeColor: cachedGym.themeColor,
+              logoEmoji: cachedGym.logoEmoji
+            };
+          }
+        }
+      } catch {}
+    }
+    return DEFAULT_EMPTY_OCCUPANCY;
+  });
 
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -233,6 +314,24 @@ export default function App() {
           const match = allGyms.find(g => g.slug === targetSlug || g.id === targetSlug) || allGyms[0];
           activeGymSlugRef.current = match.slug;
           setCurrentGym(match);
+          setOccupancy(prev => {
+            const nextOcc: OccupancyData = {
+              ...prev,
+              gymId: match.id,
+              gymName: match.name,
+              gymSlug: match.slug,
+              maxCapacity: match.maxCapacity,
+              currentCount: match.currentCount,
+              percentage: Math.min(100, Math.round((match.currentCount / Math.max(1, match.maxCapacity)) * 100)),
+              themeColor: match.themeColor,
+              logoEmoji: match.logoEmoji,
+              slogan: match.slogan,
+              city: match.city,
+              neighborhood: match.neighborhood
+            };
+            saveLocalCache(match, nextOcc, allGyms);
+            return nextOcc;
+          });
           safeUpdateUrlParam('gym', match.slug);
           try {
             localStorage.setItem(SELECTED_GYM_STORAGE_KEY, match.slug);
@@ -282,8 +381,19 @@ export default function App() {
         if (details.occupancy && (details.occupancy.gymSlug === gymSlug || details.occupancy.gymId === details.profile?.id)) {
           setOccupancy(details.occupancy);
           // Keep gyms list and currentGym in sync with real-time occupancy counts
-          setGyms(prev => prev.map(g => (g.slug === gymSlug || g.id === details.occupancy.gymId) ? { ...g, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity } : g));
-          setCurrentGym(prev => (prev && (prev.slug === gymSlug || prev.id === details.occupancy.gymId)) ? { ...prev, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity } : prev);
+          setGyms(prev => {
+            const next = prev.map(g => (g.slug === gymSlug || g.id === details.occupancy.gymId) ? { ...g, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity } : g);
+            saveLocalCache(null, details.occupancy, next);
+            return next;
+          });
+          setCurrentGym(prev => {
+            if (prev && (prev.slug === gymSlug || prev.id === details.occupancy.gymId)) {
+              const next = { ...prev, currentCount: details.occupancy.currentCount, maxCapacity: details.occupancy.maxCapacity };
+              saveLocalCache(next, details.occupancy);
+              return next;
+            }
+            return prev;
+          });
         }
 
         if (details.announcements) {
@@ -336,21 +446,37 @@ export default function App() {
   const handleSelectGym = (gym: GymProfile) => {
     if (!gym || !gym.slug) return;
     activeGymSlugRef.current = gym.slug;
-    try {
-      localStorage.setItem(SELECTED_GYM_STORAGE_KEY, gym.slug);
-    } catch {}
     setCurrentGym(gym);
+    setOccupancy(prev => {
+      const nextOcc: OccupancyData = {
+        ...prev,
+        gymId: gym.id,
+        gymName: gym.name,
+        gymSlug: gym.slug,
+        themeColor: gym.themeColor,
+        logoEmoji: gym.logoEmoji,
+        slogan: gym.slogan,
+        city: gym.city,
+        neighborhood: gym.neighborhood,
+        maxCapacity: gym.maxCapacity,
+        currentCount: gym.currentCount,
+        percentage: Math.min(100, Math.round((gym.currentCount / Math.max(1, gym.maxCapacity)) * 100))
+      };
+      saveLocalCache(gym, nextOcc);
+      return nextOcc;
+    });
     safeUpdateUrlParam('gym', gym.slug);
     loadGymData(gym.slug, false);
   };
 
   // Gym creation callback
   const handleGymCreated = (newGym: GymProfile) => {
-    setGyms(prev => [newGym, ...prev.filter(g => g.id !== newGym.id)]);
+    setGyms(prev => {
+      const next = [newGym, ...prev.filter(g => g.id !== newGym.id)];
+      saveLocalCache(newGym, null, next);
+      return next;
+    });
     activeGymSlugRef.current = newGym.slug;
-    try {
-      localStorage.setItem(SELECTED_GYM_STORAGE_KEY, newGym.slug);
-    } catch {}
     setCurrentGym(newGym);
     if (currentUser?.role !== 'superadmin') {
       setActiveTab('reception');
@@ -361,9 +487,22 @@ export default function App() {
 
   // Gym update callback
   const handleGymUpdated = (updatedGym: GymProfile) => {
-    setGyms(prev => prev.map(g => g.id === updatedGym.id ? updatedGym : g));
+    setGyms(prev => {
+      const next = prev.map(g => (g.id === updatedGym.id || g.slug === updatedGym.slug) ? updatedGym : g);
+      saveLocalCache(null, null, next);
+      return next;
+    });
     if (activeGymSlugRef.current === updatedGym.slug) {
       setCurrentGym(updatedGym);
+      setOccupancy(prev => {
+        const nextOcc: OccupancyData = {
+          ...prev,
+          maxCapacity: updatedGym.maxCapacity,
+          percentage: Math.min(100, Math.round((prev.currentCount / Math.max(1, updatedGym.maxCapacity)) * 100))
+        };
+        saveLocalCache(updatedGym, nextOcc);
+        return nextOcc;
+      });
       loadGymData(updatedGym.slug, true);
     }
   };
@@ -578,13 +717,21 @@ export default function App() {
     const safeCapacity = Math.max(10, Math.min(2000, Number(maxCapacity) || 120));
 
     // 1. Optimistic UI update immediately
-    setOccupancy(prev => ({
-      ...prev,
+    const updatedOcc: OccupancyData = {
+      ...occupancy,
       maxCapacity: safeCapacity,
-      percentage: Math.min(100, Math.round((prev.currentCount / Math.max(1, safeCapacity)) * 100))
-    }));
-    setCurrentGym(prev => prev ? { ...prev, maxCapacity: safeCapacity } : prev);
-    setGyms(prev => prev.map(g => (g.id === currentGym.id || g.slug === currentGym.slug) ? { ...g, maxCapacity: safeCapacity } : g));
+      percentage: Math.min(100, Math.round((occupancy.currentCount / Math.max(1, safeCapacity)) * 100))
+    };
+    const updatedGym: GymProfile = {
+      ...currentGym,
+      maxCapacity: safeCapacity
+    };
+    const updatedGyms = gyms.map(g => (g.id === currentGym.id || g.slug === currentGym.slug) ? { ...g, maxCapacity: safeCapacity } : g);
+
+    setOccupancy(updatedOcc);
+    setCurrentGym(updatedGym);
+    setGyms(updatedGyms);
+    saveLocalCache(updatedGym, updatedOcc, updatedGyms);
 
     // 2. Try settings update first
     const res = await updateGymSettings(currentGym.slug, { maxCapacity: safeCapacity });

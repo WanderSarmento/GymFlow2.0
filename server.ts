@@ -817,8 +817,44 @@ async function syncGymsFromSupabase() {
             sunday: { open: '08:00', close: '14:00', isOpen: true }
           }
         };
-        registerGymInStore(gym, i);
+        const existingGymState = getGymStateByIdOrSlug(row.id) || getGymStateByIdOrSlug(row.slug);
+        if (existingGymState) {
+          existingGymState.profile.name = row.name || existingGymState.profile.name;
+          existingGymState.profile.slug = row.slug || existingGymState.profile.slug;
+          existingGymState.profile.city = row.city || existingGymState.profile.city;
+          existingGymState.profile.neighborhood = row.neighborhood || existingGymState.profile.neighborhood;
+          existingGymState.profile.address = row.address || existingGymState.profile.address;
+          existingGymState.profile.contactPhone = row.contact_phone || existingGymState.profile.contactPhone;
+          existingGymState.profile.themeColor = row.theme_color || existingGymState.profile.themeColor;
+          existingGymState.profile.logoEmoji = row.logo_emoji || existingGymState.profile.logoEmoji;
+          if (row.operating_hours) {
+            existingGymState.profile.operatingHours = row.operating_hours;
+          }
+
+          if (row.max_capacity !== undefined && row.max_capacity !== null) {
+            const parsedCap = Number(row.max_capacity);
+            if (!isNaN(parsedCap) && parsedCap > 0) {
+              existingGymState.maxCapacity = parsedCap;
+              existingGymState.profile.maxCapacity = parsedCap;
+            }
+          }
+          if (row.current_count !== undefined && row.current_count !== null) {
+            existingGymState.currentCount = Number(row.current_count);
+            existingGymState.profile.currentCount = Number(row.current_count);
+          }
+          if (row.turnstile_locked !== undefined) {
+            existingGymState.turnstileLocked = Boolean(row.turnstile_locked);
+            existingGymState.profile.turnstileLocked = Boolean(row.turnstile_locked);
+          }
+          if (row.is_open !== undefined) {
+            existingGymState.isOpen = Boolean(row.is_open);
+            existingGymState.profile.isOpen = Boolean(row.is_open);
+          }
+        } else {
+          registerGymInStore(gym, i);
+        }
       });
+      saveGymsToFile();
     }
 
     // 2. Sync SaaS Accounts

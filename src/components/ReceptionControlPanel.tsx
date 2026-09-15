@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Shield,
   Unlock,
@@ -44,16 +44,20 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isSavingCapacity, setIsSavingCapacity] = useState(false);
+  const isCapacityFocusedRef = useRef(false);
+  const isCountFocusedRef = useRef(false);
 
-  // Keep inputs synchronized whenever occupancy updates from server or actions
+  // Keep inputs synchronized whenever occupancy updates from server or actions, unless the user is actively typing
   useEffect(() => {
-    if (occupancy.maxCapacity) {
+    if (occupancy.maxCapacity && !isCapacityFocusedRef.current) {
       setMaxCapacityInput(String(occupancy.maxCapacity));
     }
   }, [occupancy.maxCapacity]);
 
   useEffect(() => {
-    setCustomCountInput(String(occupancy.currentCount));
+    if (!isCountFocusedRef.current) {
+      setCustomCountInput(String(occupancy.currentCount));
+    }
   }, [occupancy.currentCount]);
 
   const showFeedback = (msg: string) => {
@@ -253,6 +257,14 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
                   min="0"
                   max="300"
                   value={customCountInput}
+                  onFocus={() => { isCountFocusedRef.current = true; }}
+                  onBlur={() => { isCountFocusedRef.current = false; }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSetExactCount();
+                    }
+                  }}
                   onChange={(e) => setCustomCountInput(e.target.value)}
                   className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
                 />
@@ -268,10 +280,25 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               <div className="flex items-center gap-2 sm:border-l sm:border-gray-800 sm:pl-3">
                 <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Capacidade Máx:</span>
                 <input
+                  id="reception-max-capacity-input"
                   type="number"
                   min="10"
-                  max="500"
+                  max="2000"
                   value={maxCapacityInput}
+                  onFocus={() => { isCapacityFocusedRef.current = true; }}
+                  onBlur={() => {
+                    isCapacityFocusedRef.current = false;
+                    const num = parseInt(maxCapacityInput, 10);
+                    if (!isNaN(num) && num >= 10 && num !== occupancy.maxCapacity && !isSavingCapacity) {
+                      handleSaveMaxCapacity();
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveMaxCapacity();
+                    }
+                  }}
                   onChange={(e) => setMaxCapacityInput(e.target.value)}
                   className="w-20 min-h-[44px] rounded-xl bg-gray-900 border border-gray-800 px-2 py-2 text-base sm:text-xs font-mono text-white text-center focus:border-cyan-400 focus:outline-none"
                 />
