@@ -490,7 +490,7 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
             esp32Ip: '192.168.1.100',
             pendingRelayTrigger: null
           },
-          announcements: announcements.length > 0 ? announcements : INITIAL_ANNOUNCEMENTS.map(a => ({ ...a, gymId: profile.id })),
+          announcements: announcements,
           accessLogs
         };
       }
@@ -536,7 +536,7 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
       esp32Ip: '192.168.1.145',
       pendingRelayTrigger: null
     },
-    announcements: INITIAL_ANNOUNCEMENTS.map(a => ({ ...a, gymId: found.id })),
+    announcements: [],
     accessLogs: []
   };
 }
@@ -730,11 +730,11 @@ export async function fetchAnnouncements(gymIdOrSlug?: string): Promise<Announce
     const res = await fetch(url, {
       headers: getAuthHeaders()
     });
-    if (!res.ok) return INITIAL_ANNOUNCEMENTS;
-    const data = await parseJsonResponse<{ announcements: Announcement[] }>(res, { announcements: INITIAL_ANNOUNCEMENTS });
-    return data.announcements || INITIAL_ANNOUNCEMENTS;
+    if (!res.ok) return [];
+    const data = await parseJsonResponse<{ announcements: Announcement[] }>(res, { announcements: [] });
+    return data.announcements || [];
   } catch (err) {
-    return INITIAL_ANNOUNCEMENTS;
+    return [];
   }
 }
 

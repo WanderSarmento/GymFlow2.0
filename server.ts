@@ -895,6 +895,16 @@ async function syncGymsFromSupabase() {
     const { data: announcements, error: annError } = await supabase.from('announcements').select('*');
     if (!annError && announcements) {
       announcements.forEach((row: any) => {
+        // Prevent syncing of legacy sample/example announcements
+        const isExample = row.id === 'ann-1' ||
+          (row.title && row.title.toLowerCase().includes('manutenção preventiva') && row.content && row.content.includes('esteiras da zona sul')) ||
+          (row.title && row.title.toLowerCase().startsWith('bem-vindos ao') && row.content && row.content.includes('painel em tempo real ativo'));
+        
+        if (isExample) {
+          Promise.resolve(supabase.from('announcements').delete().eq('id', row.id)).catch(() => {});
+          return;
+        }
+
         const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
         if (gymState) {
           if (!gymState.announcements) gymState.announcements = [];
@@ -2043,20 +2053,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
           status: 'success'
         }
       ],
-      announcements: [
-        {
-          id: `ann-${gymId}-welcome`,
-          gymId,
-          title: `Bem-vindos ao Monitor em Tempo Real da ${newProfile.name}!`,
-          content: `Agora você pode consultar o fluxo da academia e horários ideais para treinar diretamente pelo celular. Acesse o link ou escaneie o QR Code na recepção.`,
-          category: 'novidade',
-          priority: 'high',
-          date: new Date().toLocaleDateString('pt-BR'),
-          author: newProfile.ownerName,
-          pinned: true,
-          active: true
-        }
-      ]
+      announcements: []
     };
 
     gymsStore.set(gymId, newGymState);
@@ -3593,20 +3590,7 @@ void sendHeartbeat() {
           status: 'success'
         }
       ],
-      announcements: [
-        {
-          id: `ann-${gymId}-welcome`,
-          gymId,
-          title: `Bem-vindos ao GymLivre da ${newProfile.name}!`,
-          content: `Painel em tempo real ativo. Alunos e equipe agora contam com monitoramento de catraca e fluxo.`,
-          category: 'novidade',
-          priority: 'high',
-          date: new Date().toLocaleDateString('pt-BR'),
-          author: newProfile.ownerName,
-          pinned: true,
-          active: true
-        }
-      ]
+      announcements: []
     };
 
     gymsStore.set(gymId, newGymState);

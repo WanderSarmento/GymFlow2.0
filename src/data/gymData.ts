@@ -43,19 +43,7 @@ export const INITIAL_GYMS: GymProfile[] = [
   }
 ];
 
-export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'ann-1',
-    title: 'Manutenção Preventiva',
-    content: 'As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.',
-    category: 'manutencao',
-    priority: 'medium',
-    date: new Date().toLocaleDateString('pt-BR'),
-    author: 'Equipe Técnica',
-    pinned: true,
-    active: true
-  }
-];
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
 
 export const THEME_COLOR_CONFIG: Record<GymThemeColor, ThemeColorItem> = {
   cyan: {

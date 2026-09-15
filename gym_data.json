@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-15T09:19:05.244Z",
+  "updatedAt": "2026-09-15T09:50:13.335Z",
   "gyms": [
     {
       "profile": {
@@ -13,7 +13,7 @@
         "address": "Av. Paulista, 1500",
         "contactPhone": "739999454533",
         "maxCapacity": 150,
-        "currentCount": 0,
+        "currentCount": 1,
         "turnstileLocked": false,
         "isOpen": true,
         "themeColor": "blue",
@@ -41,35 +41,34 @@
           }
         }
       },
-      "currentCount": 0,
+      "currentCount": 1,
       "maxCapacity": 150,
       "turnstileLocked": false,
       "isOpen": true,
       "announcements": [
         {
-          "id": "a6fe50ff-277d-494e-949c-7f3d83e11096",
-          "title": "Horarios de funcionamento",
-          "content": "segunda a sexta:",
-          "category": "horario",
+          "id": "286f9580-a5d2-4e88-be17-07fc96c91dda",
+          "title": "leg press",
+          "content": "manutencao hoje",
+          "category": "manutencao",
           "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Administração CTWR",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "7195f1ca-054a-437c-97e3-4edf99628d5e",
-          "title": "Bem-vindos ao GymLivre da CT WR!",
-          "content": "Painel em tempo real ativo. Alunos e equipe agora contam com monitoramento de catraca e fluxo.",
-          "category": "novidade",
-          "priority": "high",
-          "date": "14/09/2026",
-          "author": "Wanderson Ramos",
-          "pinned": true,
+          "date": "15/09/2026",
+          "author": "Administração ct",
+          "pinned": false,
           "active": true
         }
       ],
       "accessLogs": [
+        {
+          "id": "log-1789463982520",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-15T09:19:42.519Z",
+          "type": "entry",
+          "source": "simulator",
+          "description": "Acesso via Simulador (CT WR)",
+          "countAfter": 1,
+          "status": "success"
+        },
         {
           "id": "log-gym-ctrw-alunos-mu18ckyd-1",
           "gymId": "gym-ctrw-alunos-mu18ckyd",
@@ -134,130 +133,7 @@
       "maxCapacity": 180,
       "turnstileLocked": false,
       "isOpen": true,
-      "announcements": [
-        {
-          "id": "ann-1",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true,
-          "gymId": "gym-fitflow-matrix"
-        },
-        {
-          "id": "7953f08e-1e23-46b8-8ddf-aaed574388e1",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "478b6250-310f-4f95-ac1e-1f7d557aaf42",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "8a62a297-0dfd-4f42-9cf7-dd918e2c0a0b",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "b4e1a3a5-31dc-4308-a95b-73a90a4ae901",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "a7be5f34-5aa0-4301-873a-d2fef5489a35",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "06cfa0e2-51f1-44c0-8bb7-6589c0c89382",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "8d22929b-af12-4ac1-8138-389b09a88436",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "1f965a4a-f417-4919-8742-d4249ec8c588",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "b6c15298-f4fb-4c72-ad10-1839fdfd6617",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        },
-        {
-          "id": "e33be7ae-5b5c-40f2-83b4-dad20437ebda",
-          "title": "Manutenção Preventiva",
-          "content": "As esteiras da zona sul passarão por manutenção amanhã entre 10h e 12h. O restante da academia funcionará normalmente.",
-          "category": "manutencao",
-          "priority": "medium",
-          "date": "14/09/2026",
-          "author": "Equipe Técnica",
-          "pinned": true,
-          "active": true
-        }
-      ],
+      "announcements": [],
       "accessLogs": [
         {
           "id": "log-gym-fitflow-matrix-1789401918906",
@@ -308,7 +184,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$EoXjYVnzSO1yqk0t0VguNOk7lLHx1XRWZN.19POsTkRFwN.c8SeDW",
+      "password": "$2b$10$ikfEdm.wLilnLKlBvkLshenxLm1v4Jyrh2944nfp6FUX8gWEcQ.O6",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -483,7 +359,7 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "9bdab789-ba5e-4d57-9ed2-ab2898df2808",
+      "id": "84282bf6-bbfb-4555-92b7-abf05337e559",
       "email": "ctrw@gmail.com",
       "password": "vemproct2026",
       "name": "Wanderson Ramos",
@@ -491,7 +367,7 @@
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-15T01:03:46.398546+00:00"
+      "createdAt": "2026-09-15T09:47:18.454079+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",

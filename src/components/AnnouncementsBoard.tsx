@@ -222,7 +222,27 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
 
       {/* Announcements List */}
       <div className="mt-5 space-y-3.5">
-        {filteredAnnouncements.length === 0 ? (
+        {announcements.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-800 bg-gray-950/40 p-10 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+              <Bell className="h-6 w-6" />
+            </div>
+            <p className="text-base font-bold text-white">Nenhum comunicado publicado</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+              Avisos importantes, manutenções e novidades cadastrados pela administração aparecerão neste mural.
+            </p>
+            {isAdminMode && (
+              <button
+                type="button"
+                onClick={handleAddNew}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-xs font-black text-black hover:bg-cyan-300 transition-colors shadow-lg shadow-cyan-400/10 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Publicar Primeiro Comunicado
+              </button>
+            )}
+          </div>
+        ) : filteredAnnouncements.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-800 bg-gray-950/40 p-8 text-center">
             <Bell className="mx-auto h-8 w-8 text-gray-600 mb-2" />
             <p className="text-sm font-bold text-gray-400">Nenhum comunicado encontrado nesta categoria</p>
