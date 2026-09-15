@@ -2301,6 +2301,12 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     if (typeof isOpen === 'boolean') {
       gymState.isOpen = isOpen;
       gymState.profile.isOpen = isOpen;
+      
+      // Zera a contagem se a academia for fechada
+      if (!isOpen) {
+        gymState.currentCount = 0;
+        gymState.profile.currentCount = 0;
+      }
     }
 
     // Save to local file and persist to Supabase
@@ -2519,6 +2525,13 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       case 'toggle_open':
         gymState.isOpen = !gymState.isOpen;
         gymState.profile.isOpen = gymState.isOpen;
+        
+        // Zera a contagem se a academia for fechada
+        if (!gymState.isOpen) {
+          gymState.currentCount = 0;
+          gymState.profile.currentCount = 0;
+        }
+
         message = gymState.isOpen
           ? `Academia marcada como ABERTA pela recepção (${operator})`
           : `Academia marcada como FECHADA pela recepção (${operator})`;
