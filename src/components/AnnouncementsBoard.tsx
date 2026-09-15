@@ -45,7 +45,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   const [formCategory, setFormCategory] = useState<AnnouncementCategory>('manutencao');
   const [formPriority, setFormPriority] = useState<AnnouncementPriority>('medium');
   const [formPinned, setFormPinned] = useState(false);
-  const [formAuthor, setFormAuthor] = useState('Administração FitFlow');
+  const [formAuthor, setFormAuthor] = useState('');
   const [formActive, setFormActive] = useState(true);
 
   const getCategoryConfig = (category: AnnouncementCategory) => {
@@ -91,6 +91,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
     setFormCategory('manutencao');
     setFormPriority('medium');
     setFormPinned(false);
+    setFormAuthor('');
     setIsModalOpen(true);
   };
 

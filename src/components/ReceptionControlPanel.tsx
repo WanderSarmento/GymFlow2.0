@@ -141,13 +141,13 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               id="reception-toggle-open-btn"
               type="button"
               onClick={() => handleTriggerAction('toggle_open')}
               disabled={isExecuting}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer active:scale-95 ${
+              className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer active:scale-95 ${
                 occupancy.isOpen
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                   : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
@@ -161,7 +161,7 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               id="reception-share-link-btn"
               type="button"
               onClick={onOpenShareModal}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
             >
               <Share2 className="w-3 h-3" />
               <span>Link Alunos</span>
@@ -171,25 +171,25 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               id="reception-edit-profile-btn"
               type="button"
               onClick={onOpenCustomizeModal}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-500/20 transition-colors cursor-pointer"
             >
               <Sliders className="w-3 h-3" />
               <span>Editar Perfil</span>
             </button>
 
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider border ${
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] sm:text-xs font-bold uppercase tracking-wider border ${
               occupancy.turnstileLocked
                 ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                 : 'bg-cyan-400/10 text-cyan-400 border-cyan-400/30'
             }`}>
               {occupancy.turnstileLocked ? (
                 <>
-                  <Lock className="h-3.5 w-3.5" />
+                  <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span>Travadas</span>
                 </>
               ) : (
                 <>
-                  <Unlock className="h-3.5 w-3.5" />
+                  <Unlock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span>Liberadas</span>
                 </>
               )}
