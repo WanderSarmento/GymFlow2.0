@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-15T10:09:25.926Z",
+  "updatedAt": "2026-09-16T00:49:02.163Z",
   "gyms": [
     {
       "profile": {
@@ -12,8 +12,8 @@
         "neighborhood": "Centro",
         "address": "Av. Paulista, 1500",
         "contactPhone": "739999454533",
-        "maxCapacity": 220,
-        "currentCount": 2,
+        "maxCapacity": 25,
+        "currentCount": 8,
         "turnstileLocked": false,
         "isOpen": true,
         "themeColor": "blue",
@@ -41,8 +41,8 @@
           }
         }
       },
-      "currentCount": 2,
-      "maxCapacity": 220,
+      "currentCount": 8,
+      "maxCapacity": 25,
       "turnstileLocked": false,
       "isOpen": true,
       "announcements": [
@@ -54,6 +54,18 @@
           "priority": "medium",
           "date": "15/09/2026",
           "author": "Administração ct",
+          "pinned": false,
+          "active": true
+        },
+        {
+          "id": "ann-1789519742089",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "title": "Teste UUID",
+          "content": "Mensagem de teste",
+          "category": "novidade",
+          "priority": "low",
+          "date": "16/09/2026",
+          "author": "CT WR",
           "pinned": false,
           "active": true
         }
@@ -194,7 +206,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$W0fZ2.NAJj4Xbm6vIzRZY.PkwMFobWiJZDbdybj/UYEoBH49BXar2",
+      "password": "$2b$10$i5DJXC3BQ6qMyat5ORKexefpvQ2FCGawLVBE4IolFFLmJRMWzGmEu",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -369,15 +381,15 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "f56f6e44-2b50-4975-87f8-1b00d47bb29e",
+      "id": "e84f8b41-babf-47c7-b237-b88d6e4d950f",
       "email": "ctrw@gmail.com",
-      "password": "vemproct2026",
+      "password": "$2b$10$k9DNIdjkMGOSN4M28kR5W.lr6sxWcQPHcJcVkiQPvVOyCEleBluVK",
       "name": "Wanderson Ramos",
       "role": "owner",
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-15T10:04:46.782235+00:00"
+      "createdAt": "2026-09-16T00:32:55.403476+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",
@@ -441,7 +453,7 @@
       "isSystemBlocked": false,
       "turnstilesLimit": 2,
       "maxCapacity": 180,
-      "nextDueDate": "2026-10-15",
+      "nextDueDate": "2026-10-16",
       "createdAt": "2026-09-14T14:17:59.823Z",
       "apiKey": "GF_KEY_MATRIX_2026",
       "invoices": []

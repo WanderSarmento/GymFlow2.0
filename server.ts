@@ -932,6 +932,9 @@ async function syncGymsFromSupabase() {
     // 4. Sync Announcements
     const { data: announcements, error: annError } = await supabase.from('announcements').select('*');
     if (!annError && announcements) {
+      // Create a map of announcements by gym to manage deletions
+      const supabaseAnnIds = new Set(announcements.map((a: any) => a.id));
+
       announcements.forEach((row: any) => {
         // Prevent syncing of legacy sample/example announcements
         const isExample = row.id === 'ann-1' ||
@@ -946,22 +949,45 @@ async function syncGymsFromSupabase() {
         const gymState = Array.from(gymsStore.values()).find(g => g.profile.id === row.gym_id);
         if (gymState) {
           if (!gymState.announcements) gymState.announcements = [];
-          const exists = gymState.announcements.some(a => a.id === row.id);
-          if (!exists) {
-            gymState.announcements.push({
-              id: row.id,
-              title: row.title,
-              content: row.content,
-              category: row.category,
-              priority: row.priority,
-              date: row.date,
-              author: row.author,
-              pinned: Boolean(row.pinned),
-              active: Boolean(row.active)
-            });
+          const index = gymState.announcements.findIndex(a => a.id === row.id);
+          
+          const annData = {
+            id: row.id,
+            gymId: row.gym_id,
+            title: row.title,
+            content: row.content,
+            category: row.category,
+            priority: row.priority,
+            date: row.date,
+            author: row.author,
+            pinned: Boolean(row.pinned),
+            active: Boolean(row.active)
+          };
+
+          if (index !== -1) {
+            // Update existing
+            gymState.announcements[index] = annData;
+          } else {
+            // Add new
+            gymState.announcements.push(annData);
           }
         }
       });
+
+      // Cleanup: Remove announcements from memory that are no longer in Supabase
+      for (const gymState of gymsStore.values()) {
+        if (gymState.announcements) {
+          const initialLen = gymState.announcements.length;
+          gymState.announcements = gymState.announcements.filter(a => {
+            // Keep bootstrapped announcements or those present in Supabase
+            const isInitial = a.id && (a.id.startsWith('ann-') && !/^[0-9a-f]{8}-/.test(a.id)); 
+            return isInitial || supabaseAnnIds.has(a.id);
+          });
+          if (gymState.announcements.length !== initialLen) {
+            console.log(`[GymFlow Sync] Removidos ${initialLen - gymState.announcements.length} comunicados órfãos da academia ${gymState.profile.name}`);
+          }
+        }
+      }
     }
 
     // 5. Guarantee EVERY gym in gymsStore has an entry in saasAccountsStore!
@@ -2875,7 +2901,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const newAnnouncement: Announcement = {
-      id: `ann-${Date.now()}`,
+      id: crypto.randomUUID(),
       gymId: gymState.profile.id,
       title,
       content,
@@ -2934,7 +2960,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     const newAnnouncement: Announcement = {
-      id: `ann-${Date.now()}`,
+      id: crypto.randomUUID(),
       gymId: defaultGym.profile.id,
       title,
       content,
@@ -2952,6 +2978,28 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
       defaultGym.announcements.push(newAnnouncement);
     }
     saveGymsToFile();
+
+    // Sincroniza inserção no Supabase se configurado
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      Promise.resolve(
+        supabase.from('announcements').insert({
+          id: newAnnouncement.id,
+          gym_id: newAnnouncement.gymId,
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
+          category: newAnnouncement.category,
+          priority: newAnnouncement.priority,
+          date: newAnnouncement.date,
+          pinned: newAnnouncement.pinned,
+          author: newAnnouncement.author,
+          active: newAnnouncement.active
+        })
+      ).then(res => {
+        if (res?.error) console.warn('[Supabase] Aviso ao inserir comunicado (fallback):', res.error.message);
+      }).catch(err => console.warn('[Supabase] Erro ao inserir comunicado (fallback):', err));
+    }
+
     res.json({ success: true, announcement: newAnnouncement });
   });
 
@@ -4278,6 +4326,13 @@ void sendHeartbeat() {
     }).catch(err => {
       console.error('[GymFlow Supabase] Sincronização inicial falhou:', err);
     });
+
+    // Sincronização periódica a cada 2 minutos para manter instâncias alinhadas
+    setInterval(() => {
+      syncGymsFromSupabase().catch(err => {
+        console.error('[GymFlow Supabase] Sincronização periódica falhou:', err);
+      });
+    }, 2 * 60 * 1000);
 
     if (!isServerless) {
       app.listen(PORT, '0.0.0.0', () => {
