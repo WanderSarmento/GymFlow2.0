@@ -350,4 +350,12 @@ GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- =========================================================================
+-- 12. REALTIME (Habilitar escuta em tempo real)
+-- =========================================================================
+-- Adicionar tabelas à publicação de realtime do Supabase
+ALTER PUBLICATION supabase_realtime ADD TABLE announcements;
+ALTER PUBLICATION supabase_realtime ADD TABLE gyms;
+ALTER PUBLICATION supabase_realtime ADD TABLE access_logs;
 `;

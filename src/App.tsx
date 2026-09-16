@@ -15,7 +15,7 @@ import { GymLoginModal } from './components/GymLoginModal';
 import { SupabaseIntegrationModal } from './components/SupabaseIntegrationModal';
 import { SaaSAdminDashboard } from './components/SaaSAdminDashboard';
 import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
-import { isSupabaseConfigured } from './lib/supabase';
+import { isSupabaseConfigured, getSupabaseClient } from './lib/supabase';
 import {
   fetchGyms,
   fetchGymDetails,
@@ -424,6 +424,68 @@ export default function App() {
     }, 3000);
     return () => clearInterval(interval);
   }, [currentGym?.slug, loadGymData]);
+
+  // 3. Supabase Realtime Subscription for Announcements
+  useEffect(() => {
+    if (!isSupabaseActive || !currentGym?.id) return;
+
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    const gymId = currentGym.id;
+    console.log('[Supabase Realtime] Subscribing to announcements for gym:', gymId);
+
+    const channel = supabase
+      .channel(`announcements-${gymId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'announcements',
+          filter: `gym_id=eq.${gymId}`
+        },
+        (payload) => {
+          console.log('[Supabase Realtime] Change detected in announcements:', payload.eventType, payload);
+          
+          const mapAnn = (row: any): Announcement => ({
+            id: row.id,
+            gymId: row.gym_id,
+            title: row.title,
+            content: row.content,
+            category: row.category,
+            priority: row.priority,
+            date: row.date,
+            author: row.author,
+            pinned: Boolean(row.pinned),
+            active: Boolean(row.active)
+          });
+
+          if (payload.eventType === 'INSERT') {
+            const newAnn = mapAnn(payload.new);
+            setAnnouncements(prev => {
+              // Avoid duplicates
+              if (prev.some(a => a.id === newAnn.id)) return prev;
+              return [newAnn, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedAnn = mapAnn(payload.new);
+            setAnnouncements(prev => prev.map(a => a.id === updatedAnn.id ? updatedAnn : a));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = payload.old.id;
+            setAnnouncements(prev => prev.filter(a => a.id !== deletedId));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Supabase Realtime] Subscription status:', status);
+      });
+
+    return () => {
+      console.log('[Supabase Realtime] Unsubscribing from announcements');
+      supabase.removeChannel(channel);
+    };
+  }, [isSupabaseActive, currentGym?.id]);
 
   // Safe URL Param Update Helper (prevents iframe SecurityError / DOMException crashes)
   const safeUpdateUrlParam = (param: string, value: string | null) => {

@@ -444,6 +444,18 @@ export const SupabaseIntegrationModal: React.FC<SupabaseIntegrationModalProps> =
                   </p>
                 </div>
               </div>
+
+              <div className="flex items-start gap-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 p-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-400 font-bold shrink-0">
+                  5
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm mb-1">Mural Atualizado Instantaneamente</h4>
+                  <p className="text-zinc-400 leading-relaxed">
+                    O GymFlow utiliza o recurso <strong>Supabase Realtime</strong>. O script SQL habilita automaticamente as notificações nas tabelas, garantindo que avisos criados na recepção apareçam no portal do aluno sem recarregar a página.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
