@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-18T00:45:18.617Z",
+  "updatedAt": "2026-09-18T00:59:15.294Z",
   "gyms": [
     {
       "profile": {
@@ -13,7 +13,7 @@
         "address": "Av. Paulista, 1500",
         "contactPhone": "739999454533",
         "maxCapacity": 25,
-        "currentCount": 7,
+        "currentCount": 9,
         "turnstileLocked": false,
         "isOpen": true,
         "themeColor": "blue",
@@ -41,7 +41,7 @@
           }
         }
       },
-      "currentCount": 7,
+      "currentCount": 9,
       "maxCapacity": 25,
       "turnstileLocked": false,
       "isOpen": true,
@@ -69,9 +69,31 @@
           "author": "Equipe GymLivre",
           "pinned": false,
           "active": true
+        },
+        {
+          "id": "9d612102-00ec-42b7-90fb-5381c68028e8",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "title": "Teste UUID",
+          "content": "Mensagem de teste",
+          "category": "novidade",
+          "priority": "low",
+          "date": "16/09/2026",
+          "author": "CT WR",
+          "pinned": false,
+          "active": true
         }
       ],
       "accessLogs": [
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789692968979",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T00:56:08.979Z",
+          "type": "entry",
+          "source": "reception_manual",
+          "description": "Entrada liberada remotamente pela recepção (Recepção (Painel Web))",
+          "countAfter": 9,
+          "status": "success"
+        },
         {
           "id": "log-gym-ctrw-alunos-mu18ckyd-1789466337457",
           "gymId": "gym-ctrw-alunos-mu18ckyd",
@@ -135,9 +157,9 @@
         "turnstileLocked": false,
         "isOpen": true,
         "operatingHours": {
-          "weekdays": {
-            "open": "06:00",
-            "close": "23:00",
+          "sunday": {
+            "open": "08:00",
+            "close": "14:00",
             "isOpen": true
           },
           "saturday": {
@@ -145,9 +167,9 @@
             "close": "17:00",
             "isOpen": true
           },
-          "sunday": {
-            "open": "08:00",
-            "close": "14:00",
+          "weekdays": {
+            "open": "06:00",
+            "close": "23:00",
             "isOpen": true
           }
         }
@@ -207,7 +229,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$YLAIl1ZRPQka8A1xYToBP.8brBdxOm6xOMtGZvnl9VKHIxgFqvGaS",
+      "password": "$2b$10$wK/.lma7eStwR1N1Wgatn.VfwTyNN5/a0XX8Ed6OAr4pqOGgBxwX2",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -238,7 +260,7 @@
       "createdAt": "2026-09-10T16:05:29.58812+00:00"
     },
     {
-      "id": "1222a28e-cc81-409b-aacb-eab1afd015f7",
+      "id": "2533397f-15f1-4ebd-a218-c916ee61b2fd",
       "email": "carlos@fitflow.com.br",
       "password": "$2b$10$3.cY5ySiA0aAFxxhxOMyWOW/pVkvLb1Nbx6/Fym4/Va8ZVIXMDZG6",
       "name": "Carlos Henrique Gestor",
@@ -246,7 +268,7 @@
       "gymId": "gym-fitflow-matrix",
       "gymSlug": "fitflow-matrix",
       "gymName": "FitFlow Club Matrix",
-      "createdAt": "2026-09-14T15:51:32.38482+00:00"
+      "createdAt": "2026-09-18T00:45:19.972531+00:00"
     },
     {
       "id": "user-rec-fitflow-moema",
@@ -382,7 +404,7 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "3a4e7a32-6d8b-4be4-b25a-f5d3a4bc634d",
+      "id": "0778b173-0c56-4c12-b6fc-ea7b85afea4b",
       "email": "ctrw@gmail.com",
       "password": "$2b$10$k9DNIdjkMGOSN4M28kR5W.lr6sxWcQPHcJcVkiQPvVOyCEleBluVK",
       "name": "Wanderson Ramos",
@@ -390,7 +412,7 @@
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-18T00:44:23.819456+00:00"
+      "createdAt": "2026-09-18T00:56:09.824345+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",
