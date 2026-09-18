@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-18T00:59:15.294Z",
+  "updatedAt": "2026-09-18T09:09:12.654Z",
   "gyms": [
     {
       "profile": {
@@ -13,7 +13,7 @@
         "address": "Av. Paulista, 1500",
         "contactPhone": "739999454533",
         "maxCapacity": 25,
-        "currentCount": 9,
+        "currentCount": 11,
         "turnstileLocked": false,
         "isOpen": true,
         "themeColor": "blue",
@@ -41,7 +41,7 @@
           }
         }
       },
-      "currentCount": 9,
+      "currentCount": 11,
       "maxCapacity": 25,
       "turnstileLocked": false,
       "isOpen": true,
@@ -84,6 +84,56 @@
         }
       ],
       "accessLogs": [
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789722549829",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T09:09:09.829Z",
+          "type": "entry",
+          "source": "reception_manual",
+          "description": "Entrada liberada remotamente pela recepção (Recepção)",
+          "countAfter": 11,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789722549814",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T09:09:09.814Z",
+          "type": "lock",
+          "source": "reception_manual",
+          "description": "Catracas TRAVADAS pela recepção (Recepção)",
+          "countAfter": 10,
+          "status": "warning"
+        },
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789722540761",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T09:09:00.761Z",
+          "type": "exit",
+          "source": "reception_manual",
+          "description": "Saída liberada remotamente pela recepção (Recepção)",
+          "countAfter": 10,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789722540737",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T09:09:00.737Z",
+          "type": "entry",
+          "source": "reception_manual",
+          "description": "Entrada liberada remotamente pela recepção (Recepção)",
+          "countAfter": 11,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-ctrw-alunos-mu18ckyd-1789722460686",
+          "gymId": "gym-ctrw-alunos-mu18ckyd",
+          "timestamp": "2026-09-18T09:07:40.686Z",
+          "type": "entry",
+          "source": "reception_manual",
+          "description": "Entrada liberada remotamente pela recepção (Recepção)",
+          "countAfter": 10,
+          "status": "success"
+        },
         {
           "id": "log-gym-ctrw-alunos-mu18ckyd-1789692968979",
           "gymId": "gym-ctrw-alunos-mu18ckyd",
@@ -229,7 +279,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$wK/.lma7eStwR1N1Wgatn.VfwTyNN5/a0XX8Ed6OAr4pqOGgBxwX2",
+      "password": "$2b$10$QaqaLvdtIgvgaAXM4NXM6eBfixKU9ohGXgYS9ovhn687JrCO5XNJ6",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -404,7 +454,7 @@
       "createdAt": "2026-09-10T21:54:02.706271+00:00"
     },
     {
-      "id": "0778b173-0c56-4c12-b6fc-ea7b85afea4b",
+      "id": "77295cbb-071e-4f40-868e-2302bbfc2201",
       "email": "ctrw@gmail.com",
       "password": "$2b$10$k9DNIdjkMGOSN4M28kR5W.lr6sxWcQPHcJcVkiQPvVOyCEleBluVK",
       "name": "Wanderson Ramos",
@@ -412,7 +462,7 @@
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
       "gymName": "CT WR",
-      "createdAt": "2026-09-18T00:56:09.824345+00:00"
+      "createdAt": "2026-09-18T09:07:42.790577+00:00"
     },
     {
       "id": "user-rec-ctrw-alunos",
