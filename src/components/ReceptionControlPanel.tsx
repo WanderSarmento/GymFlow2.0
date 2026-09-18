@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Shield,
@@ -418,9 +419,9 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
 
       </div>
 
-      {/* Modal: Guest / Experimental Class Entry */}
-      {isGuestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
+      {/* Modal: Guest / Experimental Class Entry (Rendered via Portal) */}
+      {isGuestModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-gray-800 bg-gray-950 p-6 sm:p-8 shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
               <div className="flex items-center gap-2.5">
@@ -481,7 +482,8 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

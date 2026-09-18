@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Bell,
   Wrench,
@@ -13,7 +14,9 @@ import {
   Filter,
   CheckCircle2,
   X,
-  Loader2
+  Loader2,
+  GripHorizontal,
+  RotateCcw
 } from 'lucide-react';
 import { Announcement, AnnouncementCategory, AnnouncementPriority } from '../types';
 
@@ -48,6 +51,88 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   const [formAuthor, setFormAuthor] = useState('');
   const [formActive, setFormActive] = useState(true);
 
+  // Modal position & draggable state
+  const [modalPos, setModalPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0
+  });
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
+  // Drag listeners
+  const startDrag = (clientX: number, clientY: number) => {
+    isDraggingRef.current = true;
+    dragStartRef.current = {
+      startX: clientX,
+      startY: clientY,
+      initialX: modalPos.x,
+      initialY: modalPos.y
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const dx = e.clientX - dragStartRef.current.startX;
+      const dy = e.clientY - dragStartRef.current.startY;
+      setModalPos({
+        x: dragStartRef.current.initialX + dx,
+        y: dragStartRef.current.initialY + dy
+      });
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingRef.current || !e.touches[0]) return;
+      const dx = e.touches[0].clientX - dragStartRef.current.startX;
+      const dy = e.touches[0].clientY - dragStartRef.current.startY;
+      setModalPos({
+        x: dragStartRef.current.initialX + dx,
+        y: dragStartRef.current.initialY + dy
+      });
+    };
+
+    const handleTouchEnd = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+  };
+
+  const handleHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
+    startDrag(e.clientX, e.clientY);
+  };
+
+  const handleHeaderTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
+    if (e.touches[0]) {
+      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
   const getCategoryConfig = (category: AnnouncementCategory) => {
     switch (category) {
       case 'manutencao':
@@ -73,6 +158,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   });
 
   const handleEdit = (announcement: Announcement) => {
+    setModalPos({ x: 0, y: 0 });
     setEditingId(announcement.id);
     setFormTitle(announcement.title);
     setFormContent(announcement.content);
@@ -85,6 +171,7 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   };
 
   const handleAddNew = () => {
+    setModalPos({ x: 0, y: 0 });
     setEditingId(null);
     setFormTitle('');
     setFormContent('');
@@ -343,35 +430,72 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
         )}
       </div>
 
-      {/* Modal: Create Announcement */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-3.5 sm:p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            {/* Modal Header - Fixed at top */}
-            <div className="flex items-center justify-between border-b border-gray-800 p-5 sm:p-8 pb-4">
+      {/* Modal: Create Announcement (Rendered via Portal directly to body, framed higher & draggable) */}
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 pt-3 sm:pt-6 md:pt-8 pb-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isDraggingRef.current) {
+              setIsModalOpen(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              transform: `translate3d(${modalPos.x}px, ${modalPos.y}px, 0)`
+            }}
+            className="w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] flex flex-col rounded-3xl border border-gray-800 bg-gray-950 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 transition-shadow"
+          >
+            {/* Modal Header - Draggable & Fixed at top of modal */}
+            <div
+              onMouseDown={handleHeaderMouseDown}
+              onTouchStart={handleHeaderTouchStart}
+              className="flex items-center justify-between border-b border-gray-800 p-4 sm:p-5 cursor-grab active:cursor-grabbing select-none bg-zinc-950/90 backdrop-blur-md shrink-0"
+              title="Clique e arraste pelo cabeçalho para mover a janela"
+            >
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                <div className="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20 shrink-0">
                   {editingId ? <Wrench className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                 </div>
-                <h3 className="font-['Outfit'] text-lg font-black text-white">
-                  {editingId ? 'Editar Comunicado' : 'Novo Comunicado'}
-                </h3>
+                <div>
+                  <h3 className="font-['Outfit'] text-base sm:text-lg font-black text-white leading-tight">
+                    {editingId ? 'Editar Comunicado' : 'Novo Comunicado'}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium mt-0.5">
+                    <GripHorizontal className="h-3 w-3 text-cyan-400/70" />
+                    <span>Arraste pelo topo para mover</span>
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+
+              <div className="flex items-center gap-1.5">
+                {(modalPos.x !== 0 || modalPos.y !== 0) && (
+                  <button
+                    type="button"
+                    onClick={() => setModalPos({ x: 0, y: 0 })}
+                    title="Recentralizar na posição original"
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span className="hidden sm:inline">Recentralizar</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex h-9 w-9 min-h-[36px] min-w-[36px] items-center justify-center rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer transition-colors"
+                  title="Fechar (Esc)"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto touch-scroll p-5 sm:p-8 py-5 custom-scrollbar">
-              <form id="announcement-form" onSubmit={handleSubmit} className="space-y-6">
+            {/* Modal Body - Scrollable content */}
+            <div className="flex-1 overflow-y-auto touch-scroll p-4 sm:p-6 py-4 space-y-4 custom-scrollbar">
+              <form id="announcement-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 <div>
-                  <label htmlFor="input-ann-title" className="block text-gray-400 font-bold uppercase tracking-wider mb-2 text-[10px] sm:text-[11px]">
+                  <label htmlFor="input-ann-title" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[10px] sm:text-[11px]">
                     Título do Comunicado *
                   </label>
                   <input
@@ -381,20 +505,20 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                     placeholder="Ex: Manutenção na Esteira 04 ou Horário de Feriado"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    className="w-full min-h-[48px] rounded-2xl bg-gray-900 border border-gray-800 px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none transition-all"
+                    className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none transition-all"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label htmlFor="select-ann-category" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                    <label htmlFor="select-ann-category" className="block text-gray-400 font-bold uppercase tracking-wider mb-1 text-[10px] sm:text-[11px]">
                       Categoria
                     </label>
                     <select
                       id="select-ann-category"
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value as AnnouncementCategory)}
-                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                      className="w-full min-h-[42px] rounded-2xl bg-gray-900 border border-gray-800 px-3 py-2 text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
                     >
                       <option value="manutencao">🔧 Manutenção</option>
                       <option value="evento">🏆 Evento / Desafio</option>
@@ -405,14 +529,14 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   </div>
 
                   <div>
-                    <label htmlFor="select-ann-priority" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                    <label htmlFor="select-ann-priority" className="block text-gray-400 font-bold uppercase tracking-wider mb-1 text-[10px] sm:text-[11px]">
                       Prioridade
                     </label>
                     <select
                       id="select-ann-priority"
                       value={formPriority}
                       onChange={(e) => setFormPriority(e.target.value as AnnouncementPriority)}
-                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                      className="w-full min-h-[42px] rounded-2xl bg-gray-900 border border-gray-800 px-3 py-2 text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
                     >
                       <option value="low">Baixa</option>
                       <option value="medium">Média</option>
@@ -423,23 +547,23 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="textarea-ann-content" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                  <label htmlFor="textarea-ann-content" className="block text-gray-400 font-bold uppercase tracking-wider mb-1 text-[10px] sm:text-[11px]">
                     Mensagem Completa *
                   </label>
                   <textarea
                     id="textarea-ann-content"
                     required
-                    rows={4}
+                    rows={3}
                     placeholder="Escreva os detalhes, prazos, orientações aos alunos..."
                     value={formContent}
                     onChange={(e) => setFormContent(e.target.value)}
-                    className="w-full rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-base sm:text-xs text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none resize-none transition-all"
+                    className="w-full rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:border-cyan-400 focus:outline-none resize-none transition-all"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-center">
                   <div>
-                    <label htmlFor="input-ann-author" className="block text-gray-400 font-bold uppercase tracking-wider mb-1.5 text-[11px]">
+                    <label htmlFor="input-ann-author" className="block text-gray-400 font-bold uppercase tracking-wider mb-1 text-[10px] sm:text-[11px]">
                       Autor / Setor
                     </label>
                     <input
@@ -448,18 +572,18 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                       placeholder="Ex: Recepção Central"
                       value={formAuthor}
                       onChange={(e) => setFormAuthor(e.target.value)}
-                      className="w-full min-h-[44px] rounded-2xl bg-gray-900 border border-gray-800 px-3.5 py-2 text-base sm:text-xs text-white focus:border-cyan-400 focus:outline-none transition-all"
+                      className="w-full min-h-[42px] rounded-2xl bg-gray-900 border border-gray-800 px-3 py-2 text-xs text-white focus:border-cyan-400 focus:outline-none transition-all"
                     />
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2 sm:pt-4 min-h-[44px]">
+                  <div className="flex items-center gap-2.5 pt-1 sm:pt-3">
                     <div className="relative flex items-center">
                       <input
                         id="checkbox-ann-pinned"
                         type="checkbox"
                         checked={formPinned}
                         onChange={(e) => setFormPinned(e.target.checked)}
-                        className="h-6 w-6 rounded-lg border-gray-700 bg-gray-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer transition-all"
+                        className="h-5 w-5 rounded-lg border-gray-700 bg-gray-900 text-cyan-400 focus:ring-cyan-400 cursor-pointer transition-all"
                       />
                     </div>
                     <label htmlFor="checkbox-ann-pinned" className="text-gray-300 font-bold text-xs cursor-pointer select-none">
@@ -468,14 +592,14 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   </div>
 
                   {editingId && (
-                    <div className="flex items-center gap-3 pt-2 sm:pt-4 min-h-[44px]">
+                    <div className="flex items-center gap-2.5 pt-1 sm:pt-3">
                       <div className="relative flex items-center">
                         <input
                           id="checkbox-ann-active"
                           type="checkbox"
                           checked={formActive}
                           onChange={(e) => setFormActive(e.target.checked)}
-                          className="h-6 w-6 rounded-lg border-gray-700 bg-gray-900 text-emerald-400 focus:ring-emerald-400 cursor-pointer transition-all"
+                          className="h-5 w-5 rounded-lg border-gray-700 bg-gray-900 text-emerald-400 focus:ring-emerald-400 cursor-pointer transition-all"
                         />
                       </div>
                       <label htmlFor="checkbox-ann-active" className="text-gray-300 font-bold text-xs cursor-pointer select-none">
@@ -487,13 +611,13 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
               </form>
             </div>
 
-            {/* Modal Footer - Fixed at bottom */}
-            <div className="border-t border-gray-800 p-5 sm:p-6 bg-zinc-950/95 backdrop-blur-md">
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3">
+            {/* Modal Footer - Fixed at bottom of modal dialog, ALWAYS visible */}
+            <div className="shrink-0 border-t border-gray-800 p-4 sm:p-5 bg-zinc-950/98 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full sm:w-auto min-h-[48px] rounded-2xl border border-gray-800 bg-gray-900 px-8 py-3 text-sm font-bold uppercase text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer active:scale-95 transition-all order-2 sm:order-1"
+                  className="w-full sm:w-auto min-h-[44px] rounded-2xl border border-gray-800 bg-gray-900 px-6 py-2.5 text-xs sm:text-sm font-bold uppercase text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer active:scale-95 transition-all order-2 sm:order-1"
                 >
                   Cancelar
                 </button>
@@ -502,14 +626,15 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   type="submit"
                   form="announcement-form"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto min-h-[48px] rounded-2xl bg-white hover:bg-zinc-200 text-black px-10 py-3 text-sm font-black uppercase tracking-wider shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer order-1 sm:order-2"
+                  className="w-full sm:w-auto min-h-[44px] rounded-2xl bg-white hover:bg-zinc-200 text-black px-8 py-2.5 text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer order-1 sm:order-2"
                 >
                   {isSubmitting ? 'Salvando...' : editingId ? 'Atualizar Comunicado' : 'Salvar Comunicado'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
