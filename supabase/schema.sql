@@ -243,24 +243,51 @@ SELECT
     opening_time_today, closing_time_today, turnstile_locked, updated_at
 FROM public.gyms;
 
-GRANT SELECT ON public.public_gyms TO anon, authenticated;
+GRANT SELECT ON public.public_gyms TO anon, authenticated, service_role;
 
+DROP POLICY IF EXISTS "Public Read Gyms" ON public.gyms;
 CREATE POLICY "Public Read Gyms" ON public.gyms
-    FOR SELECT USING (true);
+    FOR SELECT TO anon, authenticated, service_role USING (true);
 
+DROP POLICY IF EXISTS "Owners and Staff can update Gym" ON public.gyms;
 CREATE POLICY "Owners and Staff can update Gym" ON public.gyms
-    FOR ALL USING (auth.uid() = owner_id OR auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.gyms.id));
+    FOR UPDATE TO authenticated USING (auth.uid() = owner_id OR auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.gyms.id));
 
--- 8.2. Comunicados: Leitura pública dos ativos para os alunos; Gestão pela equipe
+CREATE POLICY "Service Role Full Gyms" ON public.gyms
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 8.2. Usuários: Acesso estritamente privado (anon NÃO pode listar usuários ou hashes)
+CREATE POLICY "Users Self Read" ON public.gym_users
+    FOR SELECT TO authenticated USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = email);
+
+CREATE POLICY "Service Role Full Users" ON public.gym_users
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 8.3. Comunicados: Leitura pública dos ativos para os alunos; Gestão pela equipe
+DROP POLICY IF EXISTS "Public Read Announcements" ON public.announcements;
 CREATE POLICY "Public Read Announcements" ON public.announcements
-    FOR SELECT USING (active = true);
+    FOR SELECT TO anon, authenticated, service_role USING (active = true);
 
+DROP POLICY IF EXISTS "Staff can manage Announcements" ON public.announcements;
 CREATE POLICY "Staff can manage Announcements" ON public.announcements
-    FOR ALL USING (auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.announcements.gym_id) OR auth.uid() IN (SELECT owner_id FROM public.gyms WHERE id = public.announcements.gym_id));
+    FOR ALL TO authenticated USING (auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.announcements.gym_id) OR auth.uid() IN (SELECT owner_id FROM public.gyms WHERE id = public.announcements.gym_id));
 
--- 8.3. Logs de Acesso: Acesso restrito a gestores e recepcionistas autenticados
+CREATE POLICY "Service Role Full Announcements" ON public.announcements
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 8.4. Logs de Acesso: Acesso restrito a gestores e recepcionistas autenticados
+DROP POLICY IF EXISTS "Staff can view Access Logs" ON public.access_logs;
 CREATE POLICY "Staff can view Access Logs" ON public.access_logs
-    FOR SELECT USING (auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.access_logs.gym_id) OR auth.uid() IN (SELECT owner_id FROM public.gyms WHERE id = public.access_logs.gym_id));
+    FOR SELECT TO authenticated USING (auth.uid() IN (SELECT user_id FROM public.gym_users WHERE gym_id = public.access_logs.gym_id) OR auth.uid() IN (SELECT owner_id FROM public.gyms WHERE id = public.access_logs.gym_id));
+
+CREATE POLICY "Service Role Full Access Logs" ON public.access_logs
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 8.5. Privilégios mínimos
+REVOKE ALL ON TABLE public.gym_users FROM anon;
+REVOKE ALL ON TABLE public.access_logs FROM anon;
+REVOKE ALL ON TABLE public.esp32_devices FROM anon;
+REVOKE ALL ON TABLE public.password_resets FROM anon;
 
 -- =========================================================================
 -- 9. DADOS INICIAIS DE EXEMPLO (SEED DATA)

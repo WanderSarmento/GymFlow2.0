@@ -1105,43 +1105,16 @@ function getAuthUserFromRequest(req: Request): GymUserRecord | null {
   const authHeader = req.headers.authorization;
   let token = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : '';
 
-  // Check query token fallback
+  // Check query token fallback if explicitly provided
   if (!token && req.query && typeof req.query.token === 'string') {
     token = req.query.token.trim();
   }
 
-  // Fast user recovery from verified user headers if present
-  const headerEmail = req.headers['x-user-email'];
-  if (typeof headerEmail === 'string' && headerEmail.trim()) {
-    const email = headerEmail.trim().toLowerCase();
-    if (email === 'wander.sarmentosantos@gmail.com') return wanderSuperAdminRecord;
-    if (email === 'admin@gymflow.com') return masterAdminRecord;
-    const user = usersStore.get(email);
-    if (user) return user;
-  }
-
   if (!token) return null;
 
-  // 1. In-memory fast cache lookup
+  // 1. In-memory fast cache lookup for active tokens issued on login
   const cached = activeTokensStore.get(token);
   if (cached) return cached;
-
-  // Direct check for master/wander tokens
-  if (token.includes('user-wander-superadmin-1') || token.includes('wander.sarmentosantos')) {
-    activeTokensStore.set(token, wanderSuperAdminRecord);
-    return wanderSuperAdminRecord;
-  }
-  if (token.includes('user-master-superadmin-1') || token.includes('admin@gymflow.com')) {
-    activeTokensStore.set(token, masterAdminRecord);
-    return masterAdminRecord;
-  }
-  if (token.includes('user-carlos-demo') || token.includes('carlos@fitflow.com.br')) {
-    const demoUser = usersStore.get('carlos@fitflow.com.br');
-    if (demoUser) {
-      activeTokensStore.set(token, demoUser);
-      return demoUser;
-    }
-  }
 
   // 2. Decode Supabase JWT or standard bearer tokens (Checked before HMAC verification)
   if (token.startsWith('eyJ')) {
@@ -1152,6 +1125,12 @@ function getAuthUserFromRequest(req: Request): GymUserRecord | null {
         const payload = JSON.parse(payloadJson);
         const email = (payload.email || '').toLowerCase().trim();
         const sub = payload.sub;
+        
+        // Reject expired JWTs
+        if (payload.exp && Date.now() >= payload.exp * 1000) {
+          return null;
+        }
+
         if (email) {
           const user = usersStore.get(email);
           if (user) {
@@ -1189,7 +1168,7 @@ function getAuthUserFromRequest(req: Request): GymUserRecord | null {
   // 3. Cryptographic signature check for GymFlow tokens (GF_AUTH_*)
   if (token.startsWith('GF_AUTH_')) {
     const raw = token.substring(8);
-    // Format A: Base64 payload + dot signature
+    // Format A: Base64 payload + dot signature (HMAC-SHA256 verified)
     if (raw.includes('.')) {
       const userId = verifyAuthToken(token);
       if (userId) {
@@ -1213,65 +1192,33 @@ function getAuthUserFromRequest(req: Request): GymUserRecord | null {
         }
       }
     }
-    // Format B: userId_timestamp fallback
-    if (raw.includes('_')) {
-      const parts = raw.split('_');
-      const possibleUserId = parts[0];
-      for (const user of usersStore.values()) {
-        if (user.id === possibleUserId) {
-          activeTokensStore.set(token, user);
-          return user;
-        }
-      }
-    }
   }
 
   return null;
 }
 
 function isAuthorizedForGym(req: Request, gymState: GymServerState): boolean {
-  // 1. Allow actions triggered by the web panel (simulator, reception panel controls, announcements)
-  const isWebPanelAction = (
-    req.headers['x-source'] === 'reception' ||
-    req.headers['x-source'] === 'web' ||
-    req.headers['x-source'] === 'simulator' ||
-    req.headers['x-panel-source'] === 'reception' ||
-    (typeof req.headers['x-operator'] === 'string' && req.headers['x-operator'].toLowerCase().includes('recep')) ||
-    (req.body && (
-      req.body.source === 'simulator' || 
-      req.body.isSimulator === true ||
-      req.body.source === 'reception' ||
-      req.body.source === 'panel' ||
-      req.body.source === 'web' ||
-      (typeof req.body.operator === 'string' && req.body.operator.toLowerCase().includes('recep'))
-    )) || 
-    (req.query && (
-      req.query.source === 'simulator' || 
-      req.query.isSimulator === 'true' ||
-      req.query.source === 'reception' ||
-      req.query.source === 'panel' ||
-      req.query.source === 'web' ||
-      req.query.source === 'admin' ||
-      req.query.source === 'dashboard'
-    ))
-  );
-
-  if (isWebPanelAction) {
-    return true;
-  }
-
-  // 2. Allow authenticated dashboard users (superadmin, owner, manager, reception)
+  // 1. Authenticated dashboard users (superadmin, owner, manager, reception)
   const authUser = getAuthUserFromRequest(req);
   if (authUser) {
-    if (authUser.role === 'superadmin' || authUser.role === 'owner' || authUser.role === 'manager' || authUser.role === 'reception') {
+    // Superadmin has global oversight across all tenants
+    if (authUser.role === 'superadmin') {
       return true;
     }
-    if (authUser.gymSlug === gymState.profile.slug || authUser.gymId === gymState.profile.id) {
+
+    // Strict multi-tenant isolation: staff must belong strictly to this gym
+    const matchesGym = (
+      authUser.gymId === gymState.profile.id ||
+      authUser.gymSlug === gymState.profile.slug ||
+      authUser.gymSlug === gymState.profile.id
+    );
+
+    if (matchesGym && (authUser.role === 'owner' || authUser.role === 'manager' || authUser.role === 'reception')) {
       return true;
     }
   }
 
-  // 3. Hardware API Key verification for real ESP32 devices
+  // 2. Hardware API Key verification for real ESP32 devices
   const gymKey = req.headers['x-gym-key'] || 
                  req.headers['x-esp32-key'] || 
                  req.headers['x-api-key'] || 

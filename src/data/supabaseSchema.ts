@@ -1,9 +1,9 @@
 export const SUPABASE_SQL_SCHEMA = `-- =========================================================================
 -- GymLivre SaaS - Schema SQL Atualizado para Supabase (PostgreSQL)
--- Versão 2.0: Multi-Tenancy, Master SaaS Admin, Faturas e Bloqueio Remoto
+-- Versao 2.0: Multi-Tenancy, Master SaaS Admin, Faturas e Bloqueio Remoto
 -- =========================================================================
 
--- Habilitar extensões necessárias
+-- Habilitar extensoes necessarias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS public.gyms (
     id TEXT PRIMARY KEY DEFAULT ('gym-' || substring(replace(gen_random_uuid()::text, '-', '') from 1 for 12)),
     slug TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    slogan TEXT DEFAULT 'Monitoramento de Lotação em Tempo Real',
+    slogan TEXT DEFAULT 'Monitoramento de Lotacao em Tempo Real',
     city TEXT NOT NULL,
     neighborhood TEXT DEFAULT 'Unidade Principal',
     address TEXT,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.gyms (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Caso a tabela gyms já exista no seu Supabase, adicione as novas colunas:
+-- Caso a tabela gyms ja exista no seu Supabase, adicione as novas colunas:
 ALTER TABLE public.gyms ADD COLUMN IF NOT EXISTS is_system_blocked BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.gyms ADD COLUMN IF NOT EXISTS block_reason TEXT;
 ALTER TABLE public.gyms ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ;
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.gym_users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ajuste de restrição de papel (role) caso a tabela já exista:
+-- Ajuste de restricao de papel (role) caso a tabela ja exista:
 DO $$ 
 BEGIN
     ALTER TABLE public.gym_users DROP CONSTRAINT IF EXISTS gym_users_role_check;
@@ -121,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_saas_invoices_gym_id ON public.saas_invoices(gym_
 CREATE INDEX IF NOT EXISTS idx_saas_invoices_status ON public.saas_invoices(status);
 
 -- =========================================================================
--- 5. TABELA: ACCESS_LOGS (Registro de Entradas, Saídas e Catracas)
+-- 5. TABELA: ACCESS_LOGS (Registro de Entradas, Saidas e Catracas)
 -- =========================================================================
 CREATE TABLE IF NOT EXISTS public.access_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS public.esp32_devices (
 CREATE INDEX IF NOT EXISTS idx_esp32_devices_gym_id ON public.esp32_devices(gym_id);
 
 -- =========================================================================
--- 8. TABELA: PASSWORD_RESETS (Recuperação de Senhas)
+-- 8. TABELA: PASSWORD_RESETS (Recuperacao de Senhas)
 -- =========================================================================
 CREATE TABLE IF NOT EXISTS public.password_resets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS public.password_resets (
 CREATE INDEX IF NOT EXISTS idx_password_resets_email ON public.password_resets(email, code);
 
 -- =========================================================================
--- 9. FUNÇÕES ATÔMICAS DE CATRACA (Com Proteção de Bloqueio SaaS)
+-- 9. FUNCOES ATOMICAS DE CATRACA (Com Protecao de Bloqueio SaaS)
 -- =========================================================================
 CREATE OR REPLACE FUNCTION public.record_gym_entry(p_gym_id TEXT, p_source TEXT DEFAULT 'esp32_button', p_client_ip TEXT DEFAULT NULL)
 RETURNS JSONB 
@@ -208,21 +208,21 @@ BEGIN
     SELECT * INTO v_gym FROM public.gyms WHERE id = p_gym_id OR slug = p_gym_id FOR UPDATE;
     
     IF NOT FOUND THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Academia não encontrada');
+        RETURN jsonb_build_object('success', false, 'message', 'Academia nao encontrada');
     END IF;
 
     -- Bloqueio Geral Master SaaS
     IF v_gym.is_system_blocked THEN
         INSERT INTO public.access_logs (gym_id, type, source, description, count_after, status, client_ip)
         VALUES (v_gym.id, 'entry', p_source, 'Tentativa de entrada negada: Unidade Suspensa pelo SaaS', v_gym.current_count, 'blocked', p_client_ip);
-        RETURN jsonb_build_object('success', false, 'granted', false, 'is_system_blocked', true, 'message', 'Acesso suspenso pelo administrador do SaaS: ' || COALESCE(v_gym.block_reason, 'Inadimplência ou manutenção'));
+        RETURN jsonb_build_object('success', false, 'granted', false, 'is_system_blocked', true, 'message', 'Acesso suspenso pelo administrador do SaaS: ' || COALESCE(v_gym.block_reason, 'Inadimplencia ou manutencao'));
     END IF;
 
-    -- Bloqueio Local da Catraca pela Recepção
+    -- Bloqueio Local da Catraca pela Recepcao
     IF v_gym.turnstile_locked THEN
         INSERT INTO public.access_logs (gym_id, type, source, description, count_after, status, client_ip)
         VALUES (v_gym.id, 'entry', p_source, 'Tentativa de entrada bloqueada: Catraca Travada Localmente', v_gym.current_count, 'blocked', p_client_ip);
-        RETURN jsonb_build_object('success', false, 'granted', false, 'message', 'Catracas travadas pela recepção');
+        RETURN jsonb_build_object('success', false, 'granted', false, 'message', 'Catracas travadas pela recepcao');
     END IF;
 
     v_new_count := v_gym.current_count + 1;
@@ -256,7 +256,7 @@ BEGIN
     SELECT * INTO v_gym FROM public.gyms WHERE id = p_gym_id OR slug = p_gym_id FOR UPDATE;
     
     IF NOT FOUND THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Academia não encontrada');
+        RETURN jsonb_build_object('success', false, 'message', 'Academia nao encontrada');
     END IF;
 
     -- Bloqueio Geral Master SaaS
@@ -271,7 +271,7 @@ BEGIN
     WHERE id = v_gym.id;
 
     INSERT INTO public.access_logs (gym_id, type, source, description, count_after, status, client_ip)
-    VALUES (v_gym.id, 'exit', p_source, 'Saída registrada via Catraca', v_new_count, 'success', p_client_ip);
+    VALUES (v_gym.id, 'exit', p_source, 'Saida registrada via Catraca', v_new_count, 'success', p_client_ip);
 
     RETURN jsonb_build_object(
         'success', true, 
@@ -283,12 +283,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Permissões de Execução nas Funções para o cliente Supabase e hardware
+-- Permissoes de Execucao nas Funcoes para o cliente Supabase e hardware
 GRANT EXECUTE ON FUNCTION public.record_gym_entry TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.record_gym_exit TO anon, authenticated, service_role;
 
 -- =========================================================================
--- 10. ROW LEVEL SECURITY (RLS) E PERMISSÕES DE ACESSO
+-- 10. VIEW PUBLICA SEGURA (SEM EXPOSICAO DE API_KEY OU DADOS PRIVADOS)
+-- =========================================================================
+CREATE OR REPLACE VIEW public.public_gyms AS
+SELECT 
+    id, slug, name, slogan, city, neighborhood, address, contact_phone, 
+    max_capacity, current_count, theme_color, logo_emoji, is_open, 
+    turnstile_locked, updated_at, created_at
+FROM public.gyms;
+
+GRANT SELECT ON public.public_gyms TO anon, authenticated, service_role;
+
+-- =========================================================================
+-- 11. ROW LEVEL SECURITY (RLS) BLINDADO E CONTROLE DE ACESSO
 -- =========================================================================
 ALTER TABLE public.gyms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gym_users ENABLE ROW LEVEL SECURITY;
@@ -299,63 +311,120 @@ ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.esp32_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
 
--- Políticas para GYMS (Leitura pública para alunos e recepção; gravação irrestrita para gestão/catracas)
+-- Limpeza de politicas legadas ou permissivas anteriores
 DROP POLICY IF EXISTS "Gyms Read Policy" ON public.gyms;
-CREATE POLICY "Gyms Read Policy" ON public.gyms FOR SELECT TO anon, authenticated, service_role USING (true);
-
 DROP POLICY IF EXISTS "Gyms Insert Policy" ON public.gyms;
-CREATE POLICY "Gyms Insert Policy" ON public.gyms FOR INSERT TO anon, authenticated, service_role WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Gyms Update Policy" ON public.gyms;
-CREATE POLICY "Gyms Update Policy" ON public.gyms FOR UPDATE TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Gyms Delete Policy" ON public.gyms;
+DROP POLICY IF EXISTS "Gyms Public Read" ON public.gyms;
+DROP POLICY IF EXISTS "Gyms Service Role Full" ON public.gyms;
 
--- Políticas para GYM_USERS
 DROP POLICY IF EXISTS "Gym Users All" ON public.gym_users;
-CREATE POLICY "Gym Users All" ON public.gym_users FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Gym Users Service Role Full" ON public.gym_users;
+DROP POLICY IF EXISTS "Gym Users Self Read" ON public.gym_users;
 
--- Políticas para ACCESS_LOGS (Permite envio de logs por catracas e leitura pelo painel)
 DROP POLICY IF EXISTS "Access Logs All" ON public.access_logs;
-CREATE POLICY "Access Logs All" ON public.access_logs FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Access Logs Service Role Full" ON public.access_logs;
+DROP POLICY IF EXISTS "Access Logs Authenticated Read" ON public.access_logs;
 
--- Políticas para ANNOUNCEMENTS (Mural de avisos)
 DROP POLICY IF EXISTS "Announcements Read" ON public.announcements;
-CREATE POLICY "Announcements Read" ON public.announcements FOR SELECT TO anon, authenticated, service_role USING (true);
-
 DROP POLICY IF EXISTS "Announcements Manage" ON public.announcements;
-CREATE POLICY "Announcements Manage" ON public.announcements FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Announcements Read Active" ON public.announcements;
+DROP POLICY IF EXISTS "Announcements Service Role Full" ON public.announcements;
 
--- Políticas para ESP32_DEVICES (Telemetria)
 DROP POLICY IF EXISTS "ESP32 Devices All" ON public.esp32_devices;
-CREATE POLICY "ESP32 Devices All" ON public.esp32_devices FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "ESP32 Devices Service Role Full" ON public.esp32_devices;
 
--- Políticas para SAAS_ACCOUNTS & SAAS_INVOICES
 DROP POLICY IF EXISTS "SaaS Accounts All" ON public.saas_accounts;
-CREATE POLICY "SaaS Accounts All" ON public.saas_accounts FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "SaaS Accounts Service Role Full" ON public.saas_accounts;
 
 DROP POLICY IF EXISTS "SaaS Invoices All" ON public.saas_invoices;
-CREATE POLICY "SaaS Invoices All" ON public.saas_invoices FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "SaaS Invoices Service Role Full" ON public.saas_invoices;
 
--- Políticas para PASSWORD_RESETS
 DROP POLICY IF EXISTS "Password Resets All" ON public.password_resets;
-CREATE POLICY "Password Resets All" ON public.password_resets FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Password Resets Service Role Full" ON public.password_resets;
+
+-- 11.1 GYMS: Leitura publica para telas de ocupacao dos alunos; gravacao apenas por backend ou dono
+CREATE POLICY "Gyms Public Read" ON public.gyms 
+    FOR SELECT TO anon, authenticated, service_role USING (true);
+
+CREATE POLICY "Gyms Service Role Full" ON public.gyms 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Gyms Authenticated Update" ON public.gyms 
+    FOR UPDATE TO authenticated USING (auth.uid()::text = id OR auth.jwt() ->> 'email' = owner_email) WITH CHECK (true);
+
+-- 11.2 GYM_USERS: TOTALMENTE BLOQUEADO PARA VISITANTES ANONIMOS (Zero vazamento de credenciais)
+CREATE POLICY "Gym Users Service Role Full" ON public.gym_users 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Gym Users Self Read" ON public.gym_users 
+    FOR SELECT TO authenticated USING (auth.uid()::text = id OR auth.jwt() ->> 'email' = email);
+
+-- 11.3 SAAS ACCOUNTS & INVOICES: Dados financeiros e de cobranca estritamente restritos ao backend service_role
+CREATE POLICY "SaaS Accounts Service Role Full" ON public.saas_accounts 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "SaaS Invoices Service Role Full" ON public.saas_invoices 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 11.4 PASSWORD RESETS: Tokens de recuperacao temporarios
+CREATE POLICY "Password Resets Service Role Full" ON public.password_resets 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 11.5 ANNOUNCEMENTS: Alunos anonimos so visualizam avisos ativos; gestao pelo backend service_role
+CREATE POLICY "Announcements Read Active" ON public.announcements 
+    FOR SELECT TO anon, authenticated, service_role USING (active = true);
+
+CREATE POLICY "Announcements Service Role Full" ON public.announcements 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- 11.6 ACCESS LOGS: Somente equipe autenticada ou service_role podem consultar historico
+CREATE POLICY "Access Logs Service Role Full" ON public.access_logs 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Access Logs Authenticated Read" ON public.access_logs 
+    FOR SELECT TO authenticated USING (true);
+
+-- 11.7 ESP32 DEVICES: Telemetria restrita ao backend service_role
+CREATE POLICY "ESP32 Devices Service Role Full" ON public.esp32_devices 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- =========================================================================
--- 11. CONCESSÃO DE PERMISSÕES DE TABELA (SCHEMA PUBLIC)
+-- 12. PERMISSOES EXPLCITAS DE PRIVILEGIO MINIMO
 -- =========================================================================
+REVOKE ALL ON TABLE public.gym_users FROM anon;
+REVOKE ALL ON TABLE public.saas_accounts FROM anon;
+REVOKE ALL ON TABLE public.saas_invoices FROM anon;
+REVOKE ALL ON TABLE public.password_resets FROM anon;
+REVOKE ALL ON TABLE public.esp32_devices FROM anon;
+REVOKE ALL ON TABLE public.access_logs FROM anon;
+
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT ON public.public_gyms TO anon;
+GRANT SELECT ON public.gyms TO anon;
+GRANT SELECT ON public.announcements TO anon;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+GRANT SELECT ON public.public_gyms, public.gyms, public.announcements, public.access_logs TO authenticated;
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO service_role;
 
 -- =========================================================================
--- 12. REALTIME (Habilitar escuta em tempo real)
+-- 13. REALTIME (Sincronizacao em tempo real para avisos e academias)
 -- =========================================================================
--- Adicionar tabelas à publicação de realtime do Supabase
-ALTER PUBLICATION supabase_realtime ADD TABLE announcements;
-ALTER PUBLICATION supabase_realtime ADD TABLE gyms;
-ALTER PUBLICATION supabase_realtime ADD TABLE access_logs;
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.announcements;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.gyms;
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
 `;

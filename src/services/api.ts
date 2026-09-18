@@ -57,19 +57,14 @@ export function getAuthHeaders(): Record<string, string> {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Attach contextual headers for authenticated/reception requests
-    if (storedUser) {
+    // Attach contextual headers ONLY for verified authenticated requests
+    if (storedUser && token) {
       if (storedUser.id) headers['x-user-id'] = storedUser.id;
       if (storedUser.email) headers['x-user-email'] = storedUser.email;
       if (storedUser.role) headers['x-user-role'] = storedUser.role;
       if (storedUser.gymSlug) headers['x-gym-slug'] = storedUser.gymSlug;
       if (storedUser.name) headers['x-operator'] = storedUser.name;
-    } else {
-      headers['x-operator'] = 'Recepção';
     }
-
-    headers['x-source'] = 'reception';
-    headers['x-panel-source'] = 'reception';
   }
   return headers;
 }
