@@ -396,6 +396,15 @@ async function persistGymStateToSupabase(gymId: string, logEntry?: Partial<Acces
     const { data: updatedRows, error: updateErr } = await supabase
       .from('gyms')
       .update({
+        name: gymState.profile.name,
+        slogan: gymState.profile.slogan,
+        city: gymState.profile.city,
+        neighborhood: gymState.profile.neighborhood,
+        address: gymState.profile.address,
+        contact_phone: gymState.profile.contactPhone,
+        theme_color: gymState.profile.themeColor,
+        logo_emoji: gymState.profile.logoEmoji,
+        operating_hours: gymState.profile.operatingHours || {},
         current_count: gymState.currentCount,
         max_capacity: gymState.maxCapacity,
         turnstile_locked: gymState.turnstileLocked,
