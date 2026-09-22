@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Save, 
@@ -14,7 +15,9 @@ import {
   Moon,
   Monitor,
   Building2,
-  Check
+  Check,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { GymProfile, GymThemeColor } from '../types';
 import { THEME_COLOR_CONFIG, ALL_THEME_OPTIONS } from '../data/gymData';
@@ -93,8 +96,34 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+  const updateHour = (day: 'weekdays' | 'saturday' | 'sunday', type: 'open' | 'close', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: {
+          ...prev.operatingHours[day],
+          [type]: value
+        }
+      }
+    }));
+  };
+
+  const toggleDayOpen = (day: 'weekdays' | 'saturday' | 'sunday') => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: {
+          ...prev.operatingHours[day],
+          isOpen: !prev.operatingHours[day].isOpen
+        }
+      }
+    }));
+  };
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 sm:p-7 my-8 text-white">
         
         {/* Close Button */}
@@ -175,7 +204,7 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
                 id="edit-gym-capacity-input"
                 type="number"
                 min="10"
-                max="1000"
+                max="2000"
                 value={formData.maxCapacity}
                 onChange={(e) => setFormData({ ...formData, maxCapacity: Number(e.target.value) })}
                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
@@ -409,75 +438,117 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
           </div>
 
           {/* Operating Hours */}
-          <div className="p-3.5 rounded-xl bg-zinc-800/40 border border-zinc-800 space-y-2">
-            <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider block flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" /> Horários de Funcionamento
-            </span>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div>
-                <span className="text-[10px] text-zinc-400 block mb-0.5">Segunda a Sexta</span>
-                <input
-                  type="text"
-                  placeholder="06:00 - 23:00"
-                  value={`${formData.operatingHours.weekdays.open} - ${formData.operatingHours.weekdays.close}`}
-                  onChange={(e) => {
-                    const parts = e.target.value.split('-').map(s => s.trim());
-                    if (parts.length === 2) {
-                      setFormData({
-                        ...formData,
-                        operatingHours: {
-                          ...formData.operatingHours,
-                          weekdays: { open: parts[0], close: parts[1], isOpen: true }
-                        }
-                      });
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px]"
-                />
+          <div className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-cyan-400" /> Horários de Funcionamento
+              </span>
+              <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> Defina abertura e fechamento
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {/* Weekdays */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+                <div className="flex items-center gap-3 w-32 shrink-0">
+                  <Calendar className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-bold text-white">Seg a Sex</span>
+                </div>
+                <div className="flex flex-1 items-center gap-2">
+                  <input
+                    type="time"
+                    value={formData.operatingHours.weekdays.open}
+                    onChange={(e) => updateHour('weekdays', 'open', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                  <input
+                    type="time"
+                    value={formData.operatingHours.weekdays.close}
+                    onChange={(e) => updateHour('weekdays', 'close', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleDayOpen('weekdays')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                    formData.operatingHours.weekdays.isOpen 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}
+                >
+                  {formData.operatingHours.weekdays.isOpen ? 'Aberto' : 'Fechado'}
+                </button>
               </div>
 
-              <div>
-                <span className="text-[10px] text-zinc-400 block mb-0.5">Sábado</span>
-                <input
-                  type="text"
-                  placeholder="07:00 - 17:00"
-                  value={`${formData.operatingHours.saturday.open} - ${formData.operatingHours.saturday.close}`}
-                  onChange={(e) => {
-                    const parts = e.target.value.split('-').map(s => s.trim());
-                    if (parts.length === 2) {
-                      setFormData({
-                        ...formData,
-                        operatingHours: {
-                          ...formData.operatingHours,
-                          saturday: { open: parts[0], close: parts[1], isOpen: true }
-                        }
-                      });
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px]"
-                />
+              {/* Saturday */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+                <div className="flex items-center gap-3 w-32 shrink-0">
+                  <Calendar className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-bold text-white">Sábado</span>
+                </div>
+                <div className="flex flex-1 items-center gap-2">
+                  <input
+                    type="time"
+                    value={formData.operatingHours.saturday.open}
+                    onChange={(e) => updateHour('saturday', 'open', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                  <input
+                    type="time"
+                    value={formData.operatingHours.saturday.close}
+                    onChange={(e) => updateHour('saturday', 'close', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleDayOpen('saturday')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                    formData.operatingHours.saturday.isOpen 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}
+                >
+                  {formData.operatingHours.saturday.isOpen ? 'Aberto' : 'Fechado'}
+                </button>
               </div>
 
-              <div>
-                <span className="text-[10px] text-zinc-400 block mb-0.5">Domingo</span>
-                <input
-                  type="text"
-                  placeholder="08:00 - 14:00"
-                  value={`${formData.operatingHours.sunday.open} - ${formData.operatingHours.sunday.close}`}
-                  onChange={(e) => {
-                    const parts = e.target.value.split('-').map(s => s.trim());
-                    if (parts.length === 2) {
-                      setFormData({
-                        ...formData,
-                        operatingHours: {
-                          ...formData.operatingHours,
-                          sunday: { open: parts[0], close: parts[1], isOpen: true }
-                        }
-                      });
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px]"
-                />
+              {/* Sunday */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+                <div className="flex items-center gap-3 w-32 shrink-0">
+                  <Calendar className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-bold text-white">Domingo</span>
+                </div>
+                <div className="flex flex-1 items-center gap-2">
+                  <input
+                    type="time"
+                    value={formData.operatingHours.sunday.open}
+                    onChange={(e) => updateHour('sunday', 'open', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                  <input
+                    type="time"
+                    value={formData.operatingHours.sunday.close}
+                    onChange={(e) => updateHour('sunday', 'close', e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleDayOpen('sunday')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                    formData.operatingHours.sunday.isOpen 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}
+                >
+                  {formData.operatingHours.sunday.isOpen ? 'Aberto' : 'Fechado'}
+                </button>
               </div>
             </div>
           </div>
@@ -509,4 +580,6 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
