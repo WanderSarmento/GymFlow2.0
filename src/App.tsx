@@ -1046,6 +1046,7 @@ export default function App() {
               <OperatingHoursCard gym={currentGym} minimal={true} />
               <AnnouncementsBoard 
                 announcements={announcements}
+                gym={currentGym}
                 isAdminMode={false}
               />
             </div>
@@ -1148,6 +1149,7 @@ export default function App() {
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <AnnouncementsBoard
                     announcements={announcements}
+                    gym={currentGym}
                     onAddAnnouncement={handleAddAnnouncement}
                     onUpdateAnnouncement={handleUpdateAnnouncement}
                     onDeleteAnnouncement={handleDeleteAnnouncement}

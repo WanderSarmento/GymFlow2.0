@@ -18,10 +18,11 @@ import {
   GripHorizontal,
   RotateCcw
 } from 'lucide-react';
-import { Announcement, AnnouncementCategory, AnnouncementPriority } from '../types';
+import { Announcement, AnnouncementCategory, AnnouncementPriority, GymProfile } from '../types';
 
 interface AnnouncementsBoardProps {
   announcements: Announcement[];
+  gym?: GymProfile;
   onAddAnnouncement?: (announcement: Partial<Announcement>) => Promise<boolean>;
   onUpdateAnnouncement?: (id: string, announcement: Partial<Announcement>) => Promise<boolean>;
   onDeleteAnnouncement?: (id: string) => Promise<boolean>;
@@ -30,6 +31,7 @@ interface AnnouncementsBoardProps {
 
 export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
   announcements,
+  gym,
   onAddAnnouncement = async () => false,
   onUpdateAnnouncement = async () => false,
   onDeleteAnnouncement = async () => false,
@@ -310,7 +312,59 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
 
       {/* Announcements List */}
       <div className="mt-5 space-y-3.5">
-        {announcements.length === 0 ? (
+        {/* Render actual gym operating hours if the category is 'horario' */}
+        {selectedCategory === 'horario' && gym?.operatingHours && (
+          <div className="mb-6 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 mb-1 px-1">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Horários Registrados da Unidade</span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Seg a Sex */}
+              <div className={`p-4 rounded-2xl border transition-all ${gym.operatingHours.weekdays.isOpen ? 'bg-zinc-900/60 border-cyan-500/20 shadow-sm' : 'bg-zinc-950/40 border-gray-800/50 grayscale opacity-50'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Segunda a Sexta</span>
+                  <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.weekdays.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
+                </div>
+                <div className="text-lg font-black text-white font-mono tracking-tighter">
+                  {gym.operatingHours.weekdays.isOpen ? `${gym.operatingHours.weekdays.open} às ${gym.operatingHours.weekdays.close}` : 'Fechado'}
+                </div>
+              </div>
+
+              {/* Sábado */}
+              <div className={`p-4 rounded-2xl border transition-all ${gym.operatingHours.saturday.isOpen ? 'bg-zinc-900/60 border-cyan-500/20 shadow-sm' : 'bg-zinc-950/40 border-gray-800/50 grayscale opacity-50'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Sábado</span>
+                  <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.saturday.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
+                </div>
+                <div className="text-lg font-black text-white font-mono tracking-tighter">
+                  {gym.operatingHours.saturday.isOpen ? `${gym.operatingHours.saturday.open} às ${gym.operatingHours.saturday.close}` : 'Fechado'}
+                </div>
+              </div>
+
+              {/* Domingo */}
+              <div className={`p-4 rounded-2xl border transition-all ${gym.operatingHours.sunday.isOpen ? 'bg-zinc-900/60 border-cyan-500/20 shadow-sm' : 'bg-zinc-950/40 border-gray-800/50 grayscale opacity-50'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Domingo</span>
+                  <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.sunday.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
+                </div>
+                <div className="text-lg font-black text-white font-mono tracking-tighter">
+                  {gym.operatingHours.sunday.isOpen ? `${gym.operatingHours.sunday.open} às ${gym.operatingHours.sunday.close}` : 'Fechado'}
+                </div>
+              </div>
+            </div>
+
+            {filteredAnnouncements.length > 0 && (
+              <div className="mt-8 mb-4 border-t border-gray-800 pt-6 px-1 flex items-center gap-2">
+                <Bell className="w-3.5 h-3.5 text-gray-500" />
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Avisos Relacionados</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {announcements.length === 0 && selectedCategory !== 'horario' ? (
           <div className="rounded-2xl border border-dashed border-gray-800 bg-gray-950/40 p-10 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
               <Bell className="h-6 w-6" />
