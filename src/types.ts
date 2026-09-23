@@ -16,10 +16,19 @@ export type GymThemeColor =
   | 'indigo'
   | 'fuchsia';
 
+export interface DayOperatingHours {
+  open: string;
+  close: string;
+  isOpen: boolean;
+  hasBreak?: boolean;
+  breakOpen?: string;
+  breakClose?: string;
+}
+
 export interface GymOperatingHours {
-  weekdays: { open: string; close: string; isOpen: boolean };
-  saturday: { open: string; close: string; isOpen: boolean };
-  sunday: { open: string; close: string; isOpen: boolean };
+  weekdays: DayOperatingHours;
+  saturday: DayOperatingHours;
+  sunday: DayOperatingHours;
 }
 
 export interface GymProfile {

@@ -327,8 +327,23 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Segunda a Sexta</span>
                   <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.weekdays.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
                 </div>
-                <div className="text-lg font-black text-white font-mono tracking-tighter">
-                  {gym.operatingHours.weekdays.isOpen ? `${gym.operatingHours.weekdays.open} às ${gym.operatingHours.weekdays.close}` : 'Fechado'}
+                <div className="text-lg font-black text-white font-mono tracking-tighter leading-tight">
+                  {!gym.operatingHours.weekdays.isOpen ? (
+                    'Fechado'
+                  ) : gym.operatingHours.weekdays.hasBreak ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs opacity-60 font-bold uppercase">
+                        <span>Turno 1:</span>
+                        <span>{gym.operatingHours.weekdays.open} - {gym.operatingHours.weekdays.breakOpen}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-90">
+                        <span>Turno 2:</span>
+                        <span>{gym.operatingHours.weekdays.breakClose} - {gym.operatingHours.weekdays.close}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    `${gym.operatingHours.weekdays.open} às ${gym.operatingHours.weekdays.close}`
+                  )}
                 </div>
               </div>
 
@@ -338,8 +353,23 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Sábado</span>
                   <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.saturday.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
                 </div>
-                <div className="text-lg font-black text-white font-mono tracking-tighter">
-                  {gym.operatingHours.saturday.isOpen ? `${gym.operatingHours.saturday.open} às ${gym.operatingHours.saturday.close}` : 'Fechado'}
+                <div className="text-lg font-black text-white font-mono tracking-tighter leading-tight">
+                  {!gym.operatingHours.saturday.isOpen ? (
+                    'Fechado'
+                  ) : gym.operatingHours.saturday.hasBreak ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs opacity-60 font-bold uppercase">
+                        <span>Turno 1:</span>
+                        <span>{gym.operatingHours.saturday.open} - {gym.operatingHours.saturday.breakOpen}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-90">
+                        <span>Turno 2:</span>
+                        <span>{gym.operatingHours.saturday.breakClose} - {gym.operatingHours.saturday.close}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    `${gym.operatingHours.saturday.open} às ${gym.operatingHours.saturday.close}`
+                  )}
                 </div>
               </div>
 
@@ -349,8 +379,23 @@ export const AnnouncementsBoard: React.FC<AnnouncementsBoardProps> = ({
                   <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">Domingo</span>
                   <span className={`h-1.5 w-1.5 rounded-full ${gym.operatingHours.sunday.isOpen ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></span>
                 </div>
-                <div className="text-lg font-black text-white font-mono tracking-tighter">
-                  {gym.operatingHours.sunday.isOpen ? `${gym.operatingHours.sunday.open} às ${gym.operatingHours.sunday.close}` : 'Fechado'}
+                <div className="text-lg font-black text-white font-mono tracking-tighter leading-tight">
+                  {!gym.operatingHours.sunday.isOpen ? (
+                    'Fechado'
+                  ) : gym.operatingHours.sunday.hasBreak ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs opacity-60 font-bold uppercase">
+                        <span>Turno 1:</span>
+                        <span>{gym.operatingHours.sunday.open} - {gym.operatingHours.sunday.breakOpen}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-90">
+                        <span>Turno 2:</span>
+                        <span>{gym.operatingHours.sunday.breakClose} - {gym.operatingHours.sunday.close}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    `${gym.operatingHours.sunday.open} às ${gym.operatingHours.sunday.close}`
+                  )}
                 </div>
               </div>
             </div>

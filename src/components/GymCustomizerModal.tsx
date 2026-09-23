@@ -60,9 +60,9 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
     visualTheme: gym.visualTheme || 'dark',
     isOpen: gym.isOpen !== false,
     operatingHours: gym.operatingHours || {
-      weekdays: { open: '06:00', close: '23:00', isOpen: true },
-      saturday: { open: '07:00', close: '17:00', isOpen: true },
-      sunday: { open: '08:00', close: '14:00', isOpen: true }
+      weekdays: { open: '06:00', close: '23:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '14:00' },
+      saturday: { open: '07:00', close: '17:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' },
+      sunday: { open: '08:00', close: '14:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' }
     }
   });
 
@@ -96,7 +96,7 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
     }
   };
 
-  const updateHour = (day: 'weekdays' | 'saturday' | 'sunday', type: 'open' | 'close', value: string) => {
+  const updateHour = (day: 'weekdays' | 'saturday' | 'sunday', type: 'open' | 'close' | 'breakOpen' | 'breakClose', value: string) => {
     setFormData(prev => ({
       ...prev,
       operatingHours: {
@@ -117,6 +117,22 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
         [day]: {
           ...prev.operatingHours[day],
           isOpen: !prev.operatingHours[day].isOpen
+        }
+      }
+    }));
+  };
+
+  const toggleDayBreak = (day: 'weekdays' | 'saturday' | 'sunday') => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [day]: {
+          ...prev.operatingHours[day],
+          hasBreak: !prev.operatingHours[day].hasBreak,
+          // Initialize defaults if enabling
+          breakOpen: prev.operatingHours[day].breakOpen || '12:00',
+          breakClose: prev.operatingHours[day].breakClose || '14:00'
         }
       }
     }));
@@ -448,107 +464,239 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Weekdays */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                <div className="flex items-center gap-3 w-32 shrink-0">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-bold text-white">Seg a Sex</span>
+              <div className="p-3.5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-zinc-500" />
+                    <span className="text-xs font-bold text-white">Seg a Sex</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDayBreak('weekdays')}
+                      className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                        formData.operatingHours.weekdays.hasBreak 
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:text-zinc-300'
+                      }`}
+                    >
+                      {formData.operatingHours.weekdays.hasBreak ? 'Com Intervalo' : 'Adicionar Intervalo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleDayOpen('weekdays')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        formData.operatingHours.weekdays.isOpen 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                      }`}
+                    >
+                      {formData.operatingHours.weekdays.isOpen ? 'Aberto' : 'Fechado'}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-1 items-center gap-2">
-                  <input
-                    type="time"
-                    value={formData.operatingHours.weekdays.open}
-                    onChange={(e) => updateHour('weekdays', 'open', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
-                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
-                  <input
-                    type="time"
-                    value={formData.operatingHours.weekdays.close}
-                    onChange={(e) => updateHour('weekdays', 'close', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 1:</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.weekdays.open}
+                      onChange={(e) => updateHour('weekdays', 'open', e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                    <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.weekdays.hasBreak ? formData.operatingHours.weekdays.breakOpen : formData.operatingHours.weekdays.close}
+                      onChange={(e) => {
+                        if (formData.operatingHours.weekdays.hasBreak) {
+                          updateHour('weekdays', 'breakOpen', e.target.value);
+                        } else {
+                          updateHour('weekdays', 'close', e.target.value);
+                        }
+                      }}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {formData.operatingHours.weekdays.hasBreak && (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 2:</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.weekdays.breakClose}
+                        onChange={(e) => updateHour('weekdays', 'breakClose', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                      <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.weekdays.close}
+                        onChange={(e) => updateHour('weekdays', 'close', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleDayOpen('weekdays')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    formData.operatingHours.weekdays.isOpen 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                  }`}
-                >
-                  {formData.operatingHours.weekdays.isOpen ? 'Aberto' : 'Fechado'}
-                </button>
               </div>
 
               {/* Saturday */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                <div className="flex items-center gap-3 w-32 shrink-0">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-bold text-white">Sábado</span>
+              <div className="p-3.5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-zinc-500" />
+                    <span className="text-xs font-bold text-white">Sábado</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDayBreak('saturday')}
+                      className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                        formData.operatingHours.saturday.hasBreak 
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:text-zinc-300'
+                      }`}
+                    >
+                      {formData.operatingHours.saturday.hasBreak ? 'Com Intervalo' : 'Adicionar Intervalo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleDayOpen('saturday')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        formData.operatingHours.saturday.isOpen 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                      }`}
+                    >
+                      {formData.operatingHours.saturday.isOpen ? 'Aberto' : 'Fechado'}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-1 items-center gap-2">
-                  <input
-                    type="time"
-                    value={formData.operatingHours.saturday.open}
-                    onChange={(e) => updateHour('saturday', 'open', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
-                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
-                  <input
-                    type="time"
-                    value={formData.operatingHours.saturday.close}
-                    onChange={(e) => updateHour('saturday', 'close', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 1:</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.saturday.open}
+                      onChange={(e) => updateHour('saturday', 'open', e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                    <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.saturday.hasBreak ? formData.operatingHours.saturday.breakOpen : formData.operatingHours.saturday.close}
+                      onChange={(e) => {
+                        if (formData.operatingHours.saturday.hasBreak) {
+                          updateHour('saturday', 'breakOpen', e.target.value);
+                        } else {
+                          updateHour('saturday', 'close', e.target.value);
+                        }
+                      }}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {formData.operatingHours.saturday.hasBreak && (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 2:</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.saturday.breakClose}
+                        onChange={(e) => updateHour('saturday', 'breakClose', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                      <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.saturday.close}
+                        onChange={(e) => updateHour('saturday', 'close', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleDayOpen('saturday')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    formData.operatingHours.saturday.isOpen 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                  }`}
-                >
-                  {formData.operatingHours.saturday.isOpen ? 'Aberto' : 'Fechado'}
-                </button>
               </div>
 
               {/* Sunday */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                <div className="flex items-center gap-3 w-32 shrink-0">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-bold text-white">Domingo</span>
+              <div className="p-3.5 rounded-xl bg-zinc-900/50 border border-zinc-800/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-4 h-4 text-zinc-500" />
+                    <span className="text-xs font-bold text-white">Domingo</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDayBreak('sunday')}
+                      className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all ${
+                        formData.operatingHours.sunday.hasBreak 
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:text-zinc-300'
+                      }`}
+                    >
+                      {formData.operatingHours.sunday.hasBreak ? 'Com Intervalo' : 'Adicionar Intervalo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleDayOpen('sunday')}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        formData.operatingHours.sunday.isOpen 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                      }`}
+                    >
+                      {formData.operatingHours.sunday.isOpen ? 'Aberto' : 'Fechado'}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-1 items-center gap-2">
-                  <input
-                    type="time"
-                    value={formData.operatingHours.sunday.open}
-                    onChange={(e) => updateHour('sunday', 'open', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
-                  <span className="text-zinc-600 text-[10px] font-bold">às</span>
-                  <input
-                    type="time"
-                    value={formData.operatingHours.sunday.close}
-                    onChange={(e) => updateHour('sunday', 'close', e.target.value)}
-                    className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
-                  />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 1:</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.sunday.open}
+                      onChange={(e) => updateHour('sunday', 'open', e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                    <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                    <input
+                      type="time"
+                      value={formData.operatingHours.sunday.hasBreak ? formData.operatingHours.sunday.breakOpen : formData.operatingHours.sunday.close}
+                      onChange={(e) => {
+                        if (formData.operatingHours.sunday.hasBreak) {
+                          updateHour('sunday', 'breakOpen', e.target.value);
+                        } else {
+                          updateHour('sunday', 'close', e.target.value);
+                        }
+                      }}
+                      className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {formData.operatingHours.sunday.hasBreak && (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <span className="text-[10px] text-zinc-500 w-16 uppercase font-bold tracking-tight">Turno 2:</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.sunday.breakClose}
+                        onChange={(e) => updateHour('sunday', 'breakClose', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                      <span className="text-zinc-600 text-[10px] font-bold">às</span>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.sunday.close}
+                        onChange={(e) => updateHour('sunday', 'close', e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-[11px] focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleDayOpen('sunday')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    formData.operatingHours.sunday.isOpen 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                  }`}
-                >
-                  {formData.operatingHours.sunday.isOpen ? 'Aberto' : 'Fechado'}
-                </button>
               </div>
             </div>
           </div>

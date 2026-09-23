@@ -37,9 +37,9 @@ export const INITIAL_GYMS: GymProfile[] = [
     isOpen: true,
     visualTheme: 'auto',
     operatingHours: {
-      weekdays: { open: '06:00', close: '23:00', isOpen: true },
-      saturday: { open: '07:00', close: '17:00', isOpen: true },
-      sunday: { open: '08:00', close: '14:00', isOpen: true }
+      weekdays: { open: '06:00', close: '23:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '14:00' },
+      saturday: { open: '07:00', close: '17:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' },
+      sunday: { open: '08:00', close: '14:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' }
     }
   }
 ];

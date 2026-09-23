@@ -19,23 +19,60 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
   // Build schedule based on gym profile operating hours if available
   const schedule = GYM_SCHEDULE.map(item => {
     if (gym?.operatingHours) {
-      if (item.dayId === 0 && gym.operatingHours.sunday) {
-        return { ...item, open: gym.operatingHours.sunday.open, close: gym.operatingHours.sunday.close };
-      } else if (item.dayId === 6 && gym.operatingHours.saturday) {
-        return { ...item, open: gym.operatingHours.saturday.open, close: gym.operatingHours.saturday.close };
-      } else if (gym.operatingHours.weekdays) {
-        return { ...item, open: gym.operatingHours.weekdays.open, close: gym.operatingHours.weekdays.close };
+      let dayConfig;
+      if (item.dayId === 0) dayConfig = gym.operatingHours.sunday;
+      else if (item.dayId === 6) dayConfig = gym.operatingHours.saturday;
+      else dayConfig = gym.operatingHours.weekdays;
+      
+      if (dayConfig) {
+        return { 
+          ...item, 
+          open: dayConfig.open, 
+          close: dayConfig.close,
+          isOpen: dayConfig.isOpen,
+          hasBreak: dayConfig.hasBreak,
+          breakOpen: dayConfig.breakOpen,
+          breakClose: dayConfig.breakClose
+        };
       }
     }
-    return item;
+    return { ...item, isOpen: true };
   });
 
   const todaySchedule = schedule.find(item => item.dayId === currentDay) || schedule[1];
-  const [openH, openM] = todaySchedule.open.split(':').map(Number);
-  const [closeH, closeM] = todaySchedule.close.split(':').map(Number);
-  const openTotalMin = (openH || 6) * 60 + (openM || 0);
-  const closeTotalMin = (closeH || 23) * 60 + (closeM || 0);
-  const isOpenNow = currentTimeMinutes >= openTotalMin && currentTimeMinutes < closeTotalMin;
+  
+  const checkIsOpen = (sched: any) => {
+    if (!sched.isOpen) return false;
+    
+    const parseTime = (timeStr: string) => {
+      const [h, m] = (timeStr || '00:00').split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+
+    const openTotalMin = parseTime(sched.open);
+    const closeTotalMin = parseTime(sched.close);
+    
+    if (sched.hasBreak && sched.breakOpen && sched.breakClose) {
+      const breakOpenTotalMin = parseTime(sched.breakOpen);
+      const breakCloseTotalMin = parseTime(sched.breakClose);
+      
+      const inFirstShift = currentTimeMinutes >= openTotalMin && currentTimeMinutes < breakOpenTotalMin;
+      const inSecondShift = currentTimeMinutes >= breakCloseTotalMin && currentTimeMinutes < closeTotalMin;
+      return inFirstShift || inSecondShift;
+    }
+    
+    return currentTimeMinutes >= openTotalMin && currentTimeMinutes < closeTotalMin;
+  };
+
+  const isOpenNow = checkIsOpen(todaySchedule);
+
+  const formatHours = (sched: any) => {
+    if (!sched.isOpen) return 'Fechado';
+    if (sched.hasBreak) {
+      return `${sched.open}-${sched.breakOpen} e ${sched.breakClose}-${sched.close}`;
+    }
+    return `${sched.open} às ${sched.close}`;
+  };
 
   if (minimal) {
     return (
@@ -53,7 +90,7 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
               </span>
             </div>
             <p className="text-sm font-black text-zinc-300 font-mono mt-0.5">
-              {todaySchedule.open} às {todaySchedule.close}
+              {formatHours(todaySchedule)}
             </p>
           </div>
         </div>
@@ -83,9 +120,13 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Aberto
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border uppercase tracking-wider ${
+          isOpenNow 
+            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+        }`}>
+          <span className={`h-2 w-2 rounded-full ${isOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
+          {isOpenNow ? 'Aberto' : 'Fechado'}
         </span>
       </div>
 
@@ -93,13 +134,7 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
       <div className="space-y-2">
         {schedule.map((item) => {
           const isToday = item.dayId === currentDay;
-
-          // Parse open and close to check if currently open
-          const [openH, openM] = item.open.split(':').map(Number);
-          const [closeH, closeM] = item.close.split(':').map(Number);
-          const openTotalMin = (openH || 6) * 60 + (openM || 0);
-          const closeTotalMin = (closeH || 23) * 60 + (closeM || 0);
-          const isOpenNow = isToday && (currentTimeMinutes >= openTotalMin && currentTimeMinutes < closeTotalMin);
+          const dayIsOpen = checkIsOpen(item);
 
           return (
             <div
@@ -115,15 +150,17 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
                   {item.dayName}
                 </span>
                 {isToday && (
-                  <span className="rounded-full bg-cyan-400 text-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                    Hoje {isOpenNow ? '• Aberto' : '• Fechado'}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                    dayIsOpen ? 'bg-cyan-400 text-black' : 'bg-zinc-800 text-zinc-500'
+                  }`}>
+                    Hoje {dayIsOpen ? '• Aberto' : '• Fechado'}
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-white text-xs">
-                  {item.open} às {item.close}
+                <span className="font-mono font-bold text-white text-[11px]">
+                  {formatHours(item)}
                 </span>
                 <span className="hidden sm:inline-block text-[11px] text-zinc-500 font-mono">
                   (Pico: {item.peakHours[0] || '18h-20h'})
