@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-30T15:30:04.141Z",
+  "updatedAt": "2026-09-30T15:52:53.421Z",
   "gyms": [
     {
       "profile": {
         "id": "gym-ctrw-alunos-mu18ckyd",
         "slug": "ctrw-alunos",
-        "name": "CT WR",
+        "name": "CT WR Fitness",
         "slogan": "A sua melhor experiência de treino",
         "city": "Uruçuca - BA",
         "neighborhood": "Centro",
@@ -198,7 +198,8 @@
             "close": "23:00",
             "isOpen": true
           }
-        }
+        },
+        "forceClosed": false
       },
       "currentCount": 0,
       "maxCapacity": 180,
@@ -206,6 +207,26 @@
       "isOpen": true,
       "announcements": [],
       "accessLogs": [
+        {
+          "id": "log-gym-fitflow-matrix-1790782239416",
+          "gymId": "gym-fitflow-matrix",
+          "timestamp": "2026-09-30T15:30:39.416Z",
+          "type": "unlock",
+          "source": "reception_manual",
+          "description": "Horário Automático REATIVADO pela recepção (Recepção (Painel Web)) - Status atual: Aberto",
+          "countAfter": 0,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-fitflow-matrix-1790782237550",
+          "gymId": "gym-fitflow-matrix",
+          "timestamp": "2026-09-30T15:30:37.550Z",
+          "type": "lock",
+          "source": "reception_manual",
+          "description": "Fechamento manual FORÇADO pela recepção (Recepção (Painel Web)) - Academia fechada até reativação.",
+          "countAfter": 0,
+          "status": "warning"
+        },
         {
           "id": "log-gym-fitflow-matrix-1789401918906",
           "gymId": "gym-fitflow-matrix",
@@ -242,33 +263,39 @@
       "profile": {
         "id": "gym-ctwr-urucuca-mubt9sem",
         "slug": "ctwr-urucuca",
-        "name": "CT WR",
+        "name": "FitFlow Club Matrix",
         "slogan": "A sua melhor experiência de treino",
-        "city": "Uruçuca - BA",
-        "neighborhood": "Centro",
-        "address": "Av. Paulista, 1500",
+        "city": "São Paulo - SP",
+        "neighborhood": "Moema",
+        "address": "Av. Ibirapuera, 2100",
         "contactPhone": "739999454533",
-        "maxCapacity": 35,
-        "currentCount": 7,
+        "maxCapacity": 120,
+        "currentCount": 4,
         "turnstileLocked": false,
         "isOpen": true,
-        "themeColor": "blue",
+        "themeColor": "cyan",
         "visualTheme": "dark",
-        "logoEmoji": "🏋️",
+        "logoEmoji": "⚡",
         "apiKey": "GF_LIVE_KEY_CTWR_URUCUCA_mubt9sem",
         "ownerName": "Wanderson Ramos",
         "ownerEmail": "ctwr@gmail.com",
         "createdAt": "2026-09-21T22:22:53.987952+00:00",
         "operatingHours": {
           "sunday": {
-            "open": "",
-            "close": "fechado",
-            "isOpen": false
+            "open": "08:00",
+            "close": "14:00",
+            "isOpen": false,
+            "hasBreak": false,
+            "breakOpen": "12:00",
+            "breakClose": "13:00"
           },
           "saturday": {
             "open": "07:00",
             "close": "11:00",
-            "isOpen": true
+            "isOpen": true,
+            "hasBreak": false,
+            "breakOpen": "12:00",
+            "breakClose": "13:00"
           },
           "weekdays": {
             "open": "05:00",
@@ -280,8 +307,8 @@
           }
         }
       },
-      "currentCount": 7,
-      "maxCapacity": 35,
+      "currentCount": 4,
+      "maxCapacity": 120,
       "turnstileLocked": false,
       "isOpen": true,
       "announcements": [
@@ -362,7 +389,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$WuJ7Y7wCm7LTqalM3GYiBeK2BobUiV04U11zeVN2HIuD1LIYDcR.2",
+      "password": "$2b$10$JmNjb/z.KtWE2ZpQkjhwHeMs0jK9iGeL8UzVVX.URMZ6PgUlZiUla",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -393,7 +420,7 @@
       "createdAt": "2026-09-10T16:05:29.58812+00:00"
     },
     {
-      "id": "2533397f-15f1-4ebd-a218-c916ee61b2fd",
+      "id": "6e526c33-b254-44fa-b3a5-08f395722b8a",
       "email": "carlos@fitflow.com.br",
       "password": "$2b$10$3.cY5ySiA0aAFxxhxOMyWOW/pVkvLb1Nbx6/Fym4/Va8ZVIXMDZG6",
       "name": "Carlos Henrique Gestor",
@@ -401,7 +428,7 @@
       "gymId": "gym-fitflow-matrix",
       "gymSlug": "fitflow-matrix",
       "gymName": "FitFlow Club Matrix",
-      "createdAt": "2026-09-18T00:45:19.972531+00:00"
+      "createdAt": "2026-09-30T15:30:39.011445+00:00"
     },
     {
       "id": "user-rec-fitflow-moema",
@@ -522,7 +549,7 @@
       "role": "owner",
       "gymId": "gym-ctwr-urucuca-mubt9sem",
       "gymSlug": "ctwr-urucuca",
-      "gymName": "CT WR",
+      "gymName": "FitFlow Club Matrix",
       "createdAt": "2026-09-21T22:22:54.708676+00:00"
     },
     {
@@ -544,7 +571,7 @@
       "role": "owner",
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
-      "gymName": "CT WR",
+      "gymName": "CT WR Fitness",
       "createdAt": "2026-09-18T09:07:42.790577+00:00"
     },
     {
@@ -555,7 +582,7 @@
       "role": "reception",
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
-      "gymName": "CT WR",
+      "gymName": "CT WR Fitness",
       "createdAt": "2026-09-14T12:39:30.677975+00:00"
     },
     {
@@ -585,17 +612,17 @@
     {
       "gymId": "gym-ctwr-urucuca-mubt9sem",
       "gymSlug": "ctwr-urucuca",
-      "gymName": "CT WR",
+      "gymName": "FitFlow Club Matrix",
       "ownerName": "Wanderson Ramos",
       "ownerEmail": "ctwr@gmail.com",
-      "city": "Uruçuca - BA",
+      "city": "São Paulo - SP",
       "plan": "starter",
       "planName": "STARTER",
       "monthlyFee": 0,
       "status": "active",
       "isSystemBlocked": false,
       "turnstilesLimit": 2,
-      "maxCapacity": 35,
+      "maxCapacity": 120,
       "nextDueDate": "2026-09-21",
       "createdAt": "2026-09-21T22:22:54.119745+00:00",
       "apiKey": "GF_LIVE_KEY_CTWR_URUCUCA_mubt9sem",
@@ -603,7 +630,7 @@
         {
           "id": "inv-gym-ctwr-urucuca-mubt9sem-mubt9sen",
           "gymId": "gym-ctwr-urucuca-mubt9sem",
-          "gymName": "CT WR",
+          "gymName": "FitFlow Club Matrix",
           "referenceMonth": "09/2026",
           "amount": 0,
           "dueDate": "2026-09-21",
@@ -612,26 +639,6 @@
           "notes": null
         }
       ]
-    },
-    {
-      "gymId": "gym-ctrw-alunos-mu18ckyd",
-      "gymSlug": "ctrw-alunos",
-      "gymName": "CT WR",
-      "ownerName": "Wanderson Ramos",
-      "ownerEmail": "ctrw@gmail.com",
-      "ownerPhone": "739999454533",
-      "city": "Uruçuca - BA",
-      "plan": "starter",
-      "planName": "Plano Starter",
-      "monthlyFee": 149,
-      "status": "active",
-      "isSystemBlocked": false,
-      "turnstilesLimit": 2,
-      "maxCapacity": 25,
-      "nextDueDate": "2026-10-30",
-      "createdAt": "2026-09-14T12:39:30.677975+00:00",
-      "apiKey": "GF_LIVE_KEY_CTRW_ALUNOS_mu18ckyd",
-      "invoices": []
     },
     {
       "gymId": "gym-fitflow-matrix",
@@ -651,6 +658,26 @@
       "nextDueDate": "2026-10-30",
       "createdAt": "2026-09-14T14:17:59.823Z",
       "apiKey": "GF_KEY_MATRIX_2026",
+      "invoices": []
+    },
+    {
+      "gymId": "gym-ctrw-alunos-mu18ckyd",
+      "gymSlug": "ctrw-alunos",
+      "gymName": "CT WR Fitness",
+      "ownerName": "Wanderson Ramos",
+      "ownerEmail": "ctrw@gmail.com",
+      "ownerPhone": "739999454533",
+      "city": "Uruçuca - BA",
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
+      "status": "active",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 25,
+      "nextDueDate": "2026-10-30",
+      "createdAt": "2026-09-14T12:39:30.677975+00:00",
+      "apiKey": "GF_LIVE_KEY_CTRW_ALUNOS_mu18ckyd",
       "invoices": []
     }
   ],

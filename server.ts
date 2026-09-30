@@ -2357,7 +2357,18 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
 
     console.log(`[GymFlow API] Atualizando configurações para ${req.params.gymIdOrSlug}:`, req.body);
 
-    if (name) gymState.profile.name = name.trim();
+    if (name && typeof name === 'string' && name.trim()) {
+      gymState.profile.name = name.trim();
+      const saasAcc = saasAccountsStore.get(gymState.profile.id);
+      if (saasAcc) {
+        saasAcc.gymName = gymState.profile.name;
+      }
+      for (const u of usersStore.values()) {
+        if (u.gymId === gymState.profile.id || u.gymSlug === gymState.profile.slug) {
+          u.gymName = gymState.profile.name;
+        }
+      }
+    }
     if (slogan !== undefined) gymState.profile.slogan = slogan.trim();
     if (city) gymState.profile.city = city.trim();
     if (neighborhood !== undefined) gymState.profile.neighborhood = neighborhood.trim();

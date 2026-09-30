@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   X, 
@@ -65,6 +65,32 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
       sunday: { open: '08:00', close: '14:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' }
     }
   });
+
+  // Keep form data synchronized with current active gym when modal opens
+  useEffect(() => {
+    if (isOpen && gym) {
+      setFormData({
+        name: gym.name,
+        slogan: gym.slogan || '',
+        city: gym.city || '',
+        neighborhood: gym.neighborhood || '',
+        address: gym.address || '',
+        contactPhone: gym.contactPhone || '',
+        maxCapacity: gym.maxCapacity,
+        themeColor: (gym.themeColor || 'cyan') as GymThemeColor,
+        logoEmoji: gym.logoEmoji || '⚡',
+        visualTheme: gym.visualTheme || 'dark',
+        isOpen: gym.isOpen !== false,
+        operatingHours: gym.operatingHours || {
+          weekdays: { open: '06:00', close: '23:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '14:00' },
+          saturday: { open: '07:00', close: '17:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' },
+          sunday: { open: '08:00', close: '14:00', isOpen: true, hasBreak: false, breakOpen: '12:00', breakClose: '13:00' }
+        }
+      });
+      setError(null);
+      setSuccess(false);
+    }
+  }, [isOpen, gym]);
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -183,17 +209,23 @@ export const GymCustomizerModal: React.FC<GymCustomizerModalProps> = ({
           {/* Gym Name & Slogan */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Nome da Unidade
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-200 mb-1">
+                <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Nome do Estabelecimento / Academia</span>
               </label>
               <input
                 id="edit-gym-name-input"
                 type="text"
                 required
+                minLength={2}
+                placeholder="Ex: CT WR Fitness"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-xs focus:outline-none focus:border-cyan-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-white text-xs font-medium focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
               />
+              <span className="text-[10px] text-zinc-400 mt-0.5 block">
+                Nome oficial exibido no cabeçalho e para os alunos.
+              </span>
             </div>
 
             <div>

@@ -30,6 +30,7 @@ import {
   deleteAnnouncement,
   updateGymSettings,
   getStoredAuthUser,
+  saveAuthSession,
   clearAuthSession
 } from './services/api';
 import { OccupancyData, AccessLog, Announcement, GymProfile, AuthUser } from './types';
@@ -554,16 +555,30 @@ export default function App() {
       saveLocalCache(null, null, next);
       return next;
     });
-    if (activeGymSlugRef.current === updatedGym.slug) {
+    if (activeGymSlugRef.current === updatedGym.slug || (currentGym && (currentGym.id === updatedGym.id || currentGym.slug === updatedGym.slug))) {
       setCurrentGym(updatedGym);
       setOccupancy(prev => {
         const nextOcc: OccupancyData = {
           ...prev,
+          gymName: updatedGym.name,
+          themeColor: updatedGym.themeColor,
+          logoEmoji: updatedGym.logoEmoji,
+          slogan: updatedGym.slogan,
+          city: updatedGym.city,
+          neighborhood: updatedGym.neighborhood,
           maxCapacity: updatedGym.maxCapacity,
           percentage: Math.min(100, Math.round((prev.currentCount / Math.max(1, updatedGym.maxCapacity)) * 100))
         };
         saveLocalCache(updatedGym, nextOcc);
         return nextOcc;
+      });
+      setCurrentUser(prevUser => {
+        if (prevUser && (prevUser.gymId === updatedGym.id || prevUser.gymSlug === updatedGym.slug)) {
+          const updatedUser = { ...prevUser, gymName: updatedGym.name };
+          saveAuthSession(updatedUser);
+          return updatedUser;
+        }
+        return prevUser;
       });
       loadGymData(updatedGym.slug, true);
     }
