@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-18T09:09:12.654Z",
+  "updatedAt": "2026-09-30T15:30:04.141Z",
   "gyms": [
     {
       "profile": {
@@ -48,30 +48,6 @@
       "announcements": [
         {
           "id": "ann-1789519742089",
-          "gymId": "gym-ctrw-alunos-mu18ckyd",
-          "title": "Teste UUID",
-          "content": "Mensagem de teste",
-          "category": "novidade",
-          "priority": "low",
-          "date": "16/09/2026",
-          "author": "CT WR",
-          "pinned": false,
-          "active": true
-        },
-        {
-          "id": "86603e5e-910a-4e58-8c8a-d2e4fd1eefbf",
-          "gymId": "gym-ctrw-alunos-mu18ckyd",
-          "title": "Corrida rosa",
-          "content": "Domingo agr",
-          "category": "evento",
-          "priority": "high",
-          "date": "16/09/2026",
-          "author": "Equipe GymLivre",
-          "pinned": false,
-          "active": true
-        },
-        {
-          "id": "9d612102-00ec-42b7-90fb-5381c68028e8",
           "gymId": "gym-ctrw-alunos-mu18ckyd",
           "title": "Teste UUID",
           "content": "Mensagem de teste",
@@ -261,6 +237,113 @@
           "status": "success"
         }
       ]
+    },
+    {
+      "profile": {
+        "id": "gym-ctwr-urucuca-mubt9sem",
+        "slug": "ctwr-urucuca",
+        "name": "CT WR",
+        "slogan": "A sua melhor experiência de treino",
+        "city": "Uruçuca - BA",
+        "neighborhood": "Centro",
+        "address": "Av. Paulista, 1500",
+        "contactPhone": "739999454533",
+        "maxCapacity": 35,
+        "currentCount": 7,
+        "turnstileLocked": false,
+        "isOpen": true,
+        "themeColor": "blue",
+        "visualTheme": "dark",
+        "logoEmoji": "🏋️",
+        "apiKey": "GF_LIVE_KEY_CTWR_URUCUCA_mubt9sem",
+        "ownerName": "Wanderson Ramos",
+        "ownerEmail": "ctwr@gmail.com",
+        "createdAt": "2026-09-21T22:22:53.987952+00:00",
+        "operatingHours": {
+          "sunday": {
+            "open": "",
+            "close": "fechado",
+            "isOpen": false
+          },
+          "saturday": {
+            "open": "07:00",
+            "close": "11:00",
+            "isOpen": true
+          },
+          "weekdays": {
+            "open": "05:00",
+            "close": "22:00",
+            "isOpen": true,
+            "hasBreak": true,
+            "breakOpen": "10:00",
+            "breakClose": "12:00"
+          }
+        }
+      },
+      "currentCount": 7,
+      "maxCapacity": 35,
+      "turnstileLocked": false,
+      "isOpen": true,
+      "announcements": [
+        {
+          "id": "166dee96-74ec-4bd3-99b6-01eaacb48675",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "title": "Avisos",
+          "content": "Respeitem os avisos e os horários de funciomento.",
+          "category": "importante",
+          "priority": "medium",
+          "date": "22/09/2026",
+          "author": "Equipe GymLivre",
+          "pinned": false,
+          "active": true
+        },
+        {
+          "id": "624cc6bb-771d-49e2-af1b-ff1d74d9e7aa",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "title": "Higienização",
+          "content": "Ar condicionado em higienização",
+          "category": "manutencao",
+          "priority": "medium",
+          "date": "23/09/2026",
+          "author": "Equipe GymLivre",
+          "pinned": false,
+          "active": true
+        },
+        {
+          "id": "f4b43c22-e6e0-43cb-ba5e-1b49b8e2ac24",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "title": "🎀 CORRIDA OUTUBRO ROSA – CT WR 🎀",
+          "content": "O CT WR convida você para participar da nossa Corrida Outubro Rosa, que acontecerá no dia 25 de outubro! 💗\n\n🏃‍♀️ Um momento de união, saúde e conscientização sobre a importância da prevenção e do cuidado com a saúde da mulher.\n\n📢 INSCRIÇÕES ABERTAS!\n\nGaranta sua participação e venha fazer parte desse movimento com a gente!\n\n💗 CT WR – Juntos pela saúde, juntos pela vida!",
+          "category": "evento",
+          "priority": "high",
+          "date": "22/09/2026",
+          "author": "Equipe GymLivre",
+          "pinned": true,
+          "active": true
+        }
+      ],
+      "accessLogs": [
+        {
+          "id": "log-gym-ctwr-urucuca-mubt9sem-1",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "timestamp": "2026-09-30T14:06:08.696Z",
+          "type": "entry",
+          "source": "esp32_button",
+          "description": "Acesso liberado via Catraca (CT WR)",
+          "countAfter": 0,
+          "status": "success"
+        },
+        {
+          "id": "log-gym-ctwr-urucuca-mubt9sem-2",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "timestamp": "2026-09-30T14:01:08.696Z",
+          "type": "exit",
+          "source": "esp32_button",
+          "description": "Saída registrada via Catraca Física (ESP32)",
+          "countAfter": 0,
+          "status": "success"
+        }
+      ]
     }
   ],
   "users": [
@@ -279,7 +362,7 @@
     {
       "id": "a7278327-af02-4d84-8102-3849da5a220f",
       "email": "wander.sarmentosantos@gmail.com",
-      "password": "$2b$10$QaqaLvdtIgvgaAXM4NXM6eBfixKU9ohGXgYS9ovhn687JrCO5XNJ6",
+      "password": "$2b$10$WuJ7Y7wCm7LTqalM3GYiBeK2BobUiV04U11zeVN2HIuD1LIYDcR.2",
       "name": "Wander Santos",
       "role": "superadmin",
       "gymId": "saas-root",
@@ -432,15 +515,15 @@
       "createdAt": "2026-09-10T18:59:41.942968+00:00"
     },
     {
-      "id": "d82776bb-3460-4064-9bd1-bc36f4f31f5c",
+      "id": "0c93cb68-121a-4cd1-82e2-5c0e9bae8945",
       "email": "ctwr@gmail.com",
-      "password": "$2b$10$yv0PLprIpjE4AHpOYQsMgeER6.pERe3ik1RCyECmgxrRuEksCluTa",
-      "name": "wanderson ramos",
+      "password": "$2b$10$jpl4UwKF0HO9nnBODBDc5e5v/j8Q7C1.AkVkpBVhbkGRPR8OwBAGy",
+      "name": "Wanderson Ramos",
       "role": "owner",
-      "gymId": "gym-ctwr-mtw1ksej",
-      "gymSlug": "ctwr",
-      "gymName": "ctwr",
-      "createdAt": "2026-09-10T21:54:03.382324+00:00"
+      "gymId": "gym-ctwr-urucuca-mubt9sem",
+      "gymSlug": "ctwr-urucuca",
+      "gymName": "CT WR",
+      "createdAt": "2026-09-21T22:22:54.708676+00:00"
     },
     {
       "id": "user-rec-ctwr",
@@ -485,9 +568,51 @@
       "gymSlug": "fitflow-matrix",
       "gymName": "FitFlow Club Matrix",
       "createdAt": "2026-09-14T14:17:59.823Z"
+    },
+    {
+      "id": "user-rec-ctwr-urucuca",
+      "email": "recepcao@ctwr-urucuca.com",
+      "password": "$2b$10$uYJVyfJJyQeFUxdGi/n2W.UDgceUnbbRL/hvuT9zKr7W8kzsS/l8C",
+      "name": "Recepção - CT WR",
+      "role": "reception",
+      "gymId": "gym-ctwr-urucuca-mubt9sem",
+      "gymSlug": "ctwr-urucuca",
+      "gymName": "CT WR",
+      "createdAt": "2026-09-21T22:22:53.987952+00:00"
     }
   ],
   "saasAccounts": [
+    {
+      "gymId": "gym-ctwr-urucuca-mubt9sem",
+      "gymSlug": "ctwr-urucuca",
+      "gymName": "CT WR",
+      "ownerName": "Wanderson Ramos",
+      "ownerEmail": "ctwr@gmail.com",
+      "city": "Uruçuca - BA",
+      "plan": "starter",
+      "planName": "STARTER",
+      "monthlyFee": 0,
+      "status": "active",
+      "isSystemBlocked": false,
+      "turnstilesLimit": 2,
+      "maxCapacity": 35,
+      "nextDueDate": "2026-09-21",
+      "createdAt": "2026-09-21T22:22:54.119745+00:00",
+      "apiKey": "GF_LIVE_KEY_CTWR_URUCUCA_mubt9sem",
+      "invoices": [
+        {
+          "id": "inv-gym-ctwr-urucuca-mubt9sem-mubt9sen",
+          "gymId": "gym-ctwr-urucuca-mubt9sem",
+          "gymName": "CT WR",
+          "referenceMonth": "09/2026",
+          "amount": 0,
+          "dueDate": "2026-09-21",
+          "status": "pending",
+          "paidDate": null,
+          "notes": null
+        }
+      ]
+    },
     {
       "gymId": "gym-ctrw-alunos-mu18ckyd",
       "gymSlug": "ctrw-alunos",
@@ -496,17 +621,14 @@
       "ownerEmail": "ctrw@gmail.com",
       "ownerPhone": "739999454533",
       "city": "Uruçuca - BA",
-      "plan": "pro",
-      "planName": "Plano Pro Performance",
-      "monthlyFee": 299,
+      "plan": "starter",
+      "planName": "Plano Starter",
+      "monthlyFee": 149,
       "status": "active",
       "isSystemBlocked": false,
-      "blockedAt": null,
-      "turnstilesLimit": 6,
-      "maxCapacity": 150,
-      "lastPaymentDate": "2026-08-15",
-      "nextDueDate": "2026-09-15",
-      "trialEndsAt": null,
+      "turnstilesLimit": 2,
+      "maxCapacity": 25,
+      "nextDueDate": "2026-10-30",
       "createdAt": "2026-09-14T12:39:30.677975+00:00",
       "apiKey": "GF_LIVE_KEY_CTRW_ALUNOS_mu18ckyd",
       "invoices": []
@@ -526,7 +648,7 @@
       "isSystemBlocked": false,
       "turnstilesLimit": 2,
       "maxCapacity": 180,
-      "nextDueDate": "2026-10-18",
+      "nextDueDate": "2026-10-30",
       "createdAt": "2026-09-14T14:17:59.823Z",
       "apiKey": "GF_KEY_MATRIX_2026",
       "invoices": []

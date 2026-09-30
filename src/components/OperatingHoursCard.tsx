@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, CheckCircle2, AlertCircle, Phone, MapPin, Calendar } from 'lucide-react';
 import { GYM_SCHEDULE, THEME_COLOR_CONFIG } from '../data/gymData';
 import { GymProfile } from '../types';
+import { getEffectiveGymOpenStatus } from '../lib/scheduleUtils';
 
 interface OperatingHoursCardProps {
   gym?: GymProfile;
@@ -14,6 +15,7 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
   const currentMinutes = new Date().getMinutes();
   const currentTimeMinutes = currentHour * 60 + currentMinutes;
 
+  const currentEval = getEffectiveGymOpenStatus(gym);
   const theme = THEME_COLOR_CONFIG[gym?.themeColor || 'cyan'] || THEME_COLOR_CONFIG.cyan;
 
   // Build schedule based on gym profile operating hours if available
@@ -84,9 +86,21 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-white uppercase tracking-tight">{todaySchedule.dayName}</span>
-              <span className={`inline-flex h-1.5 w-1.5 rounded-full ${isOpenNow ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${isOpenNow ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {isOpenNow ? 'Aberto' : 'Fechado'}
+              <span className={`inline-flex h-1.5 w-1.5 rounded-full ${
+                currentEval.status === 'break' 
+                  ? 'bg-amber-400 animate-pulse' 
+                  : isOpenNow 
+                  ? 'bg-emerald-500 animate-pulse' 
+                  : 'bg-rose-500'
+              }`}></span>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${
+                currentEval.status === 'break' 
+                  ? 'text-amber-400' 
+                  : isOpenNow 
+                  ? 'text-emerald-400' 
+                  : 'text-rose-400'
+              }`}>
+                {currentEval.label || (isOpenNow ? 'Aberto' : 'Fechado')}
               </span>
             </div>
             <p className="text-sm font-black text-zinc-300 font-mono mt-0.5">
@@ -120,14 +134,23 @@ export const OperatingHoursCard: React.FC<OperatingHoursCardProps> = ({ gym, min
           </div>
         </div>
 
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border uppercase tracking-wider ${
-          isOpenNow 
-            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-        }`}>
-          <span className={`h-2 w-2 rounded-full ${isOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
-          {isOpenNow ? 'Aberto' : 'Fechado'}
-        </span>
+        <div className="flex items-center gap-2">
+          {currentEval.status === 'break' ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border uppercase tracking-wider bg-amber-500/10 text-amber-400 border-amber-500/30">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+              {currentEval.label}
+            </span>
+          ) : (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border uppercase tracking-wider ${
+              isOpenNow 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            }`}>
+              <span className={`h-2 w-2 rounded-full ${isOpenNow ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
+              {currentEval.label || (isOpenNow ? 'Aberto' : 'Fechado')}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Week Schedule Table / Cards */}

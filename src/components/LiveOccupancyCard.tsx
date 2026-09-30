@@ -17,15 +17,57 @@ export const LiveOccupancyCard: React.FC<LiveOccupancyCardProps> = ({
   // Status styling configurations
   const getStatusConfig = () => {
     if (!occupancy.isOpen) {
+      if (occupancy.openReason === 'break') {
+        return {
+          label: occupancy.openStatusLabel || 'Pausa para Almoço',
+          badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-400',
+          colorText: 'text-amber-400',
+          ringColor: 'stroke-amber-500',
+          gradient: 'from-amber-500 to-yellow-600',
+          icon: Lock,
+          headline: 'Academia em Intervalo de Almoço',
+          advice: `${occupancy.openSublabel || 'Retorna em breve'}. Consulte os horários para planejar seu treino.`,
+          waitEstimate: 'Em Intervalo'
+        };
+      }
+
+      if (occupancy.openReason === 'day_closed') {
+        return {
+          label: 'Fechado Hoje',
+          badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
+          colorText: 'text-rose-400',
+          ringColor: 'stroke-rose-500',
+          gradient: 'from-rose-500 to-red-600',
+          icon: Lock,
+          headline: 'Sem expediente no dia de hoje',
+          advice: 'A academia não opera hoje. Confira os horários dos outros dias da semana abaixo.',
+          waitEstimate: 'Fechado'
+        };
+      }
+
+      if (occupancy.openReason === 'forced_closed') {
+        return {
+          label: 'Fechada (Manual)',
+          badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
+          colorText: 'text-rose-400',
+          ringColor: 'stroke-rose-500',
+          gradient: 'from-rose-500 to-red-600',
+          icon: Lock,
+          headline: 'Fechamento temporário pela administração',
+          advice: 'Fechamento extraordinário aplicado pela recepção. Aguarde comunicado no mural.',
+          waitEstimate: 'Fechado'
+        };
+      }
+
       return {
-        label: 'Academia Fechada',
+        label: occupancy.openStatusLabel || 'Academia Fechada',
         badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
         colorText: 'text-rose-400',
         ringColor: 'stroke-rose-500',
         gradient: 'from-rose-500 to-red-600',
         icon: Lock,
         headline: 'A academia está fechada no momento',
-        advice: 'Confira os horários de funcionamento abaixo para planejar seu próximo treino.',
+        advice: occupancy.openSublabel || 'Confira os horários de funcionamento abaixo para planejar seu próximo treino.',
         waitEstimate: 'Fechado'
       };
     }

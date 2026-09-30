@@ -44,6 +44,7 @@ export interface GymProfile {
   currentCount: number;
   turnstileLocked: boolean;
   isOpen: boolean;
+  forceClosed?: boolean;
   themeColor: GymThemeColor;
   logoEmoji: string;
   apiKey: string;
@@ -69,6 +70,10 @@ export interface OccupancyData {
   percentage: number;
   turnstileLocked: boolean;
   isOpen: boolean;
+  openReason?: 'open' | 'break' | 'outside_hours' | 'day_closed' | 'forced_closed';
+  openStatusLabel?: string;
+  openSublabel?: string;
+  isAutomaticSchedule?: boolean;
   closingTimeToday: string;
   openingTimeToday: string;
   lastAccessTime: string | null;

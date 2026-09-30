@@ -1,6 +1,7 @@
 import { OccupancyData, AccessLog, Announcement, DayCrowdStats, GymProfile, CreateGymInput, AuthUser, LoginCredentials, PasswordResetRequest, SupabaseConfigStatus } from '../types';
 import { WEEKLY_CROWD_DATA, INITIAL_ANNOUNCEMENTS, INITIAL_GYMS, SAAS_PLANS } from '../data/gymData';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { getEffectiveGymOpenStatus } from '../lib/scheduleUtils';
 
 // ==========================================
 // AUTHENTICATION & SESSION MANAGEMENT
@@ -464,9 +465,13 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
 
         const maxCap = Math.max(1, profile.maxCapacity);
         const pct = Math.min(100, Math.round((profile.currentCount / maxCap) * 100));
+        const openEval = getEffectiveGymOpenStatus(profile);
 
         return {
-          profile,
+          profile: {
+            ...profile,
+            isOpen: openEval.isOpen
+          },
           occupancy: {
             gymId: profile.id,
             gymName: profile.name,
@@ -482,7 +487,11 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
             status: pct > 85 ? 'high' : pct > 50 ? 'moderate' : 'low',
             percentage: pct,
             turnstileLocked: profile.turnstileLocked,
-            isOpen: profile.isOpen,
+            isOpen: openEval.isOpen,
+            openReason: openEval.status,
+            openStatusLabel: openEval.label,
+            openSublabel: openEval.sublabel,
+            isAutomaticSchedule: openEval.isAutomaticSchedule,
             openingTimeToday: profile.operatingHours.weekdays.open,
             closingTimeToday: profile.operatingHours.weekdays.close,
             lastAccessTime: accessLogs[0]?.timestamp || new Date().toISOString(),
@@ -511,8 +520,13 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
   const found = INITIAL_GYMS.find(g => g.slug === gymIdOrSlug || g.id === gymIdOrSlug);
   if (!found) return null;
 
+  const demoOpenEval = getEffectiveGymOpenStatus(found);
+
   return {
-    profile: found,
+    profile: {
+      ...found,
+      isOpen: demoOpenEval.isOpen
+    },
     occupancy: {
       gymId: found.id,
       gymName: found.name,
@@ -528,7 +542,11 @@ export async function fetchGymDetails(gymIdOrSlug: string): Promise<{ profile: G
       status: 'low',
       percentage: Math.round((found.currentCount / found.maxCapacity) * 100),
       turnstileLocked: false,
-      isOpen: found.isOpen,
+      isOpen: demoOpenEval.isOpen,
+      openReason: demoOpenEval.status,
+      openStatusLabel: demoOpenEval.label,
+      openSublabel: demoOpenEval.sublabel,
+      isAutomaticSchedule: demoOpenEval.isAutomaticSchedule,
       openingTimeToday: found.operatingHours.weekdays.open,
       closingTimeToday: found.operatingHours.weekdays.close,
       lastAccessTime: new Date().toISOString(),

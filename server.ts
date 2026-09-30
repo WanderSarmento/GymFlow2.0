@@ -23,6 +23,11 @@ import {
   DayCrowdStats,
   HourlyCrowdItem
 } from './src/types.ts';
+import {
+  getEffectiveGymOpenStatus,
+  getDayOperatingHours,
+  GymOpenEvaluation
+} from './src/lib/scheduleUtils.ts';
 
 interface GymUserRecord {
   id: string;
@@ -1340,15 +1345,24 @@ function calculateStatus(count: number, max: number): 'empty' | 'low' | 'moderat
 function getGymTodayHours(operatingHours?: GymOperatingHours) {
   const now = new Date();
   const day = now.getDay();
-  if (!operatingHours) {
-    if (day === 0) return { open: '08:00', close: '14:00', isOpen: true };
-    if (day === 6) return { open: '07:00', close: '17:00', isOpen: true };
-    return { open: '06:00', close: '23:00', isOpen: true };
+  return getDayOperatingHours(operatingHours, day);
+}
+
+function syncGymOpenState(gymState: GymServerState): GymOpenEvaluation {
+  const evalResult = getEffectiveGymOpenStatus(gymState.profile);
+  gymState.isOpen = evalResult.isOpen;
+  gymState.profile.isOpen = evalResult.isOpen;
+
+  // Auto clean-up students count if gym is outside hours or closed for the day
+  if (!evalResult.isOpen && (evalResult.status === 'outside_hours' || evalResult.status === 'day_closed')) {
+    if (gymState.currentCount > 0) {
+      console.log(`[GymFlow Auto-Schedule] Fechamento automático de expediente para ${gymState.profile.name}. Zerando ${gymState.currentCount} alunos.`);
+      gymState.currentCount = 0;
+      gymState.profile.currentCount = 0;
+    }
   }
 
-  if (day === 0) return operatingHours.sunday;
-  if (day === 6) return operatingHours.saturday;
-  return operatingHours.weekdays;
+  return evalResult;
 }
 
 function generateApiKey(slug: string): string {
@@ -2021,6 +2035,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   // 1. List all gyms (for directory, switcher, discovery)
   app.get('/api/gyms', (req: Request, res: Response) => {
     const list = Array.from(gymsStore.values()).map(g => {
+      const openEval = syncGymOpenState(g);
       const hours = getGymTodayHours(g.profile.operatingHours);
       const isEsp32Alive = g.esp32.lastPing
         ? (Date.now() - new Date(g.esp32.lastPing).getTime()) < 45000
@@ -2040,7 +2055,11 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         currentCount: g.currentCount,
         percentage: Math.min(100, Math.round((g.currentCount / g.maxCapacity) * 100)),
         status: calculateStatus(g.currentCount, g.maxCapacity),
-        isOpen: g.isOpen,
+        isOpen: openEval.isOpen,
+        openReason: openEval.status,
+        openStatusLabel: openEval.label,
+        openSublabel: openEval.sublabel,
+        isAutomaticSchedule: openEval.isAutomaticSchedule,
         turnstileLocked: g.turnstileLocked,
         openingTimeToday: hours.open,
         closingTimeToday: hours.close,
@@ -2249,6 +2268,7 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
 
     const isAuthorized = isAuthorizedForGym(req, gymState);
     const blockCheck = isGymSystemBlocked(gymState.profile.id);
+    const openEval = syncGymOpenState(gymState);
     const hours = getGymTodayHours(gymState.profile.operatingHours);
     const percentage = Math.min(100, Math.round((gymState.currentCount / gymState.maxCapacity) * 100));
     const status = calculateStatus(gymState.currentCount, gymState.maxCapacity);
@@ -2282,7 +2302,11 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         status,
         percentage,
         turnstileLocked: gymState.turnstileLocked,
-        isOpen: gymState.isOpen,
+        isOpen: openEval.isOpen,
+        openReason: openEval.status,
+        openStatusLabel: openEval.label,
+        openSublabel: openEval.sublabel,
+        isAutomaticSchedule: openEval.isAutomaticSchedule,
         isSystemBlocked: blockCheck.blocked,
         blockReason: blockCheck.reason,
         openingTimeToday: hours.open,
@@ -2574,20 +2598,26 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         break;
 
       case 'toggle_open':
-        gymState.isOpen = !gymState.isOpen;
-        gymState.profile.isOpen = gymState.isOpen;
-        
-        // Zera a contagem se a academia for fechada
-        if (!gymState.isOpen) {
-          gymState.currentCount = 0;
-          gymState.profile.currentCount = 0;
+        // If gym is currently force-closed, re-enable automatic schedule
+        if (gymState.profile.forceClosed) {
+          gymState.profile.forceClosed = false;
+          const openEval = syncGymOpenState(gymState);
+          message = `Horário Automático REATIVADO pela recepção (${operator}) - Status atual: ${openEval.label}`;
+          logType = 'unlock';
+          status = 'success';
+        } else {
+          // Force close manually
+          gymState.profile.forceClosed = true;
+          gymState.isOpen = false;
+          gymState.profile.isOpen = false;
+          if (gymState.currentCount > 0) {
+            gymState.currentCount = 0;
+            gymState.profile.currentCount = 0;
+          }
+          message = `Fechamento manual FORÇADO pela recepção (${operator}) - Academia fechada até reativação.`;
+          logType = 'lock';
+          status = 'warning';
         }
-
-        message = gymState.isOpen
-          ? `Academia marcada como ABERTA pela recepção (${operator})`
-          : `Academia marcada como FECHADA pela recepção (${operator})`;
-        logType = 'manual_adjust';
-        status = gymState.isOpen ? 'success' : 'warning';
         break;
 
       case 'set_max_capacity':
@@ -2706,6 +2736,30 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
         success: false,
         granted: false,
         message: 'Catraca bloqueada pela administração',
+        currentCount: gymState.currentCount
+      });
+      return;
+    }
+
+    // Verify automatic schedule and open status
+    const openEval = syncGymOpenState(gymState);
+    if (!openEval.isOpen) {
+      const log: AccessLog = {
+        id: `log-${Date.now()}`,
+        gymId: gymState.profile.id,
+        timestamp: new Date().toISOString(),
+        type: 'entry',
+        source: source === 'simulator' ? 'simulator' : 'esp32_button',
+        description: `Entrada bloqueada: Academia Fechada (${openEval.label} - ${openEval.sublabel})`,
+        countAfter: gymState.currentCount,
+        status: 'blocked'
+      };
+      gymState.accessLogs.unshift(log);
+      res.status(403).json({
+        success: false,
+        granted: false,
+        blocked: true,
+        message: `Catraca bloqueada: ${openEval.label}. ${openEval.sublabel}`,
         currentCount: gymState.currentCount
       });
       return;
@@ -3541,6 +3595,7 @@ void sendHeartbeat() {
       });
       return;
     }
+    const openEval = syncGymOpenState(gymState);
     const hours = getGymTodayHours(gymState.profile.operatingHours);
     const percentage = Math.min(100, Math.round((gymState.currentCount / gymState.maxCapacity) * 100));
     const status = calculateStatus(gymState.currentCount, gymState.maxCapacity);
@@ -3556,7 +3611,11 @@ void sendHeartbeat() {
       status,
       percentage,
       turnstileLocked: gymState.turnstileLocked,
-      isOpen: gymState.isOpen,
+      isOpen: openEval.isOpen,
+      openReason: openEval.status,
+      openStatusLabel: openEval.label,
+      openSublabel: openEval.sublabel,
+      isAutomaticSchedule: openEval.isAutomaticSchedule,
       openingTimeToday: hours.open,
       closingTimeToday: hours.close,
       lastAccessTime: gymState.lastAccessTime,
@@ -4358,6 +4417,17 @@ void sendHeartbeat() {
         console.error('[GymFlow Supabase] Sincronização periódica falhou:', err);
       });
     }, 2 * 60 * 1000);
+
+    // Avaliação automática de horário a cada 1 minuto (Abre/Fecha de acordo com grade cadastrada)
+    setInterval(() => {
+      for (const gymState of gymsStore.values()) {
+        try {
+          syncGymOpenState(gymState);
+        } catch (err) {
+          console.warn('[GymFlow Auto-Schedule] Erro na checagem de horários:', err);
+        }
+      }
+    }, 60 * 1000);
 
     if (!isServerless) {
       app.listen(PORT, '0.0.0.0', () => {

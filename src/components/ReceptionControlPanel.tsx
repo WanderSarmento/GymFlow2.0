@@ -148,14 +148,31 @@ export const ReceptionControlPanel: React.FC<ReceptionControlPanelProps> = ({
               type="button"
               onClick={() => handleTriggerAction('toggle_open')}
               disabled={isExecuting}
+              title={
+                occupancy.openReason === 'forced_closed'
+                  ? 'Academia com fechamento forçado manualmente. Clique para reativar o horário automático.'
+                  : 'Horário Automático ativo. Clique para forçar fechamento extraordinário.'
+              }
               className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer active:scale-95 ${
-                occupancy.isOpen
+                occupancy.openReason === 'forced_closed'
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 hover:bg-rose-500/30 ring-1 ring-rose-500/30'
+                  : occupancy.isOpen
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+                  : occupancy.openReason === 'break'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                  : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
               }`}
             >
-              <Power className="w-3 h-3" />
-              <span>{occupancy.isOpen ? 'Aberta' : 'Fechada'}</span>
+              <Power className={`w-3 h-3 ${occupancy.openReason === 'forced_closed' ? 'text-rose-400 animate-pulse' : ''}`} />
+              <span>
+                {occupancy.openReason === 'forced_closed'
+                  ? 'Fechada (Forçado)'
+                  : occupancy.isOpen
+                  ? 'Auto: Aberta'
+                  : occupancy.openReason === 'break'
+                  ? 'Auto: Almoço'
+                  : 'Auto: Fechada'}
+              </span>
             </button>
 
             <button
